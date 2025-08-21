@@ -107,195 +107,215 @@ const TransactionForm = ({ onSuccess }) => {
           </div>
         )}
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="date">📅 {t('date')}</label>
-            <input
-              type="date"
-              id="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        {/* Section 1: Basic Transaction Information */}
+        <div className="form-section">
+          <h4 className="section-title">📋 {t('transactionDetails')}</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="date">📅 {t('date')}</label>
+              <input
+                type="date"
+                id="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className="form-group amount-group">
-            <label htmlFor="amount">💰 {t('amount')}</label>
-            <input
-              type="number"
-              id="amount"
-              name="amount"
-              value={formData.amount}
-              onChange={handleChange}
-              placeholder="0.00"
-              step="0.01"
-              min="0.01"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="description">📝 {t('description')}</label>
-          <input
-            type="text"
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder={t('enterDescription')}
-            required
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="debitAccount">📤 {t('debitAccount')}</label>
-            <select
-              id="debitAccount"
-              name="debitAccount"
-              value={formData.debitAccount}
-              onChange={handleChange}
-              required
-            >
-              <option value="">{t('selectDebitAccount')}</option>
-              {accountsWithTypes.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
-                </option>
-              ))}
-            </select>
+            <div className="form-group amount-group">
+              <label htmlFor="amount">💰 {t('amount')}</label>
+              <input
+                type="number"
+                id="amount"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder="0.00"
+                step="0.01"
+                min="0.01"
+                required
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="creditAccount">📥 {t('creditAccount')}</label>
-            <select
-              id="creditAccount"
-              name="creditAccount"
-              value={formData.creditAccount}
-              onChange={handleChange}
-              required
-            >
-              <option value="">{t('selectCreditAccount')}</option>
-              {accountsWithTypes.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="reference">🔗 {t('reference')}</label>
+            <label htmlFor="description">📝 {t('description')}</label>
             <input
               type="text"
-              id="reference"
-              name="reference"
-              value={formData.reference}
+              id="description"
+              name="description"
+              value={formData.description}
               onChange={handleChange}
-              placeholder={t('referencePlaceholder')}
+              placeholder={t('enterDescription')}
+              required
             />
           </div>
+        </div>
 
-          <div className="form-group">
-            <label htmlFor="customerId">👥 {t('customer')}</label>
-            <select
-              id="customerId"
-              name="customerId"
-              value={formData.customerId}
-              onChange={handleChange}
-            >
-              <option value="">{t('selectCustomer')}</option>
-              {customers.map(customer => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.name}
-                </option>
-              ))}
-            </select>
+        {/* Section 2: Categorization */}
+        <div className="form-section">
+          <h4 className="section-title">🏷️ {t('categorization')}</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="subcategoryId">🏷️ {t('subcategory')}</label>
+              <select
+                id="subcategoryId"
+                name="subcategoryId"
+                value={formData.subcategoryId}
+                onChange={handleChange}
+              >
+                <option value="">{t('selectSubcategory')}</option>
+                {getSubcategoriesWithCategories().map(subcategory => (
+                  <option key={subcategory.id} value={subcategory.id}>
+                    {subcategory.name} ({subcategory.category?.name})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="category">📂 {t('category')}</label>
+              <input
+                type="text"
+                id="category"
+                name="category"
+                value={selectedCategory ? `${selectedCategory.icon} ${selectedCategory.name}` : ''}
+                placeholder={t('selectSubcategory')}
+                readOnly
+                className="readonly-field"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="vendorId">🏢 {t('vendor')}</label>
-            <select
-              id="vendorId"
-              name="vendorId"
-              value={formData.vendorId}
-              onChange={handleChange}
-            >
-              <option value="">{t('selectVendor')}</option>
-              {vendors.map(vendor => (
-                <option key={vendor.id} value={vendor.id}>
-                  {vendor.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Section 3: Account Movement */}
+        <div className="form-section">
+          <h4 className="section-title">💫 {t('accountMovement')}</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="debitAccount">📤 {t('debitAccount')}</label>
+              <select
+                id="debitAccount"
+                name="debitAccount"
+                value={formData.debitAccount}
+                onChange={handleChange}
+                required
+              >
+                <option value="">{t('selectDebitAccount')}</option>
+                {accountsWithTypes.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="productId">📦 {t('productService')}</label>
-            <select
-              id="productId"
-              name="productId"
-              value={formData.productId}
-              onChange={handleChange}
-            >
-              <option value="">{t('selectProductService')}</option>
-              {tags.map(tag => (
-                <option key={tag.id} value={tag.id}>
-                  {tag.name}
-                </option>
-              ))}
-            </select>
+            <div className="form-group">
+              <label htmlFor="creditAccount">📥 {t('creditAccount')}</label>
+              <select
+                id="creditAccount"
+                name="creditAccount"
+                value={formData.creditAccount}
+                onChange={handleChange}
+                required
+              >
+                <option value="">{t('selectCreditAccount')}</option>
+                {accountsWithTypes.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="form-row">
+        {/* Section 4: Additional Details (Optional) */}
+        <div className="form-section optional-section">
+          <h4 className="section-title">📎 {t('additionalDetails')} ({t('optional')})</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="reference">🔗 {t('reference')}</label>
+              <input
+                type="text"
+                id="reference"
+                name="reference"
+                value={formData.reference}
+                onChange={handleChange}
+                placeholder={t('referencePlaceholder')}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="vendorId">🏢 {t('vendor')}</label>
+              <select
+                id="vendorId"
+                name="vendorId"
+                value={formData.vendorId}
+                onChange={handleChange}
+              >
+                <option value="">{t('selectVendor')}</option>
+                {vendors.map(vendor => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="customerId">👥 {t('customer')}</label>
+              <select
+                id="customerId"
+                name="customerId"
+                value={formData.customerId}
+                onChange={handleChange}
+              >
+                <option value="">{t('selectCustomer')}</option>
+                {customers.map(customer => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="productId">📦 {t('productService')}</label>
+              <select
+                id="productId"
+                name="productId"
+                value={formData.productId}
+                onChange={handleChange}
+              >
+                <option value="">{t('selectProductService')}</option>
+                {tags.map(tag => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="form-group">
-            <label htmlFor="category">🏷️ {t('category')}</label>
-            <input
-              type="text"
-              id="category"
-              name="category"
-              value={selectedCategory ? `${selectedCategory.icon} ${selectedCategory.name}` : ''}
-              placeholder={t('selectSubcategory')}
-              readOnly
-              className="readonly-field"
+            <label htmlFor="notes">📋 {t('notes')}</label>
+            <textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              placeholder={t('notesPlaceholder')}
+              rows="3"
             />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="subcategoryId">🏷️ {t('subcategory')}</label>
-            <select
-              id="subcategoryId"
-              name="subcategoryId"
-              value={formData.subcategoryId}
-              onChange={handleChange}
-            >
-              <option value="">{t('selectSubcategory')}</option>
-              {getSubcategoriesWithCategories().map(subcategory => (
-                <option key={subcategory.id} value={subcategory.id}>
-                  {subcategory.name} ({subcategory.category?.name})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="notes">📋 {t('notes')}</label>
-          <textarea
-            id="notes"
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            placeholder={t('notesPlaceholder')}
-            rows="3"
-          />
         </div>
 
         <div className="double-entry-explanation">

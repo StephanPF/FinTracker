@@ -7,11 +7,14 @@ import TransactionList from './TransactionList';
 import DatabaseSetup from './DatabaseSetup';
 import DataManagement from './DataManagement';
 import TodoPage from './TodoPage';
+import HelpPanel from './HelpPanel';
+import Architecture from './Architecture';
 
 const Dashboard = () => {
   const { isLoaded, loading, resetToSetup } = useAccounting();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
+  const [helpPanelOpen, setHelpPanelOpen] = useState(false);
 
   if (loading) {
     return (
@@ -68,6 +71,20 @@ const Dashboard = () => {
         >
           <span>🎯 TODO</span>
         </button>
+        <button 
+          className={activeTab === 'architecture' ? 'nav-btn active' : 'nav-btn'}
+          onClick={() => setActiveTab('architecture')}
+        >
+          <span>🏠 {t('architecture')}</span>
+        </button>
+        
+        {/* <button 
+          className="nav-btn help-btn"
+          onClick={() => setHelpPanelOpen(true)}
+          title={t('help')}
+        >
+          <span>ⓘ</span>
+        </button> */}
       </nav>
 
       <div className="dashboard-content">
@@ -105,7 +122,17 @@ const Dashboard = () => {
             <TodoPage />
           </div>
         )}
+        {activeTab === 'architecture' && (
+          <div className="architecture-tab">
+            <Architecture />
+          </div>
+        )}
       </div>
+      
+      <HelpPanel 
+        isOpen={helpPanelOpen} 
+        onClose={() => setHelpPanelOpen(false)} 
+      />
     </div>
   );
 };
