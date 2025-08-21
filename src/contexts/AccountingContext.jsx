@@ -645,6 +645,51 @@ export const AccountingProvider = ({ children }) => {
     changeLanguage(lang);
   };
 
+  // Stress testing methods
+  const generateStressTestTransactions = async (count = 1000) => {
+    try {
+      setLoading(true);
+      const result = database.generateStressTestTransactions(count);
+      updateStateFromDatabase();
+      
+      // Save to file storage
+      const buffers = {
+        transactions: database.exportTableToBuffer('transactions'),
+        accounts: database.exportTableToBuffer('accounts')
+      };
+      await fileStorage.saveAllTables(buffers);
+      
+      return result;
+    } catch (error) {
+      console.error('Error generating stress test transactions:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearStressTestTransactions = async () => {
+    try {
+      setLoading(true);
+      const result = database.clearStressTestTransactions();
+      updateStateFromDatabase();
+      
+      // Save to file storage
+      const buffers = {
+        transactions: database.exportTableToBuffer('transactions'),
+        accounts: database.exportTableToBuffer('accounts')
+      };
+      await fileStorage.saveAllTables(buffers);
+      
+      return result;
+    } catch (error) {
+      console.error('Error clearing stress test transactions:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     database,
     accounts,
@@ -703,6 +748,8 @@ export const AccountingProvider = ({ children }) => {
     deleteSubcategory,
     getDatabaseLanguage,
     setDatabaseLanguage,
+    generateStressTestTransactions,
+    clearStressTestTransactions,
     fileStorage
   };
 

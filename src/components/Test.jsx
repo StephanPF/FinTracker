@@ -1,10 +1,43 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAccounting } from '../contexts/AccountingContext';
 
 const Test = () => {
   const { t } = useLanguage();
+  const { 
+    generateStressTestTransactions, 
+    clearStressTestTransactions, 
+    transactions, 
+    loading 
+  } = useAccounting();
   const [selectedLogo, setSelectedLogo] = useState(null);
   const [showInContext, setShowInContext] = useState(false);
+  const [stressTestResults, setStressTestResults] = useState(null);
+  const [stressTestCount, setStressTestCount] = useState(1000);
+
+  const handleStressTest = async () => {
+    try {
+      console.time('Stress Test');
+      const result = await generateStressTestTransactions(stressTestCount);
+      console.timeEnd('Stress Test');
+      setStressTestResults(result);
+      alert(`✅ Stress Test Completed!\n\nGenerated: ${result.generated} transactions\nTotal: ${result.total} transactions\nTime: ${result.duration}ms\nAvg per transaction: ${result.averageTime}ms`);
+    } catch (error) {
+      console.error('Stress test failed:', error);
+      alert(`❌ Stress Test Failed: ${error.message}`);
+    }
+  };
+
+  const handleClearStressTest = async () => {
+    try {
+      const result = await clearStressTestTransactions();
+      setStressTestResults(null);
+      alert(`✅ Cleared ${result} stress test transactions`);
+    } catch (error) {
+      console.error('Clear stress test failed:', error);
+      alert(`❌ Clear Failed: ${error.message}`);
+    }
+  };
 
   const logoOptions = [
     {
@@ -191,6 +224,85 @@ const Test = () => {
 
   return (
     <div className="test-page">
+      <div className="stress-test-section">
+        <div className="page-header">
+          <h2>🧪 Application Stress Test</h2>
+          <p>Test application performance with bulk transaction data</p>
+        </div>
+        
+        <div className="stress-test-controls">
+          <div className="current-stats">
+            <div className="stat-item">
+              <span className="stat-label">Current Transactions:</span>
+              <span className="stat-value">{transactions.length}</span>
+            </div>
+            {stressTestResults && (
+              <div className="stat-item">
+                <span className="stat-label">Last Test Results:</span>
+                <span className="stat-value">
+                  {stressTestResults.generated} in {stressTestResults.duration}ms 
+                  (avg: {stressTestResults.averageTime}ms/txn)
+                </span>
+              </div>
+            )}
+          </div>
+          
+          <div className="test-controls">
+            <div className="control-group">
+              <label htmlFor="stress-count">Number of transactions:</label>
+              <input
+                id="stress-count"
+                type="number"
+                min="100"
+                max="5000"
+                step="100"
+                value={stressTestCount}
+                onChange={(e) => setStressTestCount(parseInt(e.target.value))}
+                disabled={loading}
+              />
+            </div>
+            
+            <div className="button-group">
+              <button 
+                className="stress-btn generate-btn"
+                onClick={handleStressTest}
+                disabled={loading}
+              >
+                {loading ? '⏳ Generating...' : '🚀 Generate Test Data'}
+              </button>
+              
+              <button 
+                className="stress-btn clear-btn"
+                onClick={handleClearStressTest}
+                disabled={loading || transactions.filter(t => t.id.startsWith('STRESS_TXN_')).length === 0}
+              >
+                {loading ? '⏳ Clearing...' : '🗑️ Clear Test Data'}
+              </button>
+            </div>
+          </div>
+          
+          <div className="test-info">
+            <h4>📊 What this test does:</h4>
+            <ul>
+              <li>Generates realistic transaction data with random amounts, dates, and accounts</li>
+              <li>Tests UI performance with large datasets</li>
+              <li>Measures generation speed and memory usage</li>
+              <li>Updates account balances automatically</li>
+              <li>Includes filtering, sorting, and search functionality</li>
+            </ul>
+          </div>
+          
+          {transactions.length > 500 && (
+            <div className="performance-warning">
+              ⚠️ <strong>Performance Note:</strong> With {transactions.length} transactions, 
+              you may notice slower rendering. This helps identify optimization opportunities.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <hr style={{margin: '2rem 0', border: '1px solid #e0e0e0'}} />
+
       <div className="page-header">
         <h2>🎨 Logo Design Options</h2>
         <p>Exploring visual identity concepts for the Personal Finance Tracker</p>

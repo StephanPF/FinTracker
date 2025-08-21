@@ -2026,6 +2026,142 @@ class RelationalDatabase {
       }
     ];
   }
+
+  // Stress test method to generate bulk transactions
+  generateStressTestTransactions(count = 1000) {
+    console.log(`Starting stress test: generating ${count} transactions...`);
+    
+    const startTime = performance.now();
+    const transactions = [];
+    
+    // Get available accounts
+    const accounts = this.tables.accounts.filter(acc => acc.isActive);
+    const vendors = this.tables.vendors;
+    const customers = this.tables.customers;
+    const categories = this.tables.categories;
+    const subcategories = this.tables.subcategories;
+    const tags = this.tables.tags;
+    
+    if (accounts.length < 2) {
+      throw new Error('Need at least 2 active accounts for stress testing');
+    }
+    
+    // Sample transaction descriptions
+    const descriptions = [
+      'Grocery Shopping', 'Gas Station Purchase', 'Online Shopping', 'Restaurant Meal',
+      'Coffee Shop', 'Utility Payment', 'Rent Payment', 'Salary Deposit',
+      'Investment Purchase', 'Bank Fee', 'ATM Withdrawal', 'Medical Expense',
+      'Insurance Payment', 'Phone Bill', 'Internet Service', 'Subscription Service',
+      'Car Repair', 'Home Maintenance', 'Entertainment', 'Travel Expense',
+      'Gift Purchase', 'Charity Donation', 'Tax Payment', 'Loan Payment',
+      'Credit Card Payment', 'Dividend Income', 'Interest Income', 'Freelance Income',
+      'Refund Received', 'Cash Back Reward'
+    ];
+    
+    const references = [
+      'INV-2024-001', 'CHK-1001', 'TXN-AUTO-001', 'REF-12345',
+      'ORD-98765', 'BILL-2024001', 'PAY-001234', 'DEP-SALARY-001'
+    ];
+    
+    const notes = [
+      'Regular monthly expense', 'One-time purchase', 'Business expense',
+      'Personal expense', 'Emergency fund', 'Investment income',
+      'Routine payment', 'Special occasion', 'Maintenance cost',
+      'Annual payment', '', '' // Some empty notes
+    ];
+    
+    // Generate transactions
+    for (let i = 0; i < count; i++) {
+      // Random date within last 2 years
+      const randomDate = new Date();
+      randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 730));
+      
+      // Random accounts (ensure they're different)
+      const debitAccount = accounts[Math.floor(Math.random() * accounts.length)];
+      let creditAccount;
+      do {
+        creditAccount = accounts[Math.floor(Math.random() * accounts.length)];
+      } while (creditAccount.id === debitAccount.id);
+      
+      // Random amount between $5 and $5000
+      const amount = (Math.random() * 4995 + 5).toFixed(2);
+      
+      const transaction = {
+        id: `STRESS_TXN_${i}_${Date.now()}`,
+        date: randomDate.toISOString().split('T')[0],
+        description: descriptions[Math.floor(Math.random() * descriptions.length)] + ` #${i + 1}`,
+        debitAccountId: debitAccount.id,
+        creditAccountId: creditAccount.id,
+        amount: parseFloat(amount),
+        customerId: Math.random() > 0.7 && customers.length > 0 ? 
+          customers[Math.floor(Math.random() * customers.length)].id : null,
+        vendorId: Math.random() > 0.6 && vendors.length > 0 ? 
+          vendors[Math.floor(Math.random() * vendors.length)].id : null,
+        productId: Math.random() > 0.8 && tags.length > 0 ? 
+          tags[Math.floor(Math.random() * tags.length)].id : null,
+        categoryId: Math.random() > 0.5 && categories.length > 0 ? 
+          categories[Math.floor(Math.random() * categories.length)].id : null,
+        subcategoryId: Math.random() > 0.5 && subcategories.length > 0 ? 
+          subcategories[Math.floor(Math.random() * subcategories.length)].id : null,
+        reference: Math.random() > 0.7 ? 
+          references[Math.floor(Math.random() * references.length)] : '',
+        notes: notes[Math.floor(Math.random() * notes.length)],
+        createdAt: new Date().toISOString()
+      };
+      
+      transactions.push(transaction);
+    }
+    
+    // Add all transactions to the database
+    this.tables.transactions.push(...transactions);
+    
+    // Update account balances for all transactions
+    transactions.forEach(transaction => {
+      this.updateAccountBalances(transaction);
+    });
+    
+    // Update workbooks
+    this.saveTableToWorkbook('transactions');
+    this.saveTableToWorkbook('accounts');
+    
+    const endTime = performance.now();
+    const duration = (endTime - startTime).toFixed(2);
+    
+    console.log(`Stress test completed: Generated ${count} transactions in ${duration}ms`);
+    console.log(`Total transactions in database: ${this.tables.transactions.length}`);
+    console.log(`Average time per transaction: ${(duration / count).toFixed(3)}ms`);
+    
+    return {
+      generated: count,
+      total: this.tables.transactions.length,
+      duration: duration,
+      averageTime: (duration / count).toFixed(3)
+    };
+  }
+
+  // Clear all stress test transactions
+  clearStressTestTransactions() {
+    const initialCount = this.tables.transactions.length;
+    this.tables.transactions = this.tables.transactions.filter(
+      txn => !txn.id.startsWith('STRESS_TXN_')
+    );
+    const removed = initialCount - this.tables.transactions.length;
+    
+    // Recalculate all account balances
+    this.tables.accounts.forEach(account => {
+      account.balance = account.initialBalance || 0;
+    });
+    
+    this.tables.transactions.forEach(transaction => {
+      this.updateAccountBalances(transaction);
+    });
+    
+    this.saveTableToWorkbook('transactions');
+    this.saveTableToWorkbook('accounts');
+    
+    console.log(`Cleared ${removed} stress test transactions`);
+    return removed;
+  }
 }
 
 export default RelationalDatabase;

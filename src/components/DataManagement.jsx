@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -52,6 +52,7 @@ const DataManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [showAccountTypeTooltip, setShowAccountTypeTooltip] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
 
   const resetForm = () => {
     // Initialize formData with default values for transactions
@@ -962,6 +963,19 @@ const DataManagement = () => {
     }
   };
 
+  // Handle loading state for transactions
+  useEffect(() => {
+    if (activeTab === 'transactions' && transactions.length > 1000) {
+      setIsLoadingTransactions(true);
+      const timer = setTimeout(() => {
+        setIsLoadingTransactions(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      setIsLoadingTransactions(false);
+    }
+  }, [activeTab, transactions]);
+
   const { data: rawData, columns } = getTableData();
   const data = filterData(rawData, searchTerm);
 
@@ -1030,7 +1044,13 @@ const DataManagement = () => {
 
         <div className="table-container">
           <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})</h3>
-          {data.length > 0 ? (
+          {isLoadingTransactions && activeTab === 'transactions' ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <h3>Loading {transactions.length.toLocaleString()} transactions...</h3>
+              <p>This may take a moment for large datasets</p>
+            </div>
+          ) : data.length > 0 ? (
             renderTable(data, columns)
           ) : (
             <div className="empty-state">

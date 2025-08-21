@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -13,6 +13,7 @@ const TransactionList = ({ limit }) => {
   const [filterAmountMin, setFilterAmountMin] = useState('');
   const [filterAmountMax, setFilterAmountMax] = useState('');
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
+  const [isRendering, setIsRendering] = useState(false);
 
 
   const formatDate = (dateString) => {
@@ -117,9 +118,24 @@ const TransactionList = ({ limit }) => {
     return filtered;
   }, [transactions, searchTerm, filterAccount, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, accounts, categories, subcategories, customers, vendors, tags, t]);
 
-  const displayTransactions = limit 
-    ? filteredTransactions.slice(-limit).reverse() 
-    : [...filteredTransactions].reverse();
+  const displayTransactions = useMemo(() => {
+    return limit 
+      ? filteredTransactions.slice(-limit).reverse() 
+      : [...filteredTransactions].reverse();
+  }, [filteredTransactions, limit]);
+
+  // Handle large datasets with loading state
+  useEffect(() => {
+    if (transactions.length > 1000) {
+      setIsRendering(true);
+      const timer = setTimeout(() => {
+        setIsRendering(false);
+      }, 100); // Small delay to show loading state
+      return () => clearTimeout(timer);
+    } else {
+      setIsRendering(false);
+    }
+  }, [transactions, filteredTransactions]);
 
   if (transactions.length === 0) {
     return (
@@ -128,6 +144,18 @@ const TransactionList = ({ limit }) => {
           <span className="empty-icon">📝</span>
           <h3>{t('noTransactionsYet')}</h3>
           <p>{t('addFirstTransaction')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isRendering && transactions.length > 1000) {
+    return (
+      <div className="transaction-list loading">
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <h3>Loading {transactions.length.toLocaleString()} transactions...</h3>
+          <p>This may take a moment for large datasets</p>
         </div>
       </div>
     );
@@ -246,20 +274,6 @@ const TransactionList = ({ limit }) => {
         </div>
       )}
       
-      {displayTransactions.length > 0 && (
-        <div className="transaction-list-header">
-          <h3>
-            {limit ? t('recentTransactionsTitle') : t('allTransactionsTitle')}
-          </h3>
-          <div className="transaction-count">
-            {displayTransactions.length} {displayTransactions.length === 1 ? 'transaction' : 'transactions'}
-            {searchTerm || filterAccount || filterDateFrom || filterDateTo || filterAmountMin || filterAmountMax 
-              ? ` (filtered from ${transactions.length} total)` 
-              : ''
-            }
-          </div>
-        </div>
-      )}
       
       <div className="data-table">
         <table>
