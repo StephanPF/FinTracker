@@ -279,7 +279,7 @@ const TransactionForm = ({ onSuccess }) => {
               <option value="">{t('selectSubcategory')}</option>
               {getSubcategoriesWithCategories().map(subcategory => (
                 <option key={subcategory.id} value={subcategory.id}>
-                  {subcategory.icon} {subcategory.name} ({subcategory.category?.name})
+                  {subcategory.name} ({subcategory.category?.name})
                 </option>
               ))}
             </select>

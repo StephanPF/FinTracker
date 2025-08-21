@@ -571,16 +571,6 @@ const DataManagement = () => {
             onChange={(e) => handleInputChange('color', e.target.value)}
           />
         </div>
-        <div className="form-group">
-          <label>{t('icon')}</label>
-          <input
-            type="text"
-            value={formData.icon || ''}
-            onChange={(e) => handleInputChange('icon', e.target.value)}
-            placeholder="🏷️"
-            maxLength="2"
-          />
-        </div>
         <div className="form-actions">
           <button type="submit" className="btn-primary">
             {editingId ? t('updateSubcategory') : t('addSubcategory')}
@@ -724,11 +714,6 @@ const DataManagement = () => {
           data: subcategoriesWithCategories,
           columns: [
             { key: 'id', label: t('id') },
-            { 
-              key: 'icon', 
-              label: t('icon'), 
-              render: (value) => <span style={{fontSize: '1.2em'}}>{value}</span>
-            },
             { key: 'name', label: t('name') },
             { 
               key: 'category', 
