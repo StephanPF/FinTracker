@@ -51,16 +51,57 @@ const DataManagement = () => {
   const [formData, setFormData] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [showAccountTypeTooltip, setShowAccountTypeTooltip] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const resetForm = () => {
-    setFormData({});
+    // Initialize formData with default values for transactions
+    if (activeTab === 'transactions' && !editingId) {
+      setFormData({ date: new Date().toISOString().split('T')[0] });
+    } else {
+      setFormData({});
+    }
     setShowForm(false);
     setEditingId(null);
     setShowAccountTypeTooltip(false);
   };
 
+  const filterData = (data, searchTerm) => {
+    if (!searchTerm.trim()) {
+      return data;
+    }
+
+    const term = searchTerm.toLowerCase().trim();
+    return data.filter(item => {
+      // Search in all string values of the object
+      return Object.values(item).some(value => {
+        if (value === null || value === undefined) return false;
+        
+        // Handle nested objects (like accountType, category)
+        if (typeof value === 'object') {
+          return Object.values(value).some(nestedValue => 
+            nestedValue !== null && 
+            nestedValue !== undefined && 
+            nestedValue.toString().toLowerCase().includes(term)
+          );
+        }
+        
+        return value.toString().toLowerCase().includes(term);
+      });
+    });
+  };
+
   const handleEdit = (record) => {
-    setFormData(record);
+    // Map transaction data to form field names
+    if (activeTab === 'transactions') {
+      const mappedData = {
+        ...record,
+        debitAccount: record.debitAccountId,
+        creditAccount: record.creditAccountId
+      };
+      setFormData(mappedData);
+    } else {
+      setFormData(record);
+    }
     setEditingId(record.id);
     setShowForm(true);
   };
@@ -429,9 +470,103 @@ const DataManagement = () => {
         <label>Date</label>
         <input
           type="date"
-          value={formData.date || new Date().toISOString().split('T')[0]}
+          value={(() => {
+            if (formData.date) {
+              const date = new Date(formData.date);
+              return isNaN(date.getTime()) ? new Date().toISOString().split('T')[0] : date.toISOString().split('T')[0];
+            }
+            return new Date().toISOString().split('T')[0];
+          })()}
           onChange={(e) => handleInputChange('date', e.target.value)}
           required
+        />
+      </div>
+      <div className="form-group">
+        <label>{t('category')}</label>
+        <select
+          value={formData.categoryId || ''}
+          onChange={(e) => handleInputChange('categoryId', e.target.value)}
+        >
+          <option value="">{t('selectCategory')}</option>
+          {categories.map(category => (
+            <option key={category.id} value={category.id}>
+              {category.icon} {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>{t('subcategory')}</label>
+        <select
+          value={formData.subcategoryId || ''}
+          onChange={(e) => handleInputChange('subcategoryId', e.target.value)}
+        >
+          <option value="">{t('selectSubcategory')}</option>
+          {subcategories.map(subcategory => (
+            <option key={subcategory.id} value={subcategory.id}>
+              {subcategory.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>{t('customer')}</label>
+        <select
+          value={formData.customerId || ''}
+          onChange={(e) => handleInputChange('customerId', e.target.value)}
+        >
+          <option value="">{t('selectCustomer')}</option>
+          {customers.map(customer => (
+            <option key={customer.id} value={customer.id}>
+              {customer.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>{t('vendor')}</label>
+        <select
+          value={formData.vendorId || ''}
+          onChange={(e) => handleInputChange('vendorId', e.target.value)}
+        >
+          <option value="">{t('selectVendor')}</option>
+          {vendors.map(vendor => (
+            <option key={vendor.id} value={vendor.id}>
+              {vendor.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>{t('productService')}</label>
+        <select
+          value={formData.productId || ''}
+          onChange={(e) => handleInputChange('productId', e.target.value)}
+        >
+          <option value="">{t('selectProductService')}</option>
+          {tags.map(tag => (
+            <option key={tag.id} value={tag.id}>
+              {tag.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>{t('reference')}</label>
+        <input
+          type="text"
+          value={formData.reference || ''}
+          onChange={(e) => handleInputChange('reference', e.target.value)}
+          placeholder={t('referencePlaceholder')}
+        />
+      </div>
+      <div className="form-group">
+        <label>{t('notes')}</label>
+        <textarea
+          value={formData.notes || ''}
+          onChange={(e) => handleInputChange('notes', e.target.value)}
+          placeholder={t('notesPlaceholder')}
+          rows="3"
         />
       </div>
       <div className="form-actions">
@@ -663,12 +798,76 @@ const DataManagement = () => {
         return {
           data: transactions,
           columns: [
-            { key: 'id', label: t('id') },
-            { key: 'date', label: t('date') },
+            { 
+              key: 'date', 
+              label: t('date'),
+              render: (value) => {
+                if (!value) return '-';
+                const date = new Date(value);
+                if (isNaN(date.getTime())) return 'Invalid Date';
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+              }
+            },
             { key: 'description', label: t('description') },
-            { key: 'amount', label: t('amount'), render: (value) => formatCurrency(value || 0) },
-            { key: 'debitAccountId', label: t('debit') },
-            { key: 'creditAccountId', label: t('credit') }
+            { 
+              key: 'debitAccountId', 
+              label: t('debitAccount'),
+              render: (value) => {
+                const account = accountsWithTypes.find(acc => acc.id === value);
+                return account ? account.name : t('unknownAccount');
+              }
+            },
+            { 
+              key: 'creditAccountId', 
+              label: t('creditAccount'),
+              render: (value) => {
+                const account = accountsWithTypes.find(acc => acc.id === value);
+                return account ? account.name : t('unknownAccount');
+              }
+            },
+            { 
+              key: 'categoryId', 
+              label: t('category'),
+              render: (value, row) => {
+                const categoryName = row.categoryId ? 
+                  (categories.find(c => c.id === row.categoryId)?.name || '') : '';
+                const subcategoryName = row.subcategoryId ? 
+                  (subcategories.find(s => s.id === row.subcategoryId)?.name || '') : '';
+                
+                if (categoryName && subcategoryName) {
+                  return `${categoryName} - ${subcategoryName}`;
+                } else if (categoryName) {
+                  return categoryName;
+                } else if (subcategoryName) {
+                  return `- ${subcategoryName}`;
+                }
+                return '-';
+              }
+            },
+            { 
+              key: 'vendorId', 
+              label: t('vendor'),
+              render: (value) => {
+                if (!value) return '-';
+                const vendor = vendors.find(v => v.id === value);
+                return vendor ? vendor.name : t('unknownAccount');
+              }
+            },
+            { 
+              key: 'productId', 
+              label: t('productService'),
+              render: (value) => {
+                if (!value) return '-';
+                const tag = tags.find(t => t.id === value);
+                return tag ? tag.name : t('unknownAccount');
+              }
+            },
+            { key: 'reference', label: t('reference'), render: (value) => value || '-' },
+            { key: 'notes', label: t('notes'), render: (value) => value || '-' },
+            { key: 'amount', label: t('amount'), render: (value) => formatCurrency(value || 0) }
           ]
         };
       case 'products':
@@ -763,7 +962,8 @@ const DataManagement = () => {
     }
   };
 
-  const { data, columns } = getTableData();
+  const { data: rawData, columns } = getTableData();
+  const data = filterData(rawData, searchTerm);
 
   return (
     <div className="data-management">
@@ -776,6 +976,7 @@ const DataManagement = () => {
               setActiveTab(tab);
               resetForm();
               setShowAccountTypeTooltip(false);
+              setSearchTerm('');
             }}
           >
             {t(tab)}
@@ -799,6 +1000,33 @@ const DataManagement = () => {
             {renderForm()}
           </div>
         )}
+
+        <div className="search-container">
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              placeholder={`Search ${t(activeTab)}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+            <span className="search-icon">🔍</span>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="search-clear"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <div className="search-results-info">
+              {data.length} of {rawData.length} {t(activeTab)} found
+            </div>
+          )}
+        </div>
 
         <div className="table-container">
           <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})</h3>

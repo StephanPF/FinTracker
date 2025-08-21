@@ -3,6 +3,7 @@ import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import RecentDatabases from './RecentDatabases';
 import LanguageSwitcher from './LanguageSwitcher';
+import Logo from './Logo';
 
 const DatabaseSetup = () => {
   const { createNewDatabase, loadExistingDatabase } = useAccounting();
@@ -45,14 +46,17 @@ const DatabaseSetup = () => {
   return (
     <div className="database-setup">
       <div className="setup-container">
+        <div className="setup-header financeflow-setup-header">
+          <Logo variant="full" size="large" theme="light" />
+          <div className="header-text">
+            <h1>{t('welcomeTitle')}</h1>
+          </div>
+        </div>
+        
         <header className="app-language-header">
           <LanguageSwitcher />
         </header>
-        <div className="setup-header">
-          <h1>{t('welcomeTitle')}</h1>
-          <p className="setup-subtitle">{t('welcomeSubtitle')}</p>
-        </div>
-        
+
         {error && (
           <div className="error-message">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">

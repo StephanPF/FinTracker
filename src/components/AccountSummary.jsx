@@ -38,7 +38,7 @@ const AccountSummary = () => {
             <h3>💵 {t('totalIncome')}</h3>
             <span className="card-icon">📊</span>
           </div>
-          <div className="card-value">{formatCurrency(Math.abs(summary.totalIncome))}</div>
+          <div className="card-value">{formatCurrency(summary.totalIncome)}</div>
           <div className="card-subtitle">{getAccountsByType('Income').length} {t('accountsCount')}</div>
         </div>
 

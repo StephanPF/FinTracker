@@ -11,7 +11,7 @@ export const fr = {
   
   // Action Cards
   startNewPersonal: "Nouvelles Finances Personnelles",
-  startNewPersonalDesc: "Créer une nouvelle base de données financières avec des comptes standards et des données d'exemple",
+  startNewPersonalDesc: "Créer une nouvelle base de données financières",
   importExistingData: "Importer Données Existantes",
   importExistingDataDesc: "Se connecter à un dossier de base de données financières existant avec vos données historiques",
   
@@ -132,10 +132,10 @@ export const fr = {
   debitAccount: "Compte Débit (De)",
   creditAccount: "Compte Crédit (À)",
   reference: "Référence",
-  notes: "Notes (Optionnel)",
-  customer: "Personne (Optionnel)",
-  vendor: "Marchand (Optionnel)",
-  productService: "Tag (Optionnel)",
+  notes: "Notes",
+  customer: "Personne",
+  vendor: "Marchand",
+  productService: "Tag",
   selectCustomer: "Sélectionner personne...",
   selectVendor: "Sélectionner marchand...",
   selectProductService: "Sélectionner tag...",

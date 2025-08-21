@@ -364,7 +364,7 @@ export const AccountingProvider = ({ children }) => {
     return {
       totalAssets: balances.Asset || 0,
       totalLiabilities: balances.Liability || 0,
-      totalIncome: Math.abs(balances.Income || 0),
+      totalIncome: balances.Income || 0,
       totalExpenses: balances.Expense || 0,
       accountsCount: accounts.length,
       transactionsCount: transactions.length,

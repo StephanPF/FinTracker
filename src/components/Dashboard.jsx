@@ -9,6 +9,8 @@ import DataManagement from './DataManagement';
 import TodoPage from './TodoPage';
 import HelpPanel from './HelpPanel';
 import Architecture from './Architecture';
+import Test from './Test';
+import Logo from './Logo';
 
 const Dashboard = () => {
   const { isLoaded, loading, resetToSetup } = useAccounting();
@@ -33,50 +35,61 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      <nav className="dashboard-nav">
-        <button 
-          className="nav-btn back-btn"
-          onClick={resetToSetup}
-          title={t('backToSetup')}
-        >
-          <span>🏠</span>
-        </button>
-        <button 
-          className={activeTab === 'overview' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('overview')}
-        >
-          <span>📈 {t('overview')}</span>
-        </button>
-        <button 
-          className={activeTab === 'transactions' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('transactions')}
-        >
-          <span>💰 {t('transactions')}</span>
-        </button>
-        <button 
-          className={activeTab === 'add-transaction' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('add-transaction')}
-        >
-          <span>➕ {t('addTransaction')}</span>
-        </button>
-        <button 
-          className={activeTab === 'data-management' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('data-management')}
-        >
-          <span>🗂️ {t('dataManagement')}</span>
-        </button>
-        <button 
-          className={activeTab === 'todo' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('todo')}
-        >
-          <span>🎯 TODO</span>
-        </button>
-        <button 
-          className={activeTab === 'architecture' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('architecture')}
-        >
-          <span>🏠 {t('architecture')}</span>
-        </button>
+      <nav className="dashboard-nav financeflow-nav">
+        <div className="nav-brand">
+          <Logo 
+            variant="compact" 
+            size="small" 
+            theme="light" 
+            clickable={true}
+            onClick={resetToSetup}
+          />
+        </div>
+        <div className="nav-buttons">
+          <button 
+            className={activeTab === 'overview' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveTab('overview')}
+          >
+            <span>📈 {t('overview')}</span>
+          </button>
+          <button 
+            className={activeTab === 'transactions' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveTab('transactions')}
+          >
+            <span>💰 {t('transactions')}</span>
+          </button>
+          <button 
+            className={activeTab === 'add-transaction' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveTab('add-transaction')}
+          >
+            <span>➕ {t('addTransaction')}</span>
+          </button>
+          <button 
+            className={activeTab === 'data-management' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveTab('data-management')}
+          >
+            <span>🗂️ {t('dataManagement')}</span>
+          </button>
+          <button 
+            className={activeTab === 'todo' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveTab('todo')}
+          >
+            <span>🎯 TODO</span>
+          </button>
+          <button 
+            className={activeTab === 'architecture' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveTab('architecture')}
+          >
+            <span>🏗️ {t('architecture')}</span>
+          </button>
+          <button 
+            className={activeTab === 'test' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => setActiveTab('test')}
+          >
+            <span>🎨 Test</span>
+          </button>
+        </div>
+        <div className="nav-actions"></div>
         
         {/* <button 
           className="nav-btn help-btn"
@@ -125,6 +138,11 @@ const Dashboard = () => {
         {activeTab === 'architecture' && (
           <div className="architecture-tab">
             <Architecture />
+          </div>
+        )}
+        {activeTab === 'test' && (
+          <div className="test-tab">
+            <Test />
           </div>
         )}
       </div>

@@ -152,7 +152,7 @@ class RelationalDatabase {
 
     const newTransaction = {
       id: 'TXN' + Date.now(),
-      date: transactionData.date,
+      date: transactionData.date || new Date().toISOString().split('T')[0],
       description: transactionData.description,
       debitAccountId: transactionData.debitAccountId,
       creditAccountId: transactionData.creditAccountId,
@@ -160,11 +160,13 @@ class RelationalDatabase {
       customerId: transactionData.customerId || null,
       vendorId: transactionData.vendorId || null,
       productId: transactionData.productId || null,
+      categoryId: transactionData.categoryId || null,
+      subcategoryId: transactionData.subcategoryId || null,
       reference: transactionData.reference || '',
       notes: transactionData.notes || '',
       createdAt: new Date().toISOString()
     };
-
+    
     this.tables.transactions.push(newTransaction);
     this.updateAccountBalances(newTransaction);
     this.saveTableToWorkbook('transactions');
@@ -461,12 +463,42 @@ class RelationalDatabase {
 
   calculateAccountBalances() {
     const balances = {};
+    const accountBalances = {};
     
+    // Initialize account balances with initial balances
+    this.tables.accounts.forEach(account => {
+      accountBalances[account.id] = parseFloat(account.balance) || 0;
+    });
+    
+    // Process all transactions to update account balances
+    this.tables.transactions.forEach(transaction => {
+      const amount = parseFloat(transaction.amount) || 0;
+      
+      // Debit account - increase the balance
+      if (transaction.debitAccountId && accountBalances.hasOwnProperty(transaction.debitAccountId)) {
+        accountBalances[transaction.debitAccountId] += amount;
+      }
+      
+      // Credit account - decrease the balance  
+      if (transaction.creditAccountId && accountBalances.hasOwnProperty(transaction.creditAccountId)) {
+        accountBalances[transaction.creditAccountId] -= amount;
+      }
+    });
+    
+    // Sum balances by account type
     this.tables.accounts.forEach(account => {
       const accountType = this.getRecord('account_types', account.accountTypeId);
-      if (accountType) {
+      if (accountType && accountBalances.hasOwnProperty(account.id)) {
         const type = accountType.type;
-        balances[type] = (balances[type] || 0) + (parseFloat(account.balance) || 0);
+        let accountBalance = accountBalances[account.id];
+        
+        // For liability, equity, and income accounts, we need to consider the sign
+        // In double-entry, these accounts have normal credit balances
+        if (type === 'Liability' || type === 'Equity' || type === 'Income') {
+          accountBalance = -accountBalance;
+        }
+        
+        balances[type] = (balances[type] || 0) + accountBalance;
       }
     });
     
@@ -477,11 +509,50 @@ class RelationalDatabase {
     return this.tables.accounts.filter(account => account.isActive);
   }
 
+  calculateIndividualAccountBalances() {
+    const accountBalances = {};
+    
+    // Initialize account balances with initial balances
+    this.tables.accounts.forEach(account => {
+      accountBalances[account.id] = parseFloat(account.balance) || 0;
+    });
+    
+    // Process all transactions to update account balances
+    this.tables.transactions.forEach(transaction => {
+      const amount = parseFloat(transaction.amount) || 0;
+      
+      // Debit account - increase the balance
+      if (transaction.debitAccountId && accountBalances.hasOwnProperty(transaction.debitAccountId)) {
+        accountBalances[transaction.debitAccountId] += amount;
+      }
+      
+      // Credit account - decrease the balance  
+      if (transaction.creditAccountId && accountBalances.hasOwnProperty(transaction.creditAccountId)) {
+        accountBalances[transaction.creditAccountId] -= amount;
+      }
+    });
+    
+    return accountBalances;
+  }
+
   getAccountsWithTypes() {
-    return this.tables.accounts.map(account => ({
-      ...account,
-      accountType: this.getRecord('account_types', account.accountTypeId)
-    }));
+    const accountBalances = this.calculateIndividualAccountBalances();
+    
+    return this.tables.accounts.map(account => {
+      const accountType = this.getRecord('account_types', account.accountTypeId);
+      let calculatedBalance = accountBalances[account.id] || 0;
+      
+      // For liability, equity, and income accounts, display the credit balance as positive
+      if (accountType && (accountType.type === 'Liability' || accountType.type === 'Equity' || accountType.type === 'Income')) {
+        calculatedBalance = -calculatedBalance;
+      }
+      
+      return {
+        ...account,
+        balance: calculatedBalance,
+        accountType: accountType
+      };
+    });
   }
 
   getActiveAccountsWithTypes() {

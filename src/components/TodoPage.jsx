@@ -205,7 +205,13 @@ const TodoPage = () => {
                     </span>
                     <span className="todo-hours">⏱️ {todo.estimatedHours}h</span>
                     <span className="todo-date">
-                      📅 {new Date(todo.createdAt).toLocaleDateString()}
+                      📅 {(() => {
+                        const date = new Date(todo.createdAt);
+                        const day = date.getDate().toString().padStart(2, '0');
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        const year = date.getFullYear();
+                        return `${day}/${month}/${year}`;
+                      })()}
                     </span>
                   </div>
                 </div>

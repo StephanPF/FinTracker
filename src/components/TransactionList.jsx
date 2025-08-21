@@ -3,7 +3,7 @@ import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const TransactionList = ({ limit }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes } = useAccounting();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags } = useAccounting();
   const { t, formatCurrency } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,11 +16,14 @@ const TransactionList = ({ limit }) => {
 
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const getAccountName = (accountId) => {
@@ -28,23 +31,62 @@ const TransactionList = ({ limit }) => {
     return account ? account.name : t('unknownAccount');
   };
 
+  const getCategoryName = (categoryId) => {
+    if (!categoryId) return '-';
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? `${category.icon} ${category.name}` : '-';
+  };
+
+  const getSubcategoryName = (subcategoryId) => {
+    if (!subcategoryId) return '-';
+    const subcategory = subcategories.find(sub => sub.id === subcategoryId);
+    return subcategory ? subcategory.name : '-';
+  };
+
+  const getCategorySubcategoryName = (transaction) => {
+    const categoryName = transaction.categoryId ? 
+      (categories.find(cat => cat.id === transaction.categoryId)?.name || '') : '';
+    const subcategoryName = transaction.subcategoryId ? 
+      (subcategories.find(sub => sub.id === transaction.subcategoryId)?.name || '') : '';
+    
+    if (categoryName && subcategoryName) {
+      return `${categoryName} - ${subcategoryName}`;
+    } else if (categoryName) {
+      return categoryName;
+    } else if (subcategoryName) {
+      return `- ${subcategoryName}`;
+    }
+    return '-';
+  };
+
   const filteredTransactions = useMemo(() => {
     let filtered = [...transactions];
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(transaction => 
-        transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.id.toString().includes(searchTerm) ||
-        getAccountName(transaction.debitAccount).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getAccountName(transaction.creditAccount).toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(transaction => {
+        const customer = transaction.customerId ? customers.find(c => c.id === transaction.customerId) : null;
+        const vendor = transaction.vendorId ? vendors.find(v => v.id === transaction.vendorId) : null;
+        const tag = transaction.productId ? tags.find(t => t.id === transaction.productId) : null;
+        
+        return transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          transaction.id.toString().includes(searchTerm) ||
+          getAccountName(transaction.debitAccountId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getAccountName(transaction.creditAccountId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getCategoryName(transaction.categoryId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getSubcategoryName(transaction.subcategoryId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (customer && customer.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (vendor && vendor.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (tag && tag.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (transaction.reference && transaction.reference.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (transaction.notes && transaction.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+      });
     }
 
     // Apply account filter
     if (filterAccount) {
       filtered = filtered.filter(transaction => 
-        transaction.debitAccount === filterAccount || transaction.creditAccount === filterAccount
+        transaction.debitAccountId === filterAccount || transaction.creditAccountId === filterAccount
       );
     }
 
@@ -73,7 +115,7 @@ const TransactionList = ({ limit }) => {
     }
 
     return filtered;
-  }, [transactions, searchTerm, filterAccount, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, accounts, t]);
+  }, [transactions, searchTerm, filterAccount, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, accounts, categories, subcategories, customers, vendors, tags, t]);
 
   const displayTransactions = limit 
     ? filteredTransactions.slice(-limit).reverse() 
@@ -123,7 +165,7 @@ const TransactionList = ({ limit }) => {
               <label>🔍 Search</label>
               <input
                 type="text"
-                placeholder="Search description, ID, or account..."
+                placeholder="Search description, accounts, categories, customers, vendors..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
@@ -204,49 +246,67 @@ const TransactionList = ({ limit }) => {
         </div>
       )}
       
-      <div className="transactions-table">
-        <div className="table-header">
-          <div className="header-cell">{t('date')}</div>
-          <div className="header-cell">{t('description')}</div>
-          <div className="header-cell">{t('debit')}</div>
-          <div className="header-cell">{t('credit')}</div>
-          <div className="header-cell">{t('amount')}</div>
+      {displayTransactions.length > 0 && (
+        <div className="transaction-list-header">
+          <h3>
+            {limit ? t('recentTransactionsTitle') : t('allTransactionsTitle')}
+          </h3>
+          <div className="transaction-count">
+            {displayTransactions.length} {displayTransactions.length === 1 ? 'transaction' : 'transactions'}
+            {searchTerm || filterAccount || filterDateFrom || filterDateTo || filterAmountMin || filterAmountMax 
+              ? ` (filtered from ${transactions.length} total)` 
+              : ''
+            }
+          </div>
         </div>
-
-        <div className="table-body">
-          {displayTransactions.map(transaction => (
-            <div key={transaction.id} className="table-row">
-              <div className="table-cell date">
-                {formatDate(transaction.date)}
-              </div>
-              
-              <div className="table-cell description">
-                <div className="transaction-description">
-                  {transaction.description}
-                </div>
-                <div className="transaction-id">
-                  ID: {transaction.id}
-                </div>
-              </div>
-              
-              <div className="table-cell debit">
-                <span className="account-name">
-                  {getAccountName(transaction.debitAccount)}
-                </span>
-              </div>
-              
-              <div className="table-cell credit">
-                <span className="account-name">
-                  {getAccountName(transaction.creditAccount)}
-                </span>
-              </div>
-              
-              <div className="table-cell amount">
-                {formatCurrency(transaction.amount)}
-              </div>
-            </div>
-          ))}
-        </div>
+      )}
+      
+      <div className="data-table">
+        <table>
+          <thead>
+            <tr>
+              <th>{t('date')}</th>
+              <th>{t('description')}</th>
+              <th>{t('debitAccount')}</th>
+              <th>{t('creditAccount')}</th>
+              <th>{t('category')}</th>
+              <th>{t('vendor')}</th>
+              <th>{t('productService')}</th>
+              <th>{t('reference')}</th>
+              <th>{t('notes')}</th>
+              <th>{t('amount')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayTransactions.map(transaction => (
+              <tr key={transaction.id}>
+                <td>{formatDate(transaction.date)}</td>
+                <td>
+                  <div className="transaction-description">
+                    {transaction.description}
+                  </div>
+                  <div className="transaction-id">
+                    ID: {transaction.id}
+                  </div>
+                </td>
+                <td>{getAccountName(transaction.debitAccountId)}</td>
+                <td>{getAccountName(transaction.creditAccountId)}</td>
+                <td>{getCategorySubcategoryName(transaction)}</td>
+                <td>
+                  {transaction.vendorId ? 
+                    vendors.find(v => v.id === transaction.vendorId)?.name || '-' : '-'}
+                </td>
+                <td>
+                  {transaction.productId ? 
+                    tags.find(t => t.id === transaction.productId)?.name || '-' : '-'}
+                </td>
+                <td>{transaction.reference || '-'}</td>
+                <td>{transaction.notes || '-'}</td>
+                <td>{formatCurrency(transaction.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {limit && filteredTransactions.length > limit && (

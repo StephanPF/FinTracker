@@ -71,7 +71,13 @@ const TransactionForm = ({ onSuccess }) => {
       setLoading(true);
       setError('');
       
-      await addTransaction(formData);
+      // Ensure date is always set to today if empty
+      const transactionData = {
+        ...formData,
+        date: formData.date || new Date().toISOString().split('T')[0]
+      };
+      
+      await addTransaction(transactionData);
       
       setFormData({
         date: new Date().toISOString().split('T')[0],
@@ -236,7 +242,7 @@ const TransactionForm = ({ onSuccess }) => {
 
         {/* Section 4: Additional Details (Optional) */}
         <div className="form-section optional-section">
-          <h4 className="section-title">📎 {t('additionalDetails')} ({t('optional')})</h4>
+          <h4 className="section-title">📎 {t('additionalDetails')}</h4>
           
           <div className="form-row">
             <div className="form-group">
