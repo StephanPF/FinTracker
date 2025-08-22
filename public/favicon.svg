@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- Layer 1 gradient - darkest blue -->
+    <linearGradient id="layer1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E3A8A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563EB;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Layer 2 gradient - medium blue -->
+    <linearGradient id="layer2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Layer 3 gradient - lightest blue -->
+    <linearGradient id="layer3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#93C5FD;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Layer 1 - Full size base layer -->
+  <rect x="6" y="6" width="20" height="20" rx="3" ry="3" fill="url(#layer1)"/>
+  
+  <!-- Layer 2 - 70% size middle layer -->
+  <rect x="9" y="9" width="14" height="14" rx="2.5" ry="2.5" fill="url(#layer2)"/>
+  
+  <!-- Layer 3 - 40% size top layer -->
+  <rect x="12" y="12" width="8" height="8" rx="2" ry="2" fill="url(#layer3)"/>
+</svg>

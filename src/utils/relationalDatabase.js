@@ -9,7 +9,6 @@ class RelationalDatabase {
       vendors: [],
       tags: [],
       todos: [],
-      account_types: [],
       categories: [],
       subcategories: [],
       database_info: []
@@ -24,9 +23,6 @@ class RelationalDatabase {
         productId: { table: 'tags', field: 'id', optional: true },
         categoryId: { table: 'categories', field: 'id', optional: true },
         subcategoryId: { table: 'subcategories', field: 'id', optional: true }
-      },
-      accounts: {
-        accountTypeId: { table: 'account_types', field: 'id' }
       },
       subcategories: {
         categoryId: { table: 'categories', field: 'id' }
@@ -68,7 +64,6 @@ class RelationalDatabase {
       vendors: sampleData.vendors,
       tags: sampleData.tags,
       todos: sampleData.todos,
-      account_types: this.generateAccountTypes(language),
       categories: this.generateCategories(language),
       subcategories: this.generateSubcategories(language),
       
@@ -135,6 +130,20 @@ class RelationalDatabase {
             }
           }
         }
+      }
+    }
+    
+    // Validate accounts against hardwired account types
+    const accountRecords = this.tables['accounts'];
+    const validAccountTypeIds = ['ACCT_TYPE_001', 'ACCT_TYPE_002', 'ACCT_TYPE_003', 'ACCT_TYPE_004', 'ACCT_TYPE_005'];
+    
+    for (const account of accountRecords) {
+      if (account.accountTypeId && !validAccountTypeIds.includes(account.accountTypeId)) {
+        errors.push({
+          table: 'accounts',
+          record: account.id || account,
+          error: `Invalid accountTypeId '${account.accountTypeId}' - must be one of: ${validAccountTypeIds.join(', ')}`
+        });
       }
     }
     
@@ -486,15 +495,16 @@ class RelationalDatabase {
     });
     
     // Sum balances by account type
+    const accountTypes = this.getAccountTypes();
     this.tables.accounts.forEach(account => {
-      const accountType = this.getRecord('account_types', account.accountTypeId);
+      const accountType = accountTypes.find(type => type.id === account.accountTypeId);
       if (accountType && accountBalances.hasOwnProperty(account.id)) {
         const type = accountType.type;
         let accountBalance = accountBalances[account.id];
         
-        // For liability, equity, and income accounts, we need to consider the sign
+        // For liability accounts, we need to consider the sign
         // In double-entry, these accounts have normal credit balances
-        if (type === 'Liability' || type === 'Equity' || type === 'Income') {
+        if (type === 'Liability') {
           accountBalance = -accountBalance;
         }
         
@@ -537,13 +547,14 @@ class RelationalDatabase {
 
   getAccountsWithTypes() {
     const accountBalances = this.calculateIndividualAccountBalances();
+    const accountTypes = this.getAccountTypes();
     
     return this.tables.accounts.map(account => {
-      const accountType = this.getRecord('account_types', account.accountTypeId);
+      const accountType = accountTypes.find(type => type.id === account.accountTypeId);
       let calculatedBalance = accountBalances[account.id] || 0;
       
-      // For liability, equity, and income accounts, display the credit balance as positive
-      if (accountType && (accountType.type === 'Liability' || accountType.type === 'Equity' || accountType.type === 'Income')) {
+      // For liability accounts, display the credit balance as positive
+      if (accountType && accountType.type === 'Liability') {
         calculatedBalance = -calculatedBalance;
       }
       
@@ -727,54 +738,20 @@ class RelationalDatabase {
     return deletedTodo;
   }
 
-  // Account Types methods
+  // Account Types methods - now hardwired
   getAccountTypes() {
-    return this.tables.account_types;
+    // Get current database language to return appropriate account types
+    const language = this.getDatabaseLanguage();
+    return this.generateAccountTypes(language);
   }
 
   getAccountTypesByType(type) {
-    return this.tables.account_types.filter(accountType => 
+    const accountTypes = this.getAccountTypes();
+    return accountTypes.filter(accountType => 
       accountType.type === type && accountType.isActive
     );
   }
 
-  addAccountType(accountTypeData) {
-    const newAccountType = {
-      id: 'ACCT_TYPE_' + Date.now(),
-      type: accountTypeData.type,
-      subtype: accountTypeData.subtype || '',
-      description: accountTypeData.description || '',
-      examples: accountTypeData.examples || '',
-      normalBalance: accountTypeData.normalBalance || 'Debit',
-      isActive: accountTypeData.isActive !== undefined ? accountTypeData.isActive : true,
-      createdAt: new Date().toISOString()
-    };
-
-    this.tables.account_types.push(newAccountType);
-    this.saveTableToWorkbook('account_types');
-    return newAccountType;
-  }
-
-  updateAccountType(id, accountTypeData) {
-    const accountTypeIndex = this.tables.account_types.findIndex(accountType => accountType.id === id);
-    if (accountTypeIndex === -1) {
-      throw new Error(`Account type with id ${id} not found`);
-    }
-
-    const updatedAccountType = {
-      ...this.tables.account_types[accountTypeIndex],
-      type: accountTypeData.type !== undefined ? accountTypeData.type : this.tables.account_types[accountTypeIndex].type,
-      subtype: accountTypeData.subtype !== undefined ? accountTypeData.subtype : this.tables.account_types[accountTypeIndex].subtype,
-      description: accountTypeData.description !== undefined ? accountTypeData.description : this.tables.account_types[accountTypeIndex].description,
-      examples: accountTypeData.examples !== undefined ? accountTypeData.examples : this.tables.account_types[accountTypeIndex].examples,
-      normalBalance: accountTypeData.normalBalance !== undefined ? accountTypeData.normalBalance : this.tables.account_types[accountTypeIndex].normalBalance,
-      isActive: accountTypeData.isActive !== undefined ? accountTypeData.isActive : this.tables.account_types[accountTypeIndex].isActive
-    };
-
-    this.tables.account_types[accountTypeIndex] = updatedAccountType;
-    this.saveTableToWorkbook('account_types');
-    return updatedAccountType;
-  }
 
   // Database Info methods
   getDatabaseInfo(key) {
@@ -831,7 +808,7 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_001',
         type: 'Asset',
-        subtype: 'Current Asset',
+        subtype: 'Bank account',
         description: 'Assets that can be easily converted to cash within one year',
         examples: 'Cash, Bank Accounts, Savings Accounts',
         normalBalance: 'Debit',
@@ -841,7 +818,7 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_002',
         type: 'Asset',
-        subtype: 'Investment',
+        subtype: 'Investment account',
         description: 'Long-term investments and securities',
         examples: 'Stocks, Bonds, Mutual Funds, Retirement Accounts',
         normalBalance: 'Debit',
@@ -851,7 +828,7 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_003',
         type: 'Asset',
-        subtype: 'Fixed Asset',
+        subtype: 'Fixed Assets',
         description: 'Long-term physical assets',
         examples: 'Real Estate, Vehicles, Equipment',
         normalBalance: 'Debit',
@@ -877,86 +854,6 @@ class RelationalDatabase {
         normalBalance: 'Credit',
         isActive: true,
         createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_006',
-        type: 'Income',
-        subtype: 'Earned Income',
-        description: 'Money earned from work and employment',
-        examples: 'Salary, Wages, Tips, Bonuses',
-        normalBalance: 'Credit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_007',
-        type: 'Income',
-        subtype: 'Investment Income',
-        description: 'Money earned from investments',
-        examples: 'Dividends, Interest, Capital Gains',
-        normalBalance: 'Credit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_008',
-        type: 'Income',
-        subtype: 'Other Income',
-        description: 'Other sources of income',
-        examples: 'Rental Income, Side Business, Gifts',
-        normalBalance: 'Credit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_009',
-        type: 'Expense',
-        subtype: 'Essential Expenses',
-        description: 'Necessary living expenses',
-        examples: 'Housing, Utilities, Groceries, Insurance',
-        normalBalance: 'Debit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_010',
-        type: 'Expense',
-        subtype: 'Transportation',
-        description: 'Transportation-related expenses',
-        examples: 'Gas, Car Maintenance, Public Transit, Parking',
-        normalBalance: 'Debit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_011',
-        type: 'Expense',
-        subtype: 'Entertainment',
-        description: 'Discretionary entertainment expenses',
-        examples: 'Dining Out, Movies, Hobbies, Subscriptions',
-        normalBalance: 'Debit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_012',
-        type: 'Expense',
-        subtype: 'Healthcare',
-        description: 'Medical and healthcare expenses',
-        examples: 'Doctor Visits, Medications, Health Insurance',
-        normalBalance: 'Debit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_013',
-        type: 'Equity',
-        subtype: 'Net Worth',
-        description: 'Personal equity and net worth',
-        examples: 'Opening Balance, Retained Earnings',
-        normalBalance: 'Credit',
-        isActive: true,
-        createdAt: new Date().toISOString()
       }
     ];
   }
@@ -966,7 +863,7 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_001',
         type: 'Actif',
-        subtype: 'Actif Courant',
+        subtype: 'Compte bancaire',
         description: 'Actifs facilement convertibles en espèces dans un délai d\'un an',
         examples: 'Espèces, Comptes Bancaires, Comptes Épargne',
         normalBalance: 'Débit',
@@ -976,7 +873,7 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_002',
         type: 'Actif',
-        subtype: 'Investissement',
+        subtype: 'Compte de placement',
         description: 'Investissements et valeurs mobilières à long terme',
         examples: 'Actions, Obligations, Fonds Communs, Comptes Retraite',
         normalBalance: 'Débit',
@@ -986,7 +883,7 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_003',
         type: 'Actif',
-        subtype: 'Actif Immobilisé',
+        subtype: 'Actifs immobilisés',
         description: 'Actifs physiques à long terme',
         examples: 'Immobilier, Véhicules, Équipements',
         normalBalance: 'Débit',
@@ -996,7 +893,7 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_004',
         type: 'Passif',
-        subtype: 'Passif Courant',
+        subtype: 'Passif courant',
         description: 'Dettes et obligations exigibles dans un délai d\'un an',
         examples: 'Cartes de Crédit, Prêts Court Terme, Factures à Payer',
         normalBalance: 'Crédit',
@@ -1006,89 +903,9 @@ class RelationalDatabase {
       {
         id: 'ACCT_TYPE_005',
         type: 'Passif',
-        subtype: 'Passif Long Terme',
+        subtype: 'Passif long terme',
         description: 'Dettes et obligations exigibles après un an',
         examples: 'Hypothèque, Prêts Auto, Prêts Étudiants',
-        normalBalance: 'Crédit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_006',
-        type: 'Revenus',
-        subtype: 'Revenus du Travail',
-        description: 'Revenus provenant du travail et de l\'emploi',
-        examples: 'Salaire, Heures, Pourboires, Primes',
-        normalBalance: 'Crédit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_007',
-        type: 'Revenus',
-        subtype: 'Revenus de Placements',
-        description: 'Revenus provenant des investissements',
-        examples: 'Dividendes, Intérêts, Plus-values',
-        normalBalance: 'Crédit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_008',
-        type: 'Revenus',
-        subtype: 'Autres Revenus',
-        description: 'Autres sources de revenus',
-        examples: 'Revenus Locatifs, Activité Secondaire, Cadeaux',
-        normalBalance: 'Crédit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_009',
-        type: 'Dépenses',
-        subtype: 'Dépenses Essentielles',
-        description: 'Dépenses de subsistance nécessaires',
-        examples: 'Logement, Services Publics, Alimentation, Assurance',
-        normalBalance: 'Débit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_010',
-        type: 'Dépenses',
-        subtype: 'Transport',
-        description: 'Dépenses liées au transport',
-        examples: 'Essence, Entretien Auto, Transport Public, Stationnement',
-        normalBalance: 'Débit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_011',
-        type: 'Dépenses',
-        subtype: 'Divertissement',
-        description: 'Dépenses de divertissement discrétionnaires',
-        examples: 'Restaurants, Cinéma, Loisirs, Abonnements',
-        normalBalance: 'Débit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_012',
-        type: 'Dépenses',
-        subtype: 'Santé',
-        description: 'Dépenses médicales et de santé',
-        examples: 'Consultations, Médicaments, Assurance Santé',
-        normalBalance: 'Débit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ACCT_TYPE_013',
-        type: 'Équité',
-        subtype: 'Patrimoine Net',
-        description: 'Équité personnelle et patrimoine net',
-        examples: 'Solde d\'Ouverture, Bénéfices Non Distribués',
         normalBalance: 'Crédit',
         isActive: true,
         createdAt: new Date().toISOString()
@@ -1119,28 +936,28 @@ class RelationalDatabase {
         },
         { 
           id: 'ACC003', 
-          name: 'Salary Income', 
-          accountTypeId: 'ACCT_TYPE_006',
-          balance: 0,
-          description: 'Monthly salary',
+          name: 'Savings Account', 
+          accountTypeId: 'ACCT_TYPE_001',
+          balance: 10000,
+          description: 'Emergency savings',
           isActive: true,
           createdAt: new Date().toISOString()
         },
         { 
           id: 'ACC004', 
-          name: 'Grocery Expenses', 
-          accountTypeId: 'ACCT_TYPE_009',
-          balance: 0,
-          description: 'Food and household items',
+          name: 'Investment Portfolio', 
+          accountTypeId: 'ACCT_TYPE_002',
+          balance: 25000,
+          description: 'Retirement and investment accounts',
           isActive: true,
           createdAt: new Date().toISOString()
         },
         { 
           id: 'ACC005', 
-          name: 'Savings Account', 
-          accountTypeId: 'ACCT_TYPE_001',
-          balance: 10000,
-          description: 'Emergency savings',
+          name: 'House', 
+          accountTypeId: 'ACCT_TYPE_003',
+          balance: 250000,
+          description: 'Primary residence',
           isActive: true,
           createdAt: new Date().toISOString()
         },
@@ -1150,6 +967,15 @@ class RelationalDatabase {
           accountTypeId: 'ACCT_TYPE_004',
           balance: 2500,
           description: 'Main credit card debt',
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        { 
+          id: 'ACC007', 
+          name: 'Mortgage', 
+          accountTypeId: 'ACCT_TYPE_005',
+          balance: 180000,
+          description: 'Home mortgage loan',
           isActive: true,
           createdAt: new Date().toISOString()
         }
@@ -1292,28 +1118,28 @@ class RelationalDatabase {
         },
         { 
           id: 'ACC003', 
-          name: 'Revenus Salariaux', 
-          accountTypeId: 'ACCT_TYPE_006',
-          balance: 0,
-          description: 'Salaire mensuel',
+          name: 'Compte Épargne', 
+          accountTypeId: 'ACCT_TYPE_001',
+          balance: 10000,
+          description: 'Épargne de précaution',
           isActive: true,
           createdAt: new Date().toISOString()
         },
         { 
           id: 'ACC004', 
-          name: 'Dépenses Alimentaires', 
-          accountTypeId: 'ACCT_TYPE_009',
-          balance: 0,
-          description: 'Alimentation et produits ménagers',
+          name: 'Portefeuille de Placement', 
+          accountTypeId: 'ACCT_TYPE_002',
+          balance: 25000,
+          description: 'Comptes retraite et investissements',
           isActive: true,
           createdAt: new Date().toISOString()
         },
         { 
           id: 'ACC005', 
-          name: 'Compte Épargne', 
-          accountTypeId: 'ACCT_TYPE_001',
-          balance: 10000,
-          description: 'Épargne de précaution',
+          name: 'Maison', 
+          accountTypeId: 'ACCT_TYPE_003',
+          balance: 250000,
+          description: 'Résidence principale',
           isActive: true,
           createdAt: new Date().toISOString()
         },
@@ -1323,6 +1149,15 @@ class RelationalDatabase {
           accountTypeId: 'ACCT_TYPE_004',
           balance: 2500,
           description: 'Dette carte de crédit principale',
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        { 
+          id: 'ACC007', 
+          name: 'Hypothèque', 
+          accountTypeId: 'ACCT_TYPE_005',
+          balance: 180000,
+          description: 'Prêt hypothécaire résidentiel',
           isActive: true,
           createdAt: new Date().toISOString()
         }

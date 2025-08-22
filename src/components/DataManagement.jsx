@@ -53,6 +53,7 @@ const DataManagement = () => {
   const [showAccountTypeTooltip, setShowAccountTypeTooltip] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [showAccountTypesExplanation, setShowAccountTypesExplanation] = useState(false);
 
   const resetForm = () => {
     // Initialize formData with default values for transactions
@@ -286,7 +287,7 @@ const DataManagement = () => {
   );
 
   const renderAccountForm = () => (
-    <form onSubmit={handleSubmit} className="data-form">
+    <form onSubmit={handleSubmit} className="data-form account-form">
       <div className="form-group">
         <label>Account Name</label>
         <input
@@ -324,7 +325,6 @@ const DataManagement = () => {
         <button type="submit" className="btn-primary">
           {editingId ? t('updateAccount') : t('addAccount')}
         </button>
-        <button type="button" onClick={resetForm} className="btn-secondary">{t('cancel')}</button>
       </div>
     </form>
   );
@@ -998,48 +998,82 @@ const DataManagement = () => {
         ))}
       </nav>
 
+      {activeTab === 'accounts' && (
+        <div className="account-types-explanation">
+          <div className="account-types-header">
+            <h3>{t('accountTypesExplained') || 'Account Types Explained'}</h3>
+            <button 
+              className="toggle-explanation-btn"
+              onClick={() => setShowAccountTypesExplanation(!showAccountTypesExplanation)}
+              title={showAccountTypesExplanation ? 'Hide explanation' : 'Show explanation'}
+            >
+              {showAccountTypesExplanation ? '🔽' : '▶️'}
+            </button>
+          </div>
+          {showAccountTypesExplanation && (
+            <div className="account-types-grid">
+              {accountTypes.map(accountType => (
+                <div key={accountType.id} className="account-type-card">
+                  <div className="account-type-header">
+                    <strong>{accountType.type} - {accountType.subtype}</strong>
+                  </div>
+                  <div className="account-type-description">
+                    {accountType.description}
+                  </div>
+                  <div className="account-type-examples">
+                    <em>Examples: {accountType.examples}</em>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="data-content">
         
-        <div className="data-actions">
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            className="btn-primary"
-          >
-            {showForm ? t('cancel') : (editingId ? getEditButtonText() : getAddButtonText())}
-          </button>
-        </div>
-
         {showForm && (
           <div className="form-container">
             {renderForm()}
           </div>
         )}
 
-        <div className="search-container">
-          <div className="search-input-wrapper">
-            <input
-              type="text"
-              placeholder={`Search ${t(activeTab)}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            <span className="search-icon">🔍</span>
+        <div className="search-and-actions-container">
+          <div className="search-container">
+            <div className="search-input-wrapper">
+              <input
+                type="text"
+                placeholder={`Search ${t(activeTab)}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              <span className="search-icon">🔍</span>
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="search-clear"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             {searchTerm && (
-              <button
-                onClick={() => setSearchTerm('')}
-                className="search-clear"
-                title="Clear search"
-              >
-                ✕
-              </button>
+              <div className="search-results-info">
+                {data.length} of {rawData.length} {t(activeTab)} found
+              </div>
             )}
           </div>
-          {searchTerm && (
-            <div className="search-results-info">
-              {data.length} of {rawData.length} {t(activeTab)} found
-            </div>
-          )}
+          
+          <div className="data-actions">
+            <button 
+              onClick={() => setShowForm(!showForm)}
+              className="btn-primary"
+            >
+              {showForm ? t('cancel') : (editingId ? getEditButtonText() : getAddButtonText())}
+            </button>
+          </div>
         </div>
 
         <div className="table-container">

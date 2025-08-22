@@ -9,7 +9,6 @@ class RelationalFileStorage {
       vendors: 'vendors.xlsx',
       tags: 'tags.xlsx',
       todos: 'todos.xlsx',
-      account_types: 'account_types.xlsx',
       categories: 'categories.xlsx',
       subcategories: 'subcategories.xlsx',
       database_info: 'database_info.xlsx'

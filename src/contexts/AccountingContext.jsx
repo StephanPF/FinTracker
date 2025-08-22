@@ -24,7 +24,6 @@ export const AccountingProvider = ({ children }) => {
   const [vendors, setVendors] = useState([]);
   const [tags, setTags] = useState([]);
   const [todos, setTodos] = useState([]);
-  const [accountTypes, setAccountTypes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [databaseInfo, setDatabaseInfo] = useState([]);
@@ -54,7 +53,6 @@ export const AccountingProvider = ({ children }) => {
     setVendors(database.getTable('vendors'));
     setTags(database.getTable('tags'));
     setTodos(database.getTable('todos'));
-    setAccountTypes(database.getTable('account_types'));
     setCategories(database.getTable('categories'));
     setSubcategories(database.getTable('subcategories'));
     setDatabaseInfo(database.getTable('database_info'));
@@ -394,7 +392,6 @@ export const AccountingProvider = ({ children }) => {
     setVendors([]);
     setTags([]);
     setTodos([]);
-    setAccountTypes([]);
     setCategories([]);
     setSubcategories([]);
     setDatabaseInfo([]);
@@ -698,7 +695,6 @@ export const AccountingProvider = ({ children }) => {
     vendors,
     tags,
     todos,
-    accountTypes,
     categories,
     subcategories,
     databaseInfo,
