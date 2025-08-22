@@ -12,7 +12,10 @@ const TransactionForm = ({ onSuccess }) => {
     resetToSetup, 
     getAccountsWithTypes,
     getActiveSubcategories,
-    getSubcategoriesWithCategories 
+    getSubcategoriesWithCategories,
+    currencies,
+    exchangeRateService,
+    getActiveCurrencies 
   } = useAccounting();
   const { t, formatCurrency } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
@@ -22,6 +25,8 @@ const TransactionForm = ({ onSuccess }) => {
     debitAccount: '',
     creditAccount: '',
     amount: '',
+    currencyId: 'CUR_001', // Default to EUR (base currency)
+    exchangeRate: 1.0,
     customerId: '',
     vendorId: '',
     productId: '',
@@ -41,6 +46,20 @@ const TransactionForm = ({ onSuccess }) => {
       const subcategoriesWithCategories = getSubcategoriesWithCategories();
       const selectedSubcategory = subcategoriesWithCategories.find(sub => sub.id === value);
       setSelectedCategory(selectedSubcategory?.category || null);
+    }
+    
+    // Handle currency changes and update exchange rate
+    if (name === 'currencyId' && exchangeRateService) {
+      const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+      const exchangeRate = value === baseCurrencyId ? 1.0 : 
+        exchangeRateService.getExchangeRateWithFallback(value, baseCurrencyId, 1.0);
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        exchangeRate: exchangeRate
+      }));
+      return;
     }
     
     setFormData(prev => ({
@@ -85,6 +104,8 @@ const TransactionForm = ({ onSuccess }) => {
         debitAccount: '',
         creditAccount: '',
         amount: '',
+        currencyId: 'CUR_001',
+        exchangeRate: 1.0,
         customerId: '',
         vendorId: '',
         productId: '',
@@ -143,6 +164,36 @@ const TransactionForm = ({ onSuccess }) => {
                 min="0.01"
                 required
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="currencyId">💱 {t('currency')}</label>
+              <select
+                id="currencyId"
+                name="currencyId"
+                value={formData.currencyId}
+                onChange={handleChange}
+                required
+              >
+                {getActiveCurrencies().map(currency => (
+                  <option key={currency.id} value={currency.id}>
+                    {currency.symbol} {currency.name} ({currency.code})
+                  </option>
+                ))}
+              </select>
+              {formData.exchangeRate !== 1.0 && exchangeRateService && (
+                <div className="exchange-rate-info">
+                  <small>
+                    {t('exchangeRate')}: 1 {currencies.find(c => c.id === formData.currencyId)?.code} = {formData.exchangeRate.toFixed(4)} {currencies.find(c => c.id === exchangeRateService.getBaseCurrencyId())?.code}
+                  </small>
+                  <small>
+                    {t('amountInBaseCurrency')}: {exchangeRateService.formatAmount(
+                      (parseFloat(formData.amount) || 0) * formData.exchangeRate, 
+                      exchangeRateService.getBaseCurrencyId()
+                    )}
+                  </small>
+                </div>
+              )}
             </div>
           </div>
 

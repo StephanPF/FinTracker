@@ -11,6 +11,9 @@ class RelationalFileStorage {
       todos: 'todos.xlsx',
       categories: 'categories.xlsx',
       subcategories: 'subcategories.xlsx',
+      currencies: 'currencies.xlsx',
+      exchange_rates: 'exchange_rates.xlsx',
+      currency_settings: 'currency_settings.xlsx',
       database_info: 'database_info.xlsx'
     };
   }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import RelationalFileStorage from '../utils/relationalFileStorage';
 import RelationalDatabase from '../utils/relationalDatabase';
+import ExchangeRateService from '../utils/exchangeRateService';
 import { useLanguage } from './LanguageContext';
 
 const AccountingContext = createContext();
@@ -17,15 +18,20 @@ export const AccountingProvider = ({ children }) => {
   const { language, changeLanguage } = useLanguage();
   const [database, setDatabase] = useState(new RelationalDatabase());
   const [fileStorage, setFileStorage] = useState(new RelationalFileStorage());
+  const [exchangeRateService, setExchangeRateService] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [tags, setTags] = useState([]);
+  const [products, setProducts] = useState([]);
   const [todos, setTodos] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [exchangeRates, setExchangeRates] = useState([]);
+  const [currencySettings, setCurrencySettings] = useState([]);
   const [databaseInfo, setDatabaseInfo] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -52,10 +58,17 @@ export const AccountingProvider = ({ children }) => {
     setCustomers(database.getTable('customers'));
     setVendors(database.getTable('vendors'));
     setTags(database.getTable('tags'));
+    setProducts(database.getTable('products'));
     setTodos(database.getTable('todos'));
     setCategories(database.getTable('categories'));
     setSubcategories(database.getTable('subcategories'));
+    setCurrencies(database.getTable('currencies'));
+    setExchangeRates(database.getTable('exchange_rates'));
+    setCurrencySettings(database.getTable('currency_settings'));
     setDatabaseInfo(database.getTable('database_info'));
+    
+    // Initialize or update exchange rate service
+    setExchangeRateService(new ExchangeRateService(database));
   };
 
   const createNewDatabase = async () => {
@@ -687,6 +700,100 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
+  // Currency management methods
+  const getCurrencies = () => database.getTable('currencies');
+  const getActiveCurrencies = () => getCurrencies().filter(c => c.isActive);
+  const getCurrenciesByType = (type) => getActiveCurrencies().filter(c => c.type === type);
+  
+  const addCurrency = async (currencyData) => {
+    try {
+      const newCurrency = database.addCurrency(currencyData);
+      updateStateFromDatabase();
+      
+      const buffers = { currencies: database.exportTableToBuffer('currencies') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return newCurrency;
+    } catch (error) {
+      console.error('Error adding currency:', error);
+      throw error;
+    }
+  };
+
+  const updateCurrency = async (id, currencyData) => {
+    try {
+      const updatedCurrency = database.updateCurrency(id, currencyData);
+      updateStateFromDatabase();
+      
+      const buffers = { currencies: database.exportTableToBuffer('currencies') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return updatedCurrency;
+    } catch (error) {
+      console.error('Error updating currency:', error);
+      throw error;
+    }
+  };
+
+  const deleteCurrency = async (id) => {
+    try {
+      const deletedCurrency = database.deleteCurrency(id);
+      updateStateFromDatabase();
+      
+      const buffers = { currencies: database.exportTableToBuffer('currencies') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return deletedCurrency;
+    } catch (error) {
+      console.error('Error deleting currency:', error);
+      throw error;
+    }
+  };
+
+  // Exchange rate methods
+  const getExchangeRates = () => database.getTable('exchange_rates');
+  
+  const addExchangeRate = async (rateData) => {
+    try {
+      const newRate = database.addExchangeRate(rateData);
+      updateStateFromDatabase();
+      
+      const buffers = { exchange_rates: database.exportTableToBuffer('exchange_rates') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return newRate;
+    } catch (error) {
+      console.error('Error adding exchange rate:', error);
+      throw error;
+    }
+  };
+
+  // Currency settings methods
+  const getCurrencySettings = () => database.getTable('currency_settings');
+  
+  const updateCurrencySettings = async (settingsData) => {
+    try {
+      const updatedSettings = database.updateCurrencySettings(settingsData);
+      updateStateFromDatabase();
+      
+      const buffers = { currency_settings: database.exportTableToBuffer('currency_settings') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating currency settings:', error);
+      throw error;
+    }
+  };
+
+  // Multi-currency account methods
+  const getAccountsWithCurrency = () => {
+    return accounts.map(account => ({
+      ...account,
+      currency: currencies.find(c => c.id === account.currencyId)
+    }));
+  };
+
   const value = {
     database,
     accounts,
@@ -697,6 +804,10 @@ export const AccountingProvider = ({ children }) => {
     todos,
     categories,
     subcategories,
+    currencies,
+    exchangeRates,
+    currencySettings,
+    exchangeRateService,
     databaseInfo,
     isLoaded,
     loading,
@@ -746,6 +857,17 @@ export const AccountingProvider = ({ children }) => {
     setDatabaseLanguage,
     generateStressTestTransactions,
     clearStressTestTransactions,
+    getCurrencies,
+    getActiveCurrencies,
+    getCurrenciesByType,
+    addCurrency,
+    updateCurrency,
+    deleteCurrency,
+    getExchangeRates,
+    addExchangeRate,
+    getCurrencySettings,
+    updateCurrencySettings,
+    getAccountsWithCurrency,
     fileStorage
   };
 

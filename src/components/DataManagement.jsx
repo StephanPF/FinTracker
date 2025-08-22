@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import CurrencyManager from './CurrencyManager';
 
 const DataManagement = () => {
   const { 
@@ -40,7 +41,16 @@ const DataManagement = () => {
     getSubcategoriesWithCategories,
     addSubcategory,
     updateSubcategory,
-    deleteSubcategory
+    deleteSubcategory,
+    currencies,
+    exchangeRates,
+    exchangeRateService,
+    getCurrencies,
+    getActiveCurrencies,
+    addCurrency,
+    updateCurrency,
+    deleteCurrency,
+    addExchangeRate
   } = useAccounting();
   const { t, formatCurrency } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
@@ -136,6 +146,9 @@ const DataManagement = () => {
           case 'subcategories':
             await updateSubcategory(editingId, formData);
             break;
+          case 'currencies':
+            await updateCurrency(editingId, formData);
+            break;
           default:
             break;
         }
@@ -162,6 +175,9 @@ const DataManagement = () => {
             break;
           case 'subcategories':
             await addSubcategory(formData);
+            break;
+          case 'currencies':
+            await addCurrency(formData);
             break;
           default:
             break;
@@ -202,6 +218,9 @@ const DataManagement = () => {
       case 'subcategories':
         confirmMessage = t('deleteSubcategoryConfirm');
         break;
+      case 'currencies':
+        confirmMessage = 'Are you sure you want to delete this currency?';
+        break;
       default:
         confirmMessage = 'Are you sure you want to delete this record?';
     }
@@ -230,6 +249,9 @@ const DataManagement = () => {
             break;
           case 'subcategories':
             await deleteSubcategory(record.id);
+            break;
+          case 'currencies':
+            await deleteCurrency(record.id);
             break;
           default:
             break;
@@ -326,6 +348,20 @@ const DataManagement = () => {
           {accountTypes.map(accountType => (
             <option key={accountType.id} value={accountType.id}>
               {accountType.type} - {accountType.subtype}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>{t('currency')}</label>
+        <select
+          value={formData.currencyId || 'CUR_001'}
+          onChange={(e) => handleInputChange('currencyId', e.target.value)}
+          required
+        >
+          {getActiveCurrencies().map(currency => (
+            <option key={currency.id} value={currency.id}>
+              {currency.symbol} {currency.name} ({currency.code})
             </option>
           ))}
         </select>
@@ -735,6 +771,85 @@ const DataManagement = () => {
     );
   };
 
+  const renderCurrencyForm = () => (
+    <form onSubmit={handleSubmit} className="data-form">
+      <div className="form-group">
+        <label>Code *</label>
+        <input
+          type="text"
+          value={formData.code || ''}
+          onChange={(e) => handleInputChange('code', e.target.value.toUpperCase())}
+          placeholder="EUR, USD, BTC..."
+          maxLength={10}
+          required
+        />
+      </div>
+      
+      <div className="form-group">
+        <label>Name *</label>
+        <input
+          type="text"
+          value={formData.name || ''}
+          onChange={(e) => handleInputChange('name', e.target.value)}
+          placeholder="Euro, US Dollar, Bitcoin..."
+          required
+        />
+      </div>
+      
+      <div className="form-group">
+        <label>Symbol *</label>
+        <input
+          type="text"
+          value={formData.symbol || ''}
+          onChange={(e) => handleInputChange('symbol', e.target.value)}
+          placeholder="€, $, ₿..."
+          maxLength={10}
+          required
+        />
+      </div>
+      
+      <div className="form-group">
+        <label>Type</label>
+        <select
+          value={formData.type || 'fiat'}
+          onChange={(e) => handleInputChange('type', e.target.value)}
+        >
+          <option value="fiat">{t('fiat')}</option>
+          <option value="crypto">{t('crypto')}</option>
+        </select>
+      </div>
+      
+      <div className="form-group">
+        <label>{t('decimalPlaces')}</label>
+        <input
+          type="number"
+          value={formData.decimalPlaces || 2}
+          onChange={(e) => handleInputChange('decimalPlaces', parseInt(e.target.value))}
+          min="0"
+          max="18"
+        />
+      </div>
+      
+      <div className="form-group">
+        <label>
+          <input
+            type="checkbox"
+            checked={formData.isActive !== false}
+            onChange={(e) => handleInputChange('isActive', e.target.checked)}
+          />
+          Active
+        </label>
+      </div>
+      
+      <div className="form-actions">
+        <button type="submit" className="btn-primary">
+          {editingId ? getEditButtonText() : getAddButtonText()}
+        </button>
+        <button type="button" onClick={resetForm} className="btn-secondary">Cancel</button>
+      </div>
+    </form>
+  );
+
   const getAddButtonText = () => {
     switch (activeTab) {
       case 'accounts':
@@ -751,6 +866,8 @@ const DataManagement = () => {
         return t('addCategory');
       case 'subcategories':
         return t('addSubcategory');
+      case 'currencies':
+        return t('addCurrency');
       default:
         return t('add');
     }
@@ -772,6 +889,8 @@ const DataManagement = () => {
         return t('updateCategory');
       case 'subcategories':
         return t('updateSubcategory');
+      case 'currencies':
+        return t('updateCurrency');
       default:
         return t('update');
     }
@@ -790,7 +909,30 @@ const DataManagement = () => {
               label: t('type'), 
               render: (accountType) => accountType ? `${accountType.type} - ${accountType.subtype}` : t('unknownAccount')
             },
-            { key: 'balance', label: t('balance'), render: (value) => formatCurrency(value || 0) }
+            { 
+              key: 'currencyId', 
+              label: t('currency'), 
+              render: (currencyId) => {
+                const currency = currencies.find(c => c.id === currencyId);
+                return currency ? (
+                  <span className="account-currency">
+                    <span style={{fontSize: '1.1em'}}>{currency.symbol}</span>
+                    <span className="currency-badge">{currency.code}</span>
+                  </span>
+                ) : 'N/A';
+              }
+            },
+            { 
+              key: 'balance', 
+              label: t('balance'), 
+              render: (value, row) => {
+                const currency = currencies.find(c => c.id === row.currencyId);
+                if (currency && exchangeRateService) {
+                  return exchangeRateService.formatAmount(value || 0, currency.id);
+                }
+                return formatCurrency(value || 0);
+              }
+            }
           ]
         };
       case 'customers':
@@ -956,6 +1098,39 @@ const DataManagement = () => {
           ]
         };
       }
+      case 'currencies':
+        return {
+          data: currencies,
+          columns: [
+            { key: 'id', label: t('id') },
+            { key: 'code', label: 'Code' },
+            { key: 'name', label: t('name') },
+            { 
+              key: 'symbol', 
+              label: 'Symbol', 
+              render: (value) => <span style={{fontSize: '1.2em'}}>{value}</span>
+            },
+            { 
+              key: 'type', 
+              label: 'Type',
+              render: (value) => (
+                <span className={`badge ${value === 'crypto' ? 'badge-crypto' : 'badge-fiat'}`}>
+                  {value === 'crypto' ? '₿ Crypto' : '💰 Fiat'}
+                </span>
+              )
+            },
+            { key: 'decimalPlaces', label: 'Decimals' },
+            { 
+              key: 'isActive', 
+              label: 'Status',
+              render: (value) => (
+                <span className={`badge ${value ? 'badge-active' : 'badge-inactive'}`}>
+                  {value ? 'Active' : 'Inactive'}
+                </span>
+              )
+            }
+          ]
+        };
       default:
         return { data: [], columns: [] };
     }
@@ -1013,7 +1188,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'categories', 'subcategories', 'vendors', 'products', 'transactions', 'customers'].map(tab => (
+        {['accounts', 'categories', 'subcategories', 'currencies', 'vendors', 'products', 'transactions', 'customers'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'nav-btn active' : 'nav-btn'}
@@ -1063,13 +1238,19 @@ const DataManagement = () => {
 
       <div className="data-content">
         
-        {showForm && (
-          <div className="form-container">
-            {renderForm()}
+        {activeTab === 'currencies' ? (
+          <div className="currency-manager-container">
+            <CurrencyManager />
           </div>
-        )}
+        ) : (
+          <>
+            {showForm && (
+              <div className="form-container">
+                {renderForm()}
+              </div>
+            )}
 
-        <div className="search-and-actions-container">
+            <div className="search-and-actions-container">
           <div className="search-container">
             <div className="search-input-wrapper">
               <input
@@ -1107,22 +1288,24 @@ const DataManagement = () => {
           </div>
         </div>
 
-        <div className="table-container">
-          <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})</h3>
-          {isLoadingTransactions && activeTab === 'transactions' ? (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <h3>Loading {transactions.length.toLocaleString()} transactions...</h3>
-              <p>This may take a moment for large datasets</p>
+            <div className="table-container">
+              <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})</h3>
+              {isLoadingTransactions && activeTab === 'transactions' ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <h3>Loading {transactions.length.toLocaleString()} transactions...</h3>
+                  <p>This may take a moment for large datasets</p>
+                </div>
+              ) : data.length > 0 ? (
+                renderTable(data, columns)
+              ) : (
+                <div className="empty-state">
+                  <p>No {t(activeTab)} {t('noDataFound')}</p>
+                </div>
+              )}
             </div>
-          ) : data.length > 0 ? (
-            renderTable(data, columns)
-          ) : (
-            <div className="empty-state">
-              <p>No {t(activeTab)} {t('noDataFound')}</p>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

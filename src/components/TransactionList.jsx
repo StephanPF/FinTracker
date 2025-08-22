@@ -3,7 +3,7 @@ import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const TransactionList = ({ limit }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags } = useAccounting();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService } = useAccounting();
   const { t, formatCurrency } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,6 +58,32 @@ const TransactionList = ({ limit }) => {
       return `- ${subcategoryName}`;
     }
     return '-';
+  };
+
+  const formatAmountWithCurrency = (transaction) => {
+    const currency = currencies.find(c => c.id === transaction.currencyId);
+    
+    if (currency && exchangeRateService) {
+      const primaryAmount = exchangeRateService.formatAmount(transaction.amount || 0, currency.id);
+      
+      // If not in base currency, also show converted amount
+      if (transaction.currencyId !== exchangeRateService.getBaseCurrencyId()) {
+        const baseCurrency = currencies.find(c => c.id === exchangeRateService.getBaseCurrencyId());
+        const convertedAmount = exchangeRateService.formatAmount(
+          transaction.baseCurrencyAmount || transaction.amount || 0, 
+          baseCurrency?.id
+        );
+        return (
+          <div className="amount-with-conversion">
+            <div className="primary-amount">{primaryAmount}</div>
+            <div className="converted-amount">≈ {convertedAmount}</div>
+          </div>
+        );
+      }
+      return <div className="primary-amount">{primaryAmount}</div>;
+    }
+    
+    return formatCurrency(transaction.amount || 0);
   };
 
   const filteredTransactions = useMemo(() => {
@@ -316,7 +342,7 @@ const TransactionList = ({ limit }) => {
                 </td>
                 <td>{transaction.reference || '-'}</td>
                 <td>{transaction.notes || '-'}</td>
-                <td>{formatCurrency(transaction.amount)}</td>
+                <td>{formatAmountWithCurrency(transaction)}</td>
               </tr>
             ))}
           </tbody>

@@ -263,11 +263,11 @@ Source: Manual Entry
 ### Common Fiat Currencies
 ```javascript
 const commonCurrencies = [
+  { code: 'EUR', name: 'Euro', symbol: '€', type: 'fiat', isBase: true },
   { code: 'USD', name: 'US Dollar', symbol: '$', type: 'fiat' },
-  { code: 'EUR', name: 'Euro', symbol: '€', type: 'fiat' },
-  { code: 'MAD', name: 'Moroccan Dirham', symbol: 'DH', type: 'fiat' },
+  { code: 'AED', name: 'UAE Dirham', symbol: 'AED', type: 'fiat' },
   { code: 'GBP', name: 'British Pound', symbol: '£', type: 'fiat' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', type: 'fiat' }
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', type: 'fiat' }
 ];
 ```
 

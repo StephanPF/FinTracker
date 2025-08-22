@@ -11,6 +11,9 @@ class RelationalDatabase {
       todos: [],
       categories: [],
       subcategories: [],
+      currencies: [],
+      exchange_rates: [],
+      currency_settings: [],
       database_info: []
     };
     this.workbooks = {};
@@ -22,10 +25,18 @@ class RelationalDatabase {
         vendorId: { table: 'vendors', field: 'id', optional: true },
         productId: { table: 'tags', field: 'id', optional: true },
         categoryId: { table: 'categories', field: 'id', optional: true },
-        subcategoryId: { table: 'subcategories', field: 'id', optional: true }
+        subcategoryId: { table: 'subcategories', field: 'id', optional: true },
+        currencyId: { table: 'currencies', field: 'id', optional: true }
+      },
+      accounts: {
+        currencyId: { table: 'currencies', field: 'id', optional: true }
       },
       subcategories: {
         categoryId: { table: 'categories', field: 'id' }
+      },
+      exchange_rates: {
+        fromCurrencyId: { table: 'currencies', field: 'id' },
+        toCurrencyId: { table: 'currencies', field: 'id' }
       }
     };
   }
@@ -66,6 +77,9 @@ class RelationalDatabase {
       todos: sampleData.todos,
       categories: this.generateCategories(language),
       subcategories: this.generateSubcategories(language),
+      currencies: this.generateCurrencies(),
+      exchange_rates: this.generateExchangeRates(),
+      currency_settings: this.generateCurrencySettings(),
       
       database_info: [
         {
@@ -920,64 +934,85 @@ class RelationalDatabase {
           id: 'ACC001', 
           name: 'Cash', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 1000,
+          balance: 900,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 900,
           description: 'Cash on hand',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC002', 
           name: 'Bank Account - Checking', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 5000,
+          balance: 4500,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 4500,
           description: 'Main checking account',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC003', 
           name: 'Savings Account', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 10000,
+          balance: 9000,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 9000,
           description: 'Emergency savings',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC004', 
           name: 'Investment Portfolio', 
           accountTypeId: 'ACCT_TYPE_002',
-          balance: 25000,
+          balance: 22500,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 22500,
           description: 'Retirement and investment accounts',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC005', 
           name: 'House', 
           accountTypeId: 'ACCT_TYPE_003',
-          balance: 250000,
+          balance: 227000,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 227000,
           description: 'Primary residence',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC006', 
           name: 'Credit Card', 
           accountTypeId: 'ACCT_TYPE_004',
-          balance: 2500,
+          balance: 2250,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 2250,
           description: 'Main credit card debt',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC007', 
           name: 'Mortgage', 
           accountTypeId: 'ACCT_TYPE_005',
-          balance: 180000,
+          balance: 163500,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 163500,
           description: 'Home mortgage loan',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         }
       ],
       customers: [
@@ -1102,64 +1137,85 @@ class RelationalDatabase {
           id: 'ACC001', 
           name: 'Espèces', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 1000,
+          balance: 900,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 900,
           description: 'Argent liquide disponible',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC002', 
           name: 'Compte Courant', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 5000,
+          balance: 4500,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 4500,
           description: 'Compte bancaire principal',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC003', 
           name: 'Compte Épargne', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 10000,
+          balance: 9000,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 9000,
           description: 'Épargne de précaution',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC004', 
           name: 'Portefeuille de Placement', 
           accountTypeId: 'ACCT_TYPE_002',
-          balance: 25000,
+          balance: 22500,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 22500,
           description: 'Comptes retraite et investissements',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC005', 
           name: 'Maison', 
           accountTypeId: 'ACCT_TYPE_003',
-          balance: 250000,
+          balance: 227000,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 227000,
           description: 'Résidence principale',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC006', 
           name: 'Carte de Crédit', 
           accountTypeId: 'ACCT_TYPE_004',
-          balance: 2500,
+          balance: 2250,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 2250,
           description: 'Dette carte de crédit principale',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         },
         { 
           id: 'ACC007', 
           name: 'Hypothèque', 
           accountTypeId: 'ACCT_TYPE_005',
-          balance: 180000,
+          balance: 163500,
+          currencyId: 'CUR_001', // EUR (base currency)
+          baseCurrencyValue: 163500,
           description: 'Prêt hypothécaire résidentiel',
           isActive: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString()
         }
       ],
       customers: [
@@ -1996,6 +2052,250 @@ class RelationalDatabase {
     
     console.log(`Cleared ${removed} stress test transactions`);
     return removed;
+  }
+
+  generateCurrencies() {
+    return [
+      {
+        id: 'CUR_001',
+        code: 'EUR',
+        name: 'Euro',
+        symbol: '€',
+        type: 'fiat',
+        decimalPlaces: 2,
+        isActive: true,
+        isBase: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CUR_002',
+        code: 'USD',
+        name: 'US Dollar',
+        symbol: '$',
+        type: 'fiat',
+        decimalPlaces: 2,
+        isActive: true,
+        isBase: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CUR_003',
+        code: 'AED',
+        name: 'UAE Dirham',
+        symbol: 'AED',
+        type: 'fiat',
+        decimalPlaces: 2,
+        isActive: true,
+        isBase: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CUR_004',
+        code: 'GBP',
+        name: 'British Pound',
+        symbol: '£',
+        type: 'fiat',
+        decimalPlaces: 2,
+        isActive: true,
+        isBase: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CUR_005',
+        code: 'AUD',
+        name: 'Australian Dollar',
+        symbol: 'A$',
+        type: 'fiat',
+        decimalPlaces: 2,
+        isActive: true,
+        isBase: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CUR_006',
+        code: 'BTC',
+        name: 'Bitcoin',
+        symbol: '₿',
+        type: 'crypto',
+        decimalPlaces: 8,
+        isActive: true,
+        isBase: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CUR_007',
+        code: 'ETH',
+        name: 'Ethereum',
+        symbol: 'Ξ',
+        type: 'crypto',
+        decimalPlaces: 18,
+        isActive: true,
+        isBase: false,
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  generateExchangeRates() {
+    const today = new Date().toISOString().split('T')[0];
+    return [
+      {
+        id: 'ER_001',
+        fromCurrencyId: 'CUR_002', // USD
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 0.91,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_002',
+        fromCurrencyId: 'CUR_003', // AED
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 0.25,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_003',
+        fromCurrencyId: 'CUR_004', // GBP
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 1.15,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_004',
+        fromCurrencyId: 'CUR_005', // AUD
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 0.62,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_005',
+        fromCurrencyId: 'CUR_006', // BTC
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 40900,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_006',
+        fromCurrencyId: 'CUR_007', // ETH
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 2270,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  generateCurrencySettings() {
+    return [
+      {
+        id: 'CS_001',
+        userId: 'default',
+        baseCurrencyId: 'CUR_001', // EUR (base currency)
+        autoUpdateRates: false,
+        rateUpdateFrequency: 'manual',
+        lastRateUpdate: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  // Currency management methods
+  addCurrency(currencyData) {
+    const id = this.generateId('CUR');
+    const newCurrency = {
+      id,
+      ...currencyData,
+      isActive: currencyData.isActive !== undefined ? currencyData.isActive : true,
+      createdAt: new Date().toISOString()
+    };
+
+    this.tables.currencies.push(newCurrency);
+    this.saveTableToWorkbook('currencies');
+    return newCurrency;
+  }
+
+  updateCurrency(id, currencyData) {
+    const currencyIndex = this.tables.currencies.findIndex(currency => currency.id === id);
+    if (currencyIndex === -1) {
+      throw new Error(`Currency with id ${id} not found`);
+    }
+
+    const updatedCurrency = {
+      ...this.tables.currencies[currencyIndex],
+      ...currencyData,
+      id: id // Ensure ID doesn't change
+    };
+
+    this.tables.currencies[currencyIndex] = updatedCurrency;
+    this.saveTableToWorkbook('currencies');
+    return updatedCurrency;
+  }
+
+  deleteCurrency(id) {
+    const currencyIndex = this.tables.currencies.findIndex(currency => currency.id === id);
+    if (currencyIndex === -1) {
+      throw new Error(`Currency with id ${id} not found`);
+    }
+
+    // Check if currency is used in accounts or transactions
+    const usedInAccounts = this.tables.accounts.some(account => account.currencyId === id);
+    const usedInTransactions = this.tables.transactions.some(transaction => transaction.currencyId === id);
+
+    if (usedInAccounts || usedInTransactions) {
+      throw new Error('Cannot delete currency: it is used in accounts or transactions');
+    }
+
+    const deletedCurrency = this.tables.currencies[currencyIndex];
+    this.tables.currencies.splice(currencyIndex, 1);
+    this.saveTableToWorkbook('currencies');
+    return deletedCurrency;
+  }
+
+  // Exchange rate management methods
+  addExchangeRate(rateData) {
+    const id = this.generateId('ER');
+    const newRate = {
+      id,
+      ...rateData,
+      date: rateData.date || new Date().toISOString().split('T')[0],
+      source: rateData.source || 'manual',
+      createdAt: new Date().toISOString()
+    };
+
+    this.tables.exchange_rates.push(newRate);
+    this.saveTableToWorkbook('exchange_rates');
+    return newRate;
+  }
+
+  // Currency settings management methods
+  updateCurrencySettings(settingsData) {
+    let settings = this.tables.currency_settings.find(s => s.userId === 'default');
+    
+    if (settings) {
+      Object.assign(settings, settingsData);
+    } else {
+      settings = {
+        id: 'CS_001',
+        userId: 'default',
+        ...settingsData,
+        createdAt: new Date().toISOString()
+      };
+      this.tables.currency_settings.push(settings);
+    }
+
+    this.saveTableToWorkbook('currency_settings');
+    return settings;
   }
 }
 
