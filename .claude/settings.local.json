@@ -6,7 +6,19 @@
       "Bash(node:*)",
       "Bash(npx eslint:*)",
       "Bash(rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebFetch(domain:www.exchangerate-api.com)",
+      "WebFetch(domain:app.exchangerate-api.com)",
+      "WebFetch(domain:exchangerate-api.com)",
+      "WebSearch",
+      "WebFetch(domain:www.coingecko.com)",
+      "WebFetch(domain:docs.coingecko.com)",
+      "WebFetch(domain:coinlayer.com)",
+      "WebFetch(domain:exchangerate.host)",
+      "WebFetch(domain:freeforexapi.com)",
+      "WebFetch(domain:open.er-api.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:cdn.jsdelivr.net)"
     ],
     "deny": [],
     "ask": []

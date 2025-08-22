@@ -14,6 +14,8 @@ class RelationalFileStorage {
       currencies: 'currencies.xlsx',
       exchange_rates: 'exchange_rates.xlsx',
       currency_settings: 'currency_settings.xlsx',
+      api_usage: 'api_usage.xlsx',
+      api_settings: 'api_settings.xlsx',
       database_info: 'database_info.xlsx'
     };
   }

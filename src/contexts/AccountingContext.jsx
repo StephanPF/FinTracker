@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import RelationalFileStorage from '../utils/relationalFileStorage';
 import RelationalDatabase from '../utils/relationalDatabase';
 import ExchangeRateService from '../utils/exchangeRateService';
+import LiveExchangeRateService from '../utils/liveExchangeRateService';
+import CryptoRateService from '../utils/cryptoRateService';
 import { useLanguage } from './LanguageContext';
 
 const AccountingContext = createContext();
@@ -19,6 +21,7 @@ export const AccountingProvider = ({ children }) => {
   const [database, setDatabase] = useState(new RelationalDatabase());
   const [fileStorage, setFileStorage] = useState(new RelationalFileStorage());
   const [exchangeRateService, setExchangeRateService] = useState(null);
+  const [cryptoRateService, setCryptoRateService] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -32,6 +35,8 @@ export const AccountingProvider = ({ children }) => {
   const [currencies, setCurrencies] = useState([]);
   const [exchangeRates, setExchangeRates] = useState([]);
   const [currencySettings, setCurrencySettings] = useState([]);
+  const [apiSettings, setApiSettings] = useState([]);
+  const [apiUsage, setApiUsage] = useState([]);
   const [databaseInfo, setDatabaseInfo] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,10 +70,23 @@ export const AccountingProvider = ({ children }) => {
     setCurrencies(database.getTable('currencies'));
     setExchangeRates(database.getTable('exchange_rates'));
     setCurrencySettings(database.getTable('currency_settings'));
+    setApiSettings(database.getTable('api_settings'));
+    setApiUsage(database.getTable('api_usage'));
     setDatabaseInfo(database.getTable('database_info'));
     
-    // Initialize or update exchange rate service
-    setExchangeRateService(new ExchangeRateService(database));
+    // Initialize or update live exchange rate service
+    const currentApiSettings = database.getTable('api_settings')[0];
+    const liveService = new LiveExchangeRateService(database, currentApiSettings);
+    setExchangeRateService(liveService);
+    
+    // Initialize crypto rate service
+    const cryptoService = new CryptoRateService(database);
+    setCryptoRateService(cryptoService);
+    
+    // Start automatic updates if configured
+    if (currentApiSettings && currentApiSettings.autoUpdate) {
+      setTimeout(() => liveService.updateSchedule(), 1000); // Delay to ensure everything is loaded
+    }
   };
 
   const createNewDatabase = async () => {
@@ -786,6 +804,138 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
+  // API Settings Management
+  const updateApiSettings = async (newSettings) => {
+    try {
+      const currentSettings = database.getTable('api_settings')[0];
+      let updatedSettings;
+      
+      if (currentSettings) {
+        // Update existing settings
+        updatedSettings = database.updateRecord('api_settings', currentSettings.id, newSettings);
+      } else {
+        // Create new settings if none exist
+        updatedSettings = database.addRecord('api_settings', {
+          id: 'API_001',
+          provider: 'exchangerate-api',
+          ...newSettings,
+          settings: {
+            retries: 3,
+            timeout: 30000
+          }
+        });
+      }
+      
+      setApiSettings(database.getTable('api_settings'));
+      
+      // Update the live service with new settings
+      if (exchangeRateService && exchangeRateService.updateApiSettings) {
+        exchangeRateService.updateApiSettings(updatedSettings);
+      }
+      
+      const buffers = { api_settings: database.exportTableToBuffer('api_settings') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating API settings:', error);
+      throw error;
+    }
+  };
+
+  const getApiUsage = () => {
+    return apiUsage[0] || {
+      currentMonth: new Date().toISOString().slice(0, 7),
+      requestCount: 0,
+      monthlyLimit: 1500,
+      lastRequest: null
+    };
+  };
+
+  const saveExchangeRatesToFile = async () => {
+    try {
+      const buffers = { exchange_rates: database.exportTableToBuffer('exchange_rates') };
+      await fileStorage.saveAllTables(buffers);
+      console.log('💾 Exchange rates saved to exchange_rates.xlsx');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to save exchange rates to file:', error);
+      return false;
+    }
+  };
+
+  const refreshExchangeRates = async () => {
+    if (exchangeRateService && exchangeRateService.fetchLiveRates) {
+      // Get current base currency for API call
+      const currentSettings = currencySettings.find(s => s.userId === 'default');
+      const baseCurrencyId = currentSettings ? currentSettings.baseCurrencyId : 'CUR_001';
+      const baseCurrency = currencies.find(c => c.id === baseCurrencyId);
+      const baseCurrencyCode = baseCurrency ? baseCurrency.code : 'EUR';
+      
+      console.log(`🔄 Refreshing rates with base currency: ${baseCurrencyCode}`);
+      const result = await exchangeRateService.fetchLiveRates(baseCurrencyCode);
+      if (result.success) {
+        // Refresh the exchange rates state after successful update
+        setExchangeRates([...database.getTable('exchange_rates')]);
+        console.log('✅ Exchange rates state updated after API call');
+        
+        // Save to Excel file
+        await saveExchangeRatesToFile();
+      }
+      return result;
+    }
+    throw new Error('Live exchange rate service not available');
+  };
+
+  const getRatesFreshness = () => {
+    if (exchangeRateService && exchangeRateService.getRateFreshness) {
+      return exchangeRateService.getRateFreshness();
+    }
+    return { status: 'unknown', message: 'Rate freshness unavailable' };
+  };
+
+  const getApiStatus = () => {
+    if (exchangeRateService && exchangeRateService.getStatus) {
+      return exchangeRateService.getStatus();
+    }
+    return { isConfigured: false, isScheduled: false, isUpdating: false };
+  };
+
+  // Get base currency object
+  const getBaseCurrency = () => {
+    const settings = currencySettings.find(s => s.userId === 'default');
+    const baseCurrencyId = settings ? settings.baseCurrencyId : 'CUR_001';
+    return currencies.find(c => c.id === baseCurrencyId) || currencies.find(c => c.code === 'EUR');
+  };
+
+  // Crypto rate methods
+  const refreshCryptoRates = async () => {
+    if (cryptoRateService && cryptoRateService.fetchCryptoRates) {
+      const baseCurrency = getBaseCurrency();
+      const baseCurrencyCode = baseCurrency ? baseCurrency.code : 'EUR';
+      const result = await cryptoRateService.fetchCryptoRates(baseCurrencyCode);
+      if (result.success) {
+        setExchangeRates([...database.getTable('exchange_rates')]);
+      }
+      return result;
+    }
+    throw new Error('Crypto rate service not available');
+  };
+
+  const getCryptoStatus = () => {
+    if (cryptoRateService && cryptoRateService.getStatus) {
+      return cryptoRateService.getStatus();
+    }
+    return { isConfigured: false, isUpdating: false };
+  };
+
+  const getCryptoRateFreshness = () => {
+    if (cryptoRateService && cryptoRateService.getCryptoRateFreshness) {
+      return cryptoRateService.getCryptoRateFreshness();
+    }
+    return { status: 'unknown', message: 'Crypto rate freshness unavailable' };
+  };
+
   // Multi-currency account methods
   const getAccountsWithCurrency = () => {
     return accounts.map(account => ({
@@ -868,7 +1018,22 @@ export const AccountingProvider = ({ children }) => {
     getCurrencySettings,
     updateCurrencySettings,
     getAccountsWithCurrency,
-    fileStorage
+    getBaseCurrency,
+    // API Management
+    apiSettings,
+    apiUsage,
+    updateApiSettings,
+    getApiUsage,
+    refreshExchangeRates,
+    getRatesFreshness,
+    getApiStatus,
+    // Crypto Rate Management
+    cryptoRateService,
+    refreshCryptoRates,
+    getCryptoStatus,
+    getCryptoRateFreshness,
+    fileStorage,
+    saveExchangeRatesToFile
   };
 
   return (

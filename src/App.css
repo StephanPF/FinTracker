@@ -2293,6 +2293,147 @@ body {
   color: #7c3aed;
 }
 
+/* Live Exchange Rate Styles */
+.rates-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.status-indicator {
+  font-weight: 500;
+}
+
+.status-indicator.fresh {
+  color: #059669;
+}
+
+.status-indicator.recent {
+  color: #d97706;
+}
+
+.status-indicator.stale {
+  color: #dc2626;
+}
+
+.status-indicator.no-api-rates {
+  color: #6b7280;
+}
+
+.last-update {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.update-status {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.update-status.success {
+  background: #d1fae5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.update-status.error {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.api-rate {
+  background: #eff6ff !important;
+}
+
+.manual-rate {
+  background: #f9fafb !important;
+}
+
+.rate-age {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* API Status Display */
+.api-status {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-good {
+  color: #059669;
+  font-weight: 500;
+}
+
+.status-warning {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.status-error {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.status-neutral {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Button variants */
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+  border: 1px solid #6b7280;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+  border-color: #4b5563;
+}
+
+.btn-secondary:disabled {
+  background: #9ca3af;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .dropdown-item {
   display: block;
   width: 100%;
@@ -5288,9 +5429,44 @@ body {
   color: #1d4ed8;
 }
 
+.badge-crypto {
+  background: #fef3c7;
+  color: #d97706;
+}
+
 .badge-manual {
   background: #f3e8ff;
   color: #7c3aed;
+}
+
+.badge-missing {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.missing-rate {
+  background-color: #fef2f2;
+}
+
+.missing-rate-text {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.missing-age {
+  color: #9ca3af;
+}
+
+.provider-info {
+  padding: 0.75rem;
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 6px;
+  color: #0c4a6e;
+}
+
+.provider-info strong {
+  color: #0ea5e9;
 }
 
 /* Settings styles */

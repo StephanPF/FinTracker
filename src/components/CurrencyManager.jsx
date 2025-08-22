@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -16,7 +16,15 @@ const CurrencyManager = () => {
     deleteCurrency,
     addExchangeRate,
     updateCurrencySettings,
-    getAccountsWithTypes
+    getAccountsWithTypes,
+    // API Management
+    apiSettings,
+    updateApiSettings,
+    getApiUsage,
+    refreshExchangeRates,
+    getRatesFreshness,
+    getApiStatus,
+    saveExchangeRatesToFile,
   } = useAccounting();
   
   const { t } = useLanguage();
@@ -26,6 +34,29 @@ const CurrencyManager = () => {
   const [showExchangeRateForm, setShowExchangeRateForm] = useState(false);
   const [formData, setFormData] = useState({});
   const [editingId, setEditingId] = useState(null);
+  const [apiFormData, setApiFormData] = useState({});
+  const [isUpdatingRates, setIsUpdatingRates] = useState(false);
+  const [rateUpdateStatus, setRateUpdateStatus] = useState(null);
+
+  // Initialize API form data from current settings
+  useEffect(() => {
+    const currentApiSettings = apiSettings[0];
+    if (Object.keys(apiFormData).length === 0) {
+      if (currentApiSettings) {
+        setApiFormData(currentApiSettings);
+      } else {
+        // Set default values if no settings exist
+        setApiFormData({
+          provider: 'Currency-API (GitHub)',
+          apiKey: '', // Not needed but kept for compatibility
+          isActive: true, // Always active since it's free
+          autoUpdate: false,
+          frequency: 'manual',
+          baseCurrency: 'EUR'
+        });
+      }
+    }
+  }, [apiSettings, apiFormData]);
   const [exchangeRateForm, setExchangeRateForm] = useState({
     fromCurrencyId: '',
     toCurrencyId: '',
@@ -107,8 +138,107 @@ const CurrencyManager = () => {
   const handleBaseCurrencyChange = async (currencyId) => {
     try {
       await updateCurrencySettings({ baseCurrencyId: currencyId });
+      
+      // Automatically refresh exchange rates for the new base currency
+      console.log('🔄 Base currency changed, refreshing exchange rates...');
+      setIsUpdatingRates(true);
+      setRateUpdateStatus({ type: 'info', message: 'Refreshing rates for new base currency...' });
+      
+      try {
+        const result = await refreshExchangeRates();
+        if (result.success) {
+          setRateUpdateStatus({ 
+            type: 'success', 
+            message: `Updated ${result.ratesCount} rates for new base currency and saved to Excel!` 
+          });
+        } else {
+          setRateUpdateStatus({ 
+            type: 'error', 
+            message: `Failed to update rates: ${result.error}` 
+          });
+        }
+      } catch (refreshError) {
+        setRateUpdateStatus({ 
+          type: 'error', 
+          message: `Error refreshing rates: ${refreshError.message}` 
+        });
+      } finally {
+        setIsUpdatingRates(false);
+        setTimeout(() => setRateUpdateStatus(null), 5000);
+      }
     } catch (error) {
       alert(`Error: ${error.message}`);
+    }
+  };
+
+  // API Settings Management
+  const handleApiSettingsSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Ensure we have the minimum required fields
+      const settingsToSave = {
+        provider: 'Currency-API (GitHub)',
+        apiKey: '', // Not needed for ExchangeRate.host
+        isActive: true, // Always active since it's free
+        autoUpdate: apiFormData.autoUpdate || false,
+        frequency: apiFormData.frequency || 'manual',
+        baseCurrency: apiFormData.baseCurrency || 'EUR',
+        ...apiFormData
+      };
+      
+      await updateApiSettings(settingsToSave);
+      setRateUpdateStatus({ type: 'success', message: 'API settings saved successfully!' });
+    } catch (error) {
+      setRateUpdateStatus({ type: 'error', message: `Error: ${error.message}` });
+      console.error('API Settings Error:', error);
+    }
+  };
+
+  const handleRefreshRates = async () => {
+    setIsUpdatingRates(true);
+    setRateUpdateStatus(null);
+    try {
+      const result = await refreshExchangeRates();
+      if (result.success) {
+        setRateUpdateStatus({ 
+          type: 'success', 
+          message: `Successfully updated ${result.ratesCount} rates and saved to Excel!` 
+        });
+      } else {
+        setRateUpdateStatus({ 
+          type: 'error', 
+          message: `Failed to update rates: ${result.error}` 
+        });
+      }
+    } catch (error) {
+      setRateUpdateStatus({ 
+        type: 'error', 
+        message: `Error refreshing rates: ${error.message}` 
+      });
+    } finally {
+      setIsUpdatingRates(false);
+      // Clear status after 5 seconds
+      setTimeout(() => setRateUpdateStatus(null), 5000);
+    }
+  };
+
+
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return 'Never';
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now - time;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffHours > 24) {
+      return `${Math.floor(diffHours / 24)} days ago`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hours ago`;
+    } else if (diffMinutes > 0) {
+      return `${diffMinutes} minutes ago`;
+    } else {
+      return 'Just now';
     }
   };
 
@@ -134,101 +264,7 @@ const CurrencyManager = () => {
     <div className="currencies-tab">
       <div className="section-header">
         <h3>{t('currencies')} ({currencies.length})</h3>
-        <div className="section-actions">
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            className="btn-primary"
-          >
-            {showForm ? t('cancel') : t('addCurrency')}
-          </button>
-        </div>
       </div>
-
-      {showForm && (
-        <div className="form-container">
-          <h4>{editingId ? t('edit') + ' ' + t('currency') : t('addCurrency')}</h4>
-          <form onSubmit={handleCurrencySubmit} className="currency-form">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>{t('currencyCode')} *</label>
-                <input
-                  type="text"
-                  value={formData.code || ''}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                  placeholder="USD, EUR, BTC..."
-                  maxLength={10}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>{t('currencyName')} *</label>
-                <input
-                  type="text"
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="US Dollar, Euro, Bitcoin..."
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>{t('currencySymbol')} *</label>
-                <input
-                  type="text"
-                  value={formData.symbol || ''}
-                  onChange={(e) => setFormData({ ...formData, symbol: e.target.value })}
-                  placeholder="$, €, ₿..."
-                  maxLength={10}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>{t('currencyType')}</label>
-                <select
-                  value={formData.type || 'fiat'}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                >
-                  <option value="fiat">{t('fiat')}</option>
-                  <option value="crypto">{t('crypto')}</option>
-                </select>
-              </div>
-              
-              <div className="form-group">
-                <label>{t('decimalPlaces')}</label>
-                <input
-                  type="number"
-                  value={formData.decimalPlaces || 2}
-                  onChange={(e) => setFormData({ ...formData, decimalPlaces: parseInt(e.target.value) })}
-                  min="0"
-                  max="18"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive !== false}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  />
-                  {t('isActive')}
-                </label>
-              </div>
-            </div>
-            
-            <div className="form-actions">
-              <button type="submit" className="btn-primary">
-                {editingId ? t('updateCurrency') : t('addCurrency')}
-              </button>
-              <button type="button" onClick={resetCurrencyForm} className="btn-secondary">
-                {t('cancel')}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       <div className="data-table">
         <table>
@@ -287,91 +323,140 @@ const CurrencyManager = () => {
     </div>
   );
 
-  const renderExchangeRatesTab = () => (
+  const getUniqueExchangeRates = () => {
+    const activeCurrencies = getActiveCurrencies();
+    const baseCurrencyId = getBaseCurrency();
+    const baseCurrency = currencies.find(c => c.id === baseCurrencyId);
+    
+    if (!baseCurrency || activeCurrencies.length === 0) return [];
+    
+    const uniqueRates = [];
+    const seenPairs = new Set();
+    
+    // Generate all possible currency pairs: other currencies → base currency
+    activeCurrencies.forEach(currency => {
+      if (currency.id === baseCurrencyId) return; // Skip base currency to itself
+      
+      const pairKey = `${currency.id}-${baseCurrencyId}`;
+      if (seenPairs.has(pairKey)) return;
+      seenPairs.add(pairKey);
+      
+      // Check for reverse API rate first (base → currency) since API rates are stored that way
+      const reverseApiRates = exchangeRates
+        .filter(rate => 
+          rate.fromCurrencyId === baseCurrencyId && 
+          rate.toCurrencyId === currency.id &&
+          (rate.source === 'api' || rate.source === 'crypto-api')
+        )
+        .sort((a, b) => {
+          const sourceOrder = { 'api': 0, 'crypto-api': 1 };
+          const aOrder = sourceOrder[a.source] || 999;
+          const bOrder = sourceOrder[b.source] || 999;
+          
+          if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+          }
+          return new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date);
+        });
+
+      // If we have API rates in reverse direction, use them (prioritize API over manual)
+      if (reverseApiRates.length > 0 && reverseApiRates[0].rate > 0) {
+        const reverseRate = reverseApiRates[0];
+        uniqueRates.push({
+          ...reverseRate,
+          id: `inverse-${reverseRate.id}`,
+          fromCurrencyId: currency.id,
+          toCurrencyId: baseCurrencyId,
+          rate: 1 / reverseRate.rate,
+          source: reverseRate.source + '-inverse'
+        });
+      } else {
+        // Look for direct rates (currency → base) - this would include manual rates
+        const directRates = exchangeRates
+          .filter(rate => 
+            rate.fromCurrencyId === currency.id && 
+            rate.toCurrencyId === baseCurrencyId
+          )
+          .sort((a, b) => {
+            // Even here, prioritize API over manual
+            const sourceOrder = { 'api': 0, 'crypto-api': 1, 'manual': 999 };
+            const aOrder = sourceOrder[a.source] || 999;
+            const bOrder = sourceOrder[b.source] || 999;
+            
+            if (aOrder !== bOrder) {
+              return aOrder - bOrder;
+            }
+            return new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date);
+          });
+        
+        if (directRates.length > 0) {
+          uniqueRates.push(directRates[0]);
+        } else {
+          // No rates available at all
+          uniqueRates.push({
+            id: `missing-${currency.id}-${baseCurrencyId}`,
+            fromCurrencyId: currency.id,
+            toCurrencyId: baseCurrencyId,
+            rate: null,
+            date: null,
+            source: 'missing',
+            timestamp: null
+          });
+        }
+      }
+    });
+    
+    return uniqueRates;
+  };
+
+  const renderExchangeRatesTab = () => {
+    const uniqueRates = getUniqueExchangeRates();
+    const availableRatesCount = uniqueRates.filter(r => r.source !== 'missing').length;
+    
+    
+    return (
     <div className="exchange-rates-tab">
       <div className="section-header">
-        <h3>{t('exchangeRates')} ({exchangeRates.length})</h3>
+        <h3>{t('exchangeRates')} ({availableRatesCount}/{uniqueRates.length})</h3>
         <div className="section-actions">
           <button 
-            onClick={() => {
-              if (showExchangeRateForm) {
-                resetExchangeRateForm();
-              }
-              setShowExchangeRateForm(!showExchangeRateForm);
-            }}
-            className="btn-primary"
+            onClick={handleRefreshRates}
+            disabled={isUpdatingRates}
+            className="btn-secondary"
           >
-            {showExchangeRateForm ? t('cancel') : t('addExchangeRate')}
+            {isUpdatingRates ? '🔄 Updating...' : '🔄 Refresh All Rates'}
           </button>
         </div>
       </div>
 
-      {showExchangeRateForm && (
-        <div className="form-container">
-        <h4>{t('addExchangeRate')}</h4>
-        <form onSubmit={handleExchangeRateSubmit} className="exchange-rate-form">
-          <div className="form-grid">
-            <div className="form-group">
-              <label>{t('fromCurrency')}</label>
-              <select
-                value={exchangeRateForm.fromCurrencyId}
-                onChange={(e) => setExchangeRateForm({ ...exchangeRateForm, fromCurrencyId: e.target.value })}
-                required
-              >
-                <option value="">{t('selectCurrency')}...</option>
-                {getActiveCurrencies().map(currency => (
-                  <option key={currency.id} value={currency.id}>
-                    {currency.code} - {currency.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>{t('toCurrency')}</label>
-              <select
-                value={exchangeRateForm.toCurrencyId}
-                onChange={(e) => setExchangeRateForm({ ...exchangeRateForm, toCurrencyId: e.target.value })}
-                required
-              >
-                <option value="">{t('selectCurrency')}...</option>
-                {getActiveCurrencies().map(currency => (
-                  <option key={currency.id} value={currency.id}>
-                    {currency.code} - {currency.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>{t('exchangeRate')}</label>
-              <input
-                type="number"
-                step="any"
-                value={exchangeRateForm.rate}
-                onChange={(e) => setExchangeRateForm({ ...exchangeRateForm, rate: e.target.value })}
-                placeholder="1.10"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Date</label>
-              <input
-                type="date"
-                value={exchangeRateForm.date}
-                onChange={(e) => setExchangeRateForm({ ...exchangeRateForm, date: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="form-actions">
-            <button type="submit" className="btn-primary">
-              {t('addExchangeRate')}
-            </button>
-          </div>
-        </form>
+
+      {/* Rate Status Indicators */}
+      <div className="rates-status">
+        {(() => {
+          const freshness = getRatesFreshness();
+          const statusIcon = {
+            'fresh': '🟢',
+            'recent': '🟡', 
+            'stale': '🔴',
+            'no-api-rates': '⚪'
+          }[freshness.status];
+          return (
+            <span className={`status-indicator ${freshness.status}`}>
+              {statusIcon} {freshness.message}
+            </span>
+          );
+        })()}
+        {getApiStatus().lastUpdate && (
+          <span className="last-update">
+            Last updated: {formatTimeAgo(getApiStatus().lastUpdate)}
+          </span>
+        )}
+      </div>
+
+      {/* Update Status Messages */}
+      {rateUpdateStatus && (
+        <div className={`update-status ${rateUpdateStatus.type}`}>
+          {rateUpdateStatus.type === 'success' ? '✅' : '⚠️'} {rateUpdateStatus.message}
         </div>
       )}
 
@@ -383,22 +468,50 @@ const CurrencyManager = () => {
               <th>{t('toCurrency')}</th>
               <th>{t('rate')}</th>
               <th>Date</th>
-              <th>{t('source')}</th>
+              <th>Status</th>
+              <th>Age</th>
             </tr>
           </thead>
           <tbody>
-            {exchangeRates
-              .sort((a, b) => new Date(b.date) - new Date(a.date))
-              .map(rate => (
-              <tr key={rate.id}>
+            {uniqueRates.map(rate => (
+              <tr key={rate.id} className={
+                rate.source === 'missing' ? 'missing-rate' : 
+                rate.source === 'api' ? 'api-rate' : 
+                rate.source === 'crypto-api' ? 'crypto-rate' : 'manual-rate'
+              }>
                 <td>{getCurrencyName(rate.fromCurrencyId)}</td>
                 <td>{getCurrencyName(rate.toCurrencyId)}</td>
-                <td><strong>{rate.rate}</strong></td>
-                <td>{new Date(rate.date).toLocaleDateString()}</td>
                 <td>
-                  <span className={`badge ${rate.source === 'api' ? 'badge-api' : 'badge-manual'}`}>
-                    {rate.source}
-                  </span>
+                  {rate.rate ? (
+                    <strong>{rate.rate}</strong>
+                  ) : (
+                    <span className="missing-rate-text">Not Available</span>
+                  )}
+                </td>
+                <td>
+                  {rate.date ? new Date(rate.date).toLocaleDateString() : '-'}
+                </td>
+                <td>
+                  {rate.source === 'missing' ? (
+                    <span className="badge badge-missing">❌ Missing</span>
+                  ) : (
+                    <span className={`badge ${
+                      rate.source === 'api' || rate.source === 'api-inverse' ? 'badge-api' : 
+                      rate.source === 'crypto-api' || rate.source === 'crypto-api-inverse' ? 'badge-crypto' : 'badge-manual'
+                    }`}>
+                      {(rate.source === 'api' || rate.source === 'api-inverse') ? '📡 Live' : 
+                       (rate.source === 'crypto-api' || rate.source === 'crypto-api-inverse') ? '🪙 Crypto' : '✏️ Manual'}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {rate.source === 'missing' ? (
+                    <span className="missing-age">-</span>
+                  ) : (
+                    <span className="rate-age">
+                      {rate.timestamp ? formatTimeAgo(rate.timestamp) : formatTimeAgo(rate.date)}
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -406,7 +519,8 @@ const CurrencyManager = () => {
         </table>
       </div>
     </div>
-  );
+    );
+  };
 
   const renderSettingsTab = () => {
     const baseCurrencyId = getBaseCurrency();
@@ -453,17 +567,104 @@ const CurrencyManager = () => {
             </div>
           </div>
 
-          {exchangeRateService && (
-            <div className="setting-group">
-              <h4>{t('portfolioSummary')}</h4>
-              <div className="portfolio-summary">
-                <p>Portfolio value in base currency:</p>
-                <div className="portfolio-total">
-                  {baseCurrency && exchangeRateService.formatAmount(getTotalPortfolioValue(), baseCurrency.id)}
+          {/* API Settings Section */}
+          <div className="setting-group">
+            <h4>📡 Live Exchange Rates API</h4>
+            <p>Configure automatic exchange rate updates from Currency-API (completely free!)</p>
+            
+            <form onSubmit={handleApiSettingsSubmit}>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>📡 Free Forex API Provider</label>
+                      <div className="provider-info">
+                        <strong>Currency-API (GitHub)</strong> - No API key required!
+                        <br />
+                        <small>✅ Completely free • ✅ 200+ currencies • ✅ No rate limits • ✅ CORS enabled</small>
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={apiFormData.autoUpdate || false}
+                          onChange={(e) => setApiFormData({...apiFormData, autoUpdate: e.target.checked})}
+                        />
+                        Enable automatic rate updates
+                      </label>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Update Frequency</label>
+                      <select
+                        value={apiFormData.frequency || 'manual'}
+                        onChange={(e) => setApiFormData({...apiFormData, frequency: e.target.value})}
+                        disabled={!apiFormData.autoUpdate}
+                      >
+                        <option value="manual">Manual only</option>
+                        <option value="hourly">Every hour</option>
+                        <option value="daily">Daily</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-actions">
+                    <button type="submit" className="btn-primary">
+                      💾 Save API Settings
+                    </button>
+                  </div>
+            </form>
+
+            {/* API Status Display */}
+            <div className="api-status">
+              <div className="status-grid">
+                <div className="status-item">
+                  <strong>API Provider:</strong>
+                  <span className="status-good">
+                    ✅ Currency-API (GitHub)
+                  </span>
                 </div>
+                <div className="status-item">
+                  <strong>Automatic Updates:</strong>
+                  <span className={getApiStatus().isScheduled ? 'status-good' : 'status-neutral'}>
+                    {getApiStatus().isScheduled ? '✅ Scheduled' : '⏸️ Inactive'}
+                  </span>
+                </div>
+                {getApiStatus().lastAttemptResult && (
+                  <div className="status-item">
+                    <strong>Last Attempt:</strong>
+                    <span className={getApiStatus().lastAttemptResult.success ? 'status-good' : 'status-error'}>
+                      {getApiStatus().lastAttemptResult.success ? (
+                        `✅ Success (${getApiStatus().lastAttemptResult.ratesCount || 0} rates)`
+                      ) : getApiStatus().lastAttemptResult.status === 'retrying' ? (
+                        `🔄 Retrying (${getApiStatus().lastAttemptResult.retryCount}/3)...`
+                      ) : getApiStatus().lastAttemptResult.status === 'attempting' ? (
+                        '🔄 Attempting...'
+                      ) : (
+                        `❌ Failed: ${getApiStatus().lastAttemptResult.error || 'Unknown error'}`
+                      )}
+                      {getApiStatus().lastAttemptResult.retryCount > 0 && getApiStatus().lastAttemptResult.success && (
+                        ` (after ${getApiStatus().lastAttemptResult.retryCount} retries)`
+                      )}
+                    </span>
+                  </div>
+                )}
+                <div className="status-item">
+                  <strong>Rate Limits:</strong>
+                  <span className="status-good">
+                    ♾️ Unlimited (Free)
+                  </span>
+                </div>
+                {getApiStatus().lastUpdate && (
+                  <div className="status-item">
+                    <strong>Last Update:</strong>
+                    <span>{formatTimeAgo(getApiStatus().lastUpdate)}</span>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
+
         </div>
       </div>
     );

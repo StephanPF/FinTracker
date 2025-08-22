@@ -80,6 +80,8 @@ class RelationalDatabase {
       currencies: this.generateCurrencies(),
       exchange_rates: this.generateExchangeRates(),
       currency_settings: this.generateCurrencySettings(),
+      api_usage: this.generateApiUsage(),
+      api_settings: this.generateApiSettings(),
       
       database_info: [
         {
@@ -111,6 +113,22 @@ class RelationalDatabase {
 
     this.initializeWorkbooks();
     return true;
+  }
+
+  // ID generation utility method
+  generateId(prefix) {
+    const table = this.tables[prefix.toLowerCase() === 'cur' ? 'currencies' : 'exchange_rates'];
+    const existingIds = table.map(item => item.id).filter(id => id.startsWith(prefix));
+    
+    let maxNumber = 0;
+    existingIds.forEach(id => {
+      const match = id.match(new RegExp(`${prefix}_(\\d+)`));
+      if (match) {
+        maxNumber = Math.max(maxNumber, parseInt(match[1], 10));
+      }
+    });
+    
+    return `${prefix}_${String(maxNumber + 1).padStart(3, '0')}`;
   }
 
   initializeWorkbooks() {
@@ -2210,6 +2228,39 @@ class RelationalDatabase {
     ];
   }
 
+  generateApiUsage() {
+    return [
+      {
+        id: 'USAGE_001',
+        currentMonth: new Date().toISOString().slice(0, 7), // YYYY-MM
+        requestCount: 0,
+        monthlyLimit: 1500, // Free tier default
+        lastRequest: null,
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  generateApiSettings() {
+    return [
+      {
+        id: 'API_001',
+        provider: 'exchangerate-api',
+        apiKey: '', // User needs to set this
+        isActive: false,
+        autoUpdate: false,
+        frequency: 'manual', // 'manual', 'hourly', 'daily'
+        baseCurrency: 'EUR',
+        lastUpdate: null,
+        settings: {
+          retries: 3,
+          timeout: 30000
+        },
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
   // Currency management methods
   addCurrency(currencyData) {
     const id = this.generateId('CUR');
@@ -2296,6 +2347,48 @@ class RelationalDatabase {
 
     this.saveTableToWorkbook('currency_settings');
     return settings;
+  }
+
+  deleteExchangeRate(id) {
+    const index = this.tables.exchange_rates.findIndex(rate => rate.id === id);
+    if (index !== -1) {
+      const deletedRate = this.tables.exchange_rates.splice(index, 1)[0];
+      this.saveTableToWorkbook('exchange_rates');
+      return deletedRate;
+    }
+    return null;
+  }
+
+  updateRecord(tableName, id, updateData) {
+    const table = this.tables[tableName];
+    if (!table) {
+      throw new Error(`Table ${tableName} not found`);
+    }
+    
+    const record = table.find(item => item.id === id);
+    if (!record) {
+      throw new Error(`Record with id ${id} not found in ${tableName}`);
+    }
+    
+    Object.assign(record, updateData);
+    this.saveTableToWorkbook(tableName);
+    return record;
+  }
+
+  addRecord(tableName, recordData) {
+    const table = this.tables[tableName];
+    if (!table) {
+      throw new Error(`Table ${tableName} not found`);
+    }
+    
+    const newRecord = {
+      ...recordData,
+      createdAt: recordData.createdAt || new Date().toISOString()
+    };
+    
+    table.push(newRecord);
+    this.saveTableToWorkbook(tableName);
+    return newRecord;
   }
 }
 
