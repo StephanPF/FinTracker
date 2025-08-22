@@ -54,6 +54,7 @@ const DataManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [showAccountTypesExplanation, setShowAccountTypesExplanation] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   const resetForm = () => {
     // Initialize formData with default values for transactions
@@ -263,21 +264,38 @@ const DataManagement = () => {
                   {col.render ? col.render(row[col.key], row) : row[col.key]}
                 </td>
               ))}
-              <td>
-                <button 
-                  onClick={() => handleEdit(row)}
-                  className="btn-edit"
-                  title={t('edit')}
-                >
-                  ✏️
-                </button>
-                <button 
-                  onClick={() => handleDelete(row)}
-                  className="btn-delete"
-                  title={t('delete')}
-                >
-                  🗑️
-                </button>
+              <td className="actions-cell">
+                <div className="actions-dropdown">
+                  <button 
+                    onClick={() => setOpenDropdownId(openDropdownId === row.id ? null : row.id)}
+                    className="btn-dropdown"
+                    title="More actions"
+                  >
+                    ⋮
+                  </button>
+                  {openDropdownId === row.id && (
+                    <div className="dropdown-menu">
+                      <button 
+                        onClick={() => {
+                          handleEdit(row);
+                          setOpenDropdownId(null);
+                        }}
+                        className="dropdown-item"
+                      >
+                        ✏️ {t('edit')}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          handleDelete(row);
+                          setOpenDropdownId(null);
+                        }}
+                        className="dropdown-item"
+                      >
+                        🗑️ {t('delete')}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
@@ -908,7 +926,7 @@ const DataManagement = () => {
             }
           ]
         };
-      case 'subcategories':
+      case 'subcategories': {
         const subcategoriesWithCategories = getSubcategoriesWithCategories();
         return {
           data: subcategoriesWithCategories,
@@ -937,6 +955,7 @@ const DataManagement = () => {
             }
           ]
         };
+      }
       default:
         return { data: [], columns: [] };
     }
@@ -975,6 +994,18 @@ const DataManagement = () => {
       setIsLoadingTransactions(false);
     }
   }, [activeTab, transactions]);
+
+  // Handle clicks outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.actions-dropdown')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const { data: rawData, columns } = getTableData();
   const data = filterData(rawData, searchTerm);
