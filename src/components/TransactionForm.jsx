@@ -17,7 +17,7 @@ const TransactionForm = ({ onSuccess }) => {
     exchangeRateService,
     getActiveCurrencies 
   } = useAccounting();
-  const { t, formatCurrency } = useLanguage();
+  const { t } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],

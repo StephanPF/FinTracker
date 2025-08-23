@@ -3,8 +3,8 @@ import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const AccountSummary = () => {
-  const { accounts, customers, vendors, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService } = useAccounting();
-  const { t, formatCurrency } = useLanguage();
+  const { accounts, customers, vendors, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService } = useAccounting();
+  const { t } = useLanguage();
   const summary = getSummary();
   const accountsWithTypes = getAccountsWithTypes();
 
@@ -48,6 +48,27 @@ const AccountSummary = () => {
     return currencies.find(c => c.code === 'EUR'); // fallback
   };
 
+  const formatCurrencyAmount = (amount, currencyId = null) => {
+    // If no currency specified, use base currency
+    if (!currencyId) {
+      const baseCurrency = getBaseCurrency();
+      currencyId = baseCurrency ? baseCurrency.id : 'CUR_001';
+    }
+
+    // Use NumberFormatService if available
+    if (numberFormatService) {
+      return numberFormatService.formatCurrency(amount, currencyId);
+    }
+    
+    // Fallback formatting
+    const currency = currencies.find(c => c.id === currencyId);
+    if (currency) {
+      return `${currency.symbol}${amount.toFixed(currency.decimalPlaces || 2)}`;
+    }
+    
+    return amount.toFixed(2);
+  };
+
   return (
     <div className="account-summary">
       <div className="summary-cards">
@@ -56,7 +77,7 @@ const AccountSummary = () => {
             <h3>💰 {t('totalAssets')}</h3>
             <span className="card-icon">📈</span>
           </div>
-          <div className="card-value">{formatCurrency(summary.totalAssets)}</div>
+          <div className="card-value">{formatCurrencyAmount(summary.totalAssets)}</div>
           <div className="card-subtitle">{getAccountsByType('Asset').length} {t('accountsCount')}</div>
         </div>
 
@@ -65,7 +86,7 @@ const AccountSummary = () => {
             <h3>📋 {t('totalLiabilities')}</h3>
             <span className="card-icon">📊</span>
           </div>
-          <div className="card-value">{formatCurrency(summary.totalLiabilities)}</div>
+          <div className="card-value">{formatCurrencyAmount(summary.totalLiabilities)}</div>
           <div className="card-subtitle">{getAccountsByType('Liability').length} {t('accountsCount')}</div>
         </div>
 
@@ -74,7 +95,7 @@ const AccountSummary = () => {
             <h3>💵 {t('totalIncome')}</h3>
             <span className="card-icon">📊</span>
           </div>
-          <div className="card-value">{formatCurrency(summary.totalIncome)}</div>
+          <div className="card-value">{formatCurrencyAmount(summary.totalIncome)}</div>
           <div className="card-subtitle">{getAccountsByType('Income').length} {t('accountsCount')}</div>
         </div>
 
@@ -83,7 +104,7 @@ const AccountSummary = () => {
             <h3>💸 {t('totalExpenses')}</h3>
             <span className="card-icon">📉</span>
           </div>
-          <div className="card-value">{formatCurrency(summary.totalExpenses)}</div>
+          <div className="card-value">{formatCurrencyAmount(summary.totalExpenses)}</div>
           <div className="card-subtitle">{getAccountsByType('Expense').length} {t('accountsCount')}</div>
         </div>
 
@@ -93,7 +114,7 @@ const AccountSummary = () => {
             <span className="card-icon">🎯</span>
           </div>
           <div className="card-value">
-            {formatCurrency(summary.totalIncome - summary.totalExpenses)}
+            {formatCurrencyAmount(summary.totalIncome - summary.totalExpenses)}
           </div>
           <div className="card-subtitle">{summary.transactionsCount} {t('transactionsCount')}</div>
         </div>
@@ -160,7 +181,7 @@ const AccountSummary = () => {
                   </span>
                 </div>
                 <div className="account-balance">
-                  {formatCurrency(account.balance)}
+                  {formatCurrencyAmount(account.balance, account.currencyId)}
                 </div>
               </div>
             ))}

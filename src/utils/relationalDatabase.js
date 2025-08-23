@@ -14,6 +14,7 @@ class RelationalDatabase {
       currencies: [],
       exchange_rates: [],
       currency_settings: [],
+      user_preferences: [],
       database_info: []
     };
     this.workbooks = {};
@@ -80,6 +81,7 @@ class RelationalDatabase {
       currencies: this.generateCurrencies(),
       exchange_rates: this.generateExchangeRates(),
       currency_settings: this.generateCurrencySettings(),
+      user_preferences: this.generateUserPreferences(),
       api_usage: this.generateApiUsage(),
       api_settings: this.generateApiSettings(),
       
@@ -262,6 +264,7 @@ class RelationalDatabase {
       id: 'ACC' + Date.now(),
       name: accountData.name,
       accountTypeId: accountData.accountTypeId,
+      currencyId: accountData.currencyId || 'CUR_001', // Include currencyId with default fallback
       balance: parseFloat(accountData.balance) || 0,
       description: accountData.description || '',
       isActive: accountData.isActive !== undefined ? accountData.isActive : true,
@@ -466,7 +469,9 @@ class RelationalDatabase {
   }
 
   exportTableToBuffer(tableName) {
-    if (!this.workbooks[tableName]) return null;
+    if (!this.workbooks[tableName]) {
+      return null;
+    }
     
     this.saveTableToWorkbook(tableName);
     return XLSX.write(this.workbooks[tableName], { bookType: 'xlsx', type: 'array' });
@@ -476,10 +481,21 @@ class RelationalDatabase {
     const buffers = {};
     
     for (const tableName of Object.keys(this.tables)) {
+      // Ensure workbook exists before export
+      if (!this.workbooks[tableName]) {
+        this.workbooks[tableName] = XLSX.utils.book_new();
+      }
       buffers[tableName] = this.exportTableToBuffer(tableName);
     }
     
     return buffers;
+  }
+
+  // Ensure all tables are saved to workbooks (including empty ones)
+  saveAllTablesToWorkbooks() {
+    for (const tableName of Object.keys(this.tables)) {
+      this.saveTableToWorkbook(tableName);
+    }
   }
 
   getTable(tableName) {
@@ -2135,7 +2151,7 @@ class RelationalDatabase {
         name: 'Bitcoin',
         symbol: '₿',
         type: 'crypto',
-        decimalPlaces: 8,
+        decimalPlaces: 4,
         isActive: true,
         isBase: false,
         createdAt: new Date().toISOString()
@@ -2146,7 +2162,7 @@ class RelationalDatabase {
         name: 'Ethereum',
         symbol: 'Ξ',
         type: 'crypto',
-        decimalPlaces: 18,
+        decimalPlaces: 4,
         isActive: true,
         isBase: false,
         createdAt: new Date().toISOString()
@@ -2226,6 +2242,92 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       }
     ];
+  }
+
+  generateUserPreferences() {
+    const currencies = this.generateCurrencies();
+    const preferences = [];
+    
+    // Create per-currency formatting preferences with smart defaults
+    currencies.forEach((currency, index) => {
+      let defaultSettings = {};
+      
+      if (currency.code === 'EUR') {
+        // European convention
+        defaultSettings = {
+          currencySymbolPosition: 'after',
+          decimalSeparator: 'comma',
+          thousandsSeparator: 'space',
+          decimalPrecision: 'auto',
+          negativeDisplay: 'minus',
+          largeNumberNotation: 'full',
+          currencyCodeDisplay: 'symbol-only'
+        };
+      } else if (currency.code === 'USD' || currency.code === 'GBP') {
+        // Anglo convention
+        defaultSettings = {
+          currencySymbolPosition: 'before',
+          decimalSeparator: 'dot',
+          thousandsSeparator: 'comma',
+          decimalPrecision: 'auto',
+          negativeDisplay: 'minus',
+          largeNumberNotation: 'full',
+          currencyCodeDisplay: 'symbol-only'
+        };
+      } else if (currency.type === 'crypto') {
+        // Crypto convention
+        defaultSettings = {
+          currencySymbolPosition: 'after',
+          decimalSeparator: 'dot',
+          thousandsSeparator: 'comma',
+          decimalPrecision: 'auto',
+          negativeDisplay: 'minus',
+          largeNumberNotation: 'full',
+          currencyCodeDisplay: 'symbol-only'
+        };
+      } else {
+        // Default for other currencies
+        defaultSettings = {
+          currencySymbolPosition: 'before',
+          decimalSeparator: 'dot',
+          thousandsSeparator: 'comma',
+          decimalPrecision: 'auto',
+          negativeDisplay: 'minus',
+          largeNumberNotation: 'full',
+          currencyCodeDisplay: 'symbol-only'
+        };
+      }
+      
+      preferences.push({
+        id: `PREF_CURRENCY_${String(index + 1).padStart(3, '0')}`,
+        userId: 'default',
+        category: 'currency_formatting',
+        currencyId: currency.id,
+        settings: JSON.stringify(defaultSettings),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    });
+    
+    // Add date formatting preference
+    preferences.push({
+      id: 'PREF_DATE_001',
+      userId: 'default',
+      category: 'date_formatting',
+      settings: JSON.stringify({
+        dateFormat: 'DD/MM/YYYY',
+        timeFormat: '24h',
+        timezone: 'local',
+        showSeconds: false,
+        showTimeZone: false,
+        relativeTime: false,
+        firstDayOfWeek: 'monday'
+      }),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    
+    return preferences;
   }
 
   generateApiUsage() {
@@ -2347,6 +2449,161 @@ class RelationalDatabase {
 
     this.saveTableToWorkbook('currency_settings');
     return settings;
+  }
+
+  // User Preferences CRUD methods
+  getUserPreferences(userId = 'default') {
+    return this.tables.user_preferences.filter(pref => pref.userId === userId);
+  }
+
+  updateUserPreferences(category, settings, userId = 'default') {
+    let preferences = this.tables.user_preferences.find(p => p.userId === userId && p.category === category);
+    
+    if (preferences) {
+      // Parse existing settings from JSON string, merge with new settings, then stringify back
+      const existingSettings = typeof preferences.settings === 'string' 
+        ? JSON.parse(preferences.settings) 
+        : preferences.settings;
+      preferences.settings = JSON.stringify({ ...existingSettings, ...settings });
+      preferences.updatedAt = new Date().toISOString();
+    } else {
+      preferences = {
+        id: `PREF_${Date.now()}`,
+        userId: userId,
+        category: category,
+        settings: JSON.stringify(settings),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      this.tables.user_preferences.push(preferences);
+    }
+
+    this.saveTableToWorkbook('user_preferences');
+    return preferences;
+  }
+
+  getCurrencyFormatPreferences(currencyId, userId = 'default') {
+    const prefs = this.tables.user_preferences.find(p => 
+      p.userId === userId && 
+      p.category === 'currency_formatting' && 
+      p.currencyId === currencyId
+    );
+    
+    if (prefs) {
+      return typeof prefs.settings === 'string' ? JSON.parse(prefs.settings) : prefs.settings;
+    }
+    
+    // Return smart defaults if no preferences found
+    const currency = this.tables.currencies.find(c => c.id === currencyId);
+    if (!currency) {
+      return this.getDefaultCurrencyFormatSettings();
+    }
+    
+    if (currency.code === 'EUR') {
+      return {
+        currencySymbolPosition: 'after',
+        decimalSeparator: 'comma',
+        thousandsSeparator: 'space',
+        decimalPrecision: 'auto',
+        negativeDisplay: 'minus',
+        largeNumberNotation: 'full',
+        currencyCodeDisplay: 'symbol-only'
+      };
+    } else if (currency.code === 'USD' || currency.code === 'GBP') {
+      return {
+        currencySymbolPosition: 'before',
+        decimalSeparator: 'dot',
+        thousandsSeparator: 'comma',
+        decimalPrecision: 'auto',
+        negativeDisplay: 'minus',
+        largeNumberNotation: 'full',
+        currencyCodeDisplay: 'symbol-only'
+      };
+    } else if (currency.type === 'crypto') {
+      return {
+        currencySymbolPosition: 'after',
+        decimalSeparator: 'dot',
+        thousandsSeparator: 'comma',
+        decimalPrecision: 'auto',
+        negativeDisplay: 'minus',
+        largeNumberNotation: 'full',
+        currencyCodeDisplay: 'symbol-only'
+      };
+    }
+    
+    return this.getDefaultCurrencyFormatSettings();
+  }
+
+  getDefaultCurrencyFormatSettings() {
+    return {
+      currencySymbolPosition: 'before',
+      decimalSeparator: 'dot',
+      thousandsSeparator: 'comma',
+      decimalPrecision: 'auto',
+      negativeDisplay: 'minus',
+      largeNumberNotation: 'full',
+      currencyCodeDisplay: 'symbol-only'
+    };
+  }
+
+  getAllCurrencyFormatPreferences(userId = 'default') {
+    const prefs = this.tables.user_preferences.filter(p => 
+      p.userId === userId && p.category === 'currency_formatting'
+    );
+    
+    const result = {};
+    prefs.forEach(pref => {
+      result[pref.currencyId] = typeof pref.settings === 'string' ? 
+        JSON.parse(pref.settings) : pref.settings;
+    });
+    
+    return result;
+  }
+
+  updateCurrencyFormatPreferences(currencyId, settings, userId = 'default') {
+    let preferences = this.tables.user_preferences.find(p => 
+      p.userId === userId && 
+      p.category === 'currency_formatting' && 
+      p.currencyId === currencyId
+    );
+    
+    if (preferences) {
+      const existingSettings = typeof preferences.settings === 'string' 
+        ? JSON.parse(preferences.settings) 
+        : preferences.settings;
+      preferences.settings = JSON.stringify({ ...existingSettings, ...settings });
+      preferences.updatedAt = new Date().toISOString();
+    } else {
+      preferences = {
+        id: `PREF_CURRENCY_${Date.now()}`,
+        userId: userId,
+        category: 'currency_formatting',
+        currencyId: currencyId,
+        settings: JSON.stringify(settings),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      this.tables.user_preferences.push(preferences);
+    }
+
+    this.saveTableToWorkbook('user_preferences');
+    return preferences;
+  }
+
+  getDateFormatPreferences(userId = 'default') {
+    const prefs = this.tables.user_preferences.find(p => p.userId === userId && p.category === 'date_formatting');
+    if (prefs) {
+      return typeof prefs.settings === 'string' ? JSON.parse(prefs.settings) : prefs.settings;
+    }
+    return {
+      dateFormat: 'DD/MM/YYYY',
+      timeFormat: '24h',
+      timezone: 'local',
+      showSeconds: false,
+      showTimeZone: false,
+      relativeTime: false,
+      firstDayOfWeek: 'monday'
+    };
   }
 
   deleteExchangeRate(id) {

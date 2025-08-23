@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDate } from '../hooks/useDate';
 
 const CurrencyManager = () => {
   const { 
@@ -28,6 +29,7 @@ const CurrencyManager = () => {
   } = useAccounting();
   
   const { t } = useLanguage();
+  const { formatDate } = useDate();
   
   const [activeTab, setActiveTab] = useState('currencies');
   const [showForm, setShowForm] = useState(false);
@@ -489,7 +491,7 @@ const CurrencyManager = () => {
                   )}
                 </td>
                 <td>
-                  {rate.date ? new Date(rate.date).toLocaleDateString() : '-'}
+                  {rate.date ? formatDate(rate.date) : '-'}
                 </td>
                 <td>
                   {rate.source === 'missing' ? (

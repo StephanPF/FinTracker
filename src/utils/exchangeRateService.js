@@ -1,6 +1,11 @@
 class ExchangeRateService {
   constructor(database) {
     this.database = database;
+    this.numberFormatService = null;
+  }
+
+  setNumberFormatService(service) {
+    this.numberFormatService = service;
   }
 
   // Get the current exchange rate between two currencies
@@ -112,6 +117,12 @@ class ExchangeRateService {
       return amount.toString();
     }
 
+    // Use NumberFormatService if available for proper per-currency formatting
+    if (this.numberFormatService) {
+      return this.numberFormatService.formatCurrency(amount, currencyId);
+    }
+    
+    // Fallback to simple formatting if NumberFormatService not available
     const formatted = amount.toFixed(currency.decimalPlaces || 2);
     
     // For crypto, show symbol after amount
@@ -119,7 +130,12 @@ class ExchangeRateService {
       return `${formatted} ${currency.symbol}`;
     }
     
-    // For fiat, show symbol before amount
+    // For EUR, show symbol after amount (European convention)
+    if (currency.code === 'EUR') {
+      return `${formatted} ${currency.symbol}`;
+    }
+    
+    // For other fiat currencies, show symbol before amount
     return `${currency.symbol}${formatted}`;
   }
 

@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDate } from '../hooks/useDate';
 
 const TransactionList = ({ limit }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService } = useAccounting();
-  const { t, formatCurrency } = useLanguage();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService } = useAccounting();
+  const { t } = useLanguage();
+  const { formatDate } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAccount, setFilterAccount] = useState('');
@@ -16,16 +18,6 @@ const TransactionList = ({ limit }) => {
   const [isRendering, setIsRendering] = useState(false);
 
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
   const getAccountName = (accountId) => {
     const account = accounts.find(acc => acc.id === accountId);
@@ -83,7 +75,13 @@ const TransactionList = ({ limit }) => {
       return <div className="primary-amount">{primaryAmount}</div>;
     }
     
-    return formatCurrency(transaction.amount || 0);
+    // Use numberFormatService with the transaction's currency if available
+    if (numberFormatService && transaction.currencyId) {
+      return numberFormatService.formatCurrency(transaction.amount || 0, transaction.currencyId);
+    }
+    
+    // Fallback: basic formatting without currency symbol
+    return (transaction.amount || 0).toFixed(2);
   };
 
   const filteredTransactions = useMemo(() => {

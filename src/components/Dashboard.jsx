@@ -11,6 +11,7 @@ import HelpPanel from './HelpPanel';
 import Architecture from './Architecture';
 import Test from './Test';
 import StressTest from './StressTest';
+import Settings from './Settings';
 import Logo from './Logo';
 
 const Dashboard = () => {
@@ -24,57 +25,22 @@ const Dashboard = () => {
   // Close hamburger menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      console.log('=== CLICK DEBUG ===');
-      console.log('Menu is open:', hamburgerMenuOpen);
-      console.log('Clicked element:', event.target);
-      console.log('Element tag:', event.target.tagName);
-      console.log('Element class:', event.target.className);
-      console.log('Element id:', event.target.id);
-      
-      // Log the entire parent chain
-      let parent = event.target;
-      let level = 0;
-      while (parent && level < 5) {
-        console.log(`Parent ${level}:`, parent.tagName, parent.className);
-        parent = parent.parentElement;
-        level++;
-      }
-      
       if (hamburgerMenuOpen) {
-        // Only keep the menu open if clicking EXACTLY on the hamburger button or dropdown items
         const isHamburgerButton = event.target.closest('.hamburger-btn');
         const isDropdownItem = event.target.closest('.hamburger-dropdown');
-        
-        console.log('Checks:');
-        console.log('  - Is hamburger button:', !!isHamburgerButton);
-        console.log('  - Is dropdown item:', !!isDropdownItem);
-        
-        // ONLY keep open if clicking the hamburger button or dropdown - close for everything else
         const shouldKeepOpen = isHamburgerButton || isDropdownItem;
         
-        console.log('Should keep open:', shouldKeepOpen);
-        
         if (!shouldKeepOpen) {
-          console.log('🔴 CLOSING MENU - Outside click detected');
           setHamburgerMenuOpen(false);
-        } else {
-          console.log('🟢 KEEPING MENU OPEN - Inside hamburger area');
         }
-      } else {
-        console.log('Menu is closed, ignoring click');
       }
-      console.log('=== END CLICK DEBUG ===\n');
     };
 
     if (hamburgerMenuOpen) {
-      console.log('📡 Adding mousedown listener...');
       document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      console.log('📡 Menu closed, not adding listener');
     }
 
     return () => {
-      console.log('🧹 Cleaning up mousedown listener');
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [hamburgerMenuOpen]);
@@ -167,7 +133,10 @@ const Dashboard = () => {
                   <span className="menu-icon">🧪</span>
                   <span className="menu-text">Stress Test</span>
                 </div>
-                <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
+                <div className="menu-item" onClick={() => {
+                  setActiveTab('settings');
+                  setHamburgerMenuOpen(false);
+                }}>
                   <span className="menu-icon">⚙️</span>
                   <span className="menu-text">Settings</span>
                 </div>
@@ -237,6 +206,11 @@ const Dashboard = () => {
         {activeTab === 'stress-test' && (
           <div className="stress-test-tab">
             <StressTest />
+          </div>
+        )}
+        {activeTab === 'settings' && (
+          <div className="settings-tab">
+            <Settings />
           </div>
         )}
       </div>

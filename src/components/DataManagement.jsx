@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDate } from '../hooks/useDate';
 import CurrencyManager from './CurrencyManager';
 
 const DataManagement = () => {
@@ -50,9 +51,11 @@ const DataManagement = () => {
     addCurrency,
     updateCurrency,
     deleteCurrency,
-    addExchangeRate
+    addExchangeRate,
+    numberFormatService
   } = useAccounting();
-  const { t, formatCurrency } = useLanguage();
+  const { t } = useLanguage();
+  const { formatDate, formatForInput } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
   const accountTypes = getAccountTypes();
   
@@ -525,13 +528,7 @@ const DataManagement = () => {
         <label>Date</label>
         <input
           type="date"
-          value={(() => {
-            if (formData.date) {
-              const date = new Date(formData.date);
-              return isNaN(date.getTime()) ? new Date().toISOString().split('T')[0] : date.toISOString().split('T')[0];
-            }
-            return new Date().toISOString().split('T')[0];
-          })()}
+          value={formData.date ? formatForInput(formData.date) : new Date().toISOString().split('T')[0]}
           onChange={(e) => handleInputChange('date', e.target.value)}
           required
         />
@@ -930,7 +927,11 @@ const DataManagement = () => {
                 if (currency && exchangeRateService) {
                   return exchangeRateService.formatAmount(value || 0, currency.id);
                 }
-                return formatCurrency(value || 0);
+                // Fallback: use NumberFormatService with base currency or simple formatting
+                if (numberFormatService && row.currencyId) {
+                  return numberFormatService.formatCurrency(value || 0, row.currencyId);
+                }
+                return (value || 0).toFixed(2);
               }
             }
           ]
@@ -962,15 +963,7 @@ const DataManagement = () => {
             { 
               key: 'date', 
               label: t('date'),
-              render: (value) => {
-                if (!value) return '-';
-                const date = new Date(value);
-                if (isNaN(date.getTime())) return 'Invalid Date';
-                const day = date.getDate().toString().padStart(2, '0');
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-              }
+              render: (value) => formatDate(value)
             },
             { key: 'description', label: t('description') },
             { 
@@ -1028,7 +1021,13 @@ const DataManagement = () => {
             },
             { key: 'reference', label: t('reference'), render: (value) => value || '-' },
             { key: 'notes', label: t('notes'), render: (value) => value || '-' },
-            { key: 'amount', label: t('amount'), render: (value) => formatCurrency(value || 0) }
+            { key: 'amount', label: t('amount'), render: (value, row) => {
+              // For transactions, use the currency-aware formatting
+              if (numberFormatService && row.currencyId) {
+                return numberFormatService.formatCurrency(value || 0, row.currencyId);
+              }
+              return (value || 0).toFixed(2);
+            }}
           ]
         };
       case 'products':

@@ -4,6 +4,8 @@ import RelationalDatabase from '../utils/relationalDatabase';
 import ExchangeRateService from '../utils/exchangeRateService';
 import LiveExchangeRateService from '../utils/liveExchangeRateService';
 import CryptoRateService from '../utils/cryptoRateService';
+import NumberFormatService from '../utils/numberFormatService';
+import DateFormatService from '../utils/dateFormatService';
 import { useLanguage } from './LanguageContext';
 
 const AccountingContext = createContext();
@@ -22,6 +24,8 @@ export const AccountingProvider = ({ children }) => {
   const [fileStorage, setFileStorage] = useState(new RelationalFileStorage());
   const [exchangeRateService, setExchangeRateService] = useState(null);
   const [cryptoRateService, setCryptoRateService] = useState(null);
+  const [numberFormatService, setNumberFormatService] = useState(null);
+  const [dateFormatService, setDateFormatService] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -35,6 +39,7 @@ export const AccountingProvider = ({ children }) => {
   const [currencies, setCurrencies] = useState([]);
   const [exchangeRates, setExchangeRates] = useState([]);
   const [currencySettings, setCurrencySettings] = useState([]);
+  const [userPreferences, setUserPreferences] = useState([]);
   const [apiSettings, setApiSettings] = useState([]);
   const [apiUsage, setApiUsage] = useState([]);
   const [databaseInfo, setDatabaseInfo] = useState([]);
@@ -70,18 +75,28 @@ export const AccountingProvider = ({ children }) => {
     setCurrencies(database.getTable('currencies'));
     setExchangeRates(database.getTable('exchange_rates'));
     setCurrencySettings(database.getTable('currency_settings'));
+    setUserPreferences(database.getTable('user_preferences'));
     setApiSettings(database.getTable('api_settings'));
     setApiUsage(database.getTable('api_usage'));
     setDatabaseInfo(database.getTable('database_info'));
     
+    // Initialize number format service first (needed by other services)
+    const formatService = new NumberFormatService(database);
+    setNumberFormatService(formatService);
+    
     // Initialize or update live exchange rate service
     const currentApiSettings = database.getTable('api_settings')[0];
     const liveService = new LiveExchangeRateService(database, currentApiSettings);
+    liveService.setNumberFormatService(formatService); // Inject the format service
     setExchangeRateService(liveService);
     
     // Initialize crypto rate service
     const cryptoService = new CryptoRateService(database);
     setCryptoRateService(cryptoService);
+    
+    // Initialize date format service
+    const dateService = new DateFormatService(database);
+    setDateFormatService(dateService);
     
     // Start automatic updates if configured
     if (currentApiSettings && currentApiSettings.autoUpdate) {
@@ -957,6 +972,7 @@ export const AccountingProvider = ({ children }) => {
     currencies,
     exchangeRates,
     currencySettings,
+    userPreferences,
     exchangeRateService,
     databaseInfo,
     isLoaded,
@@ -1032,6 +1048,16 @@ export const AccountingProvider = ({ children }) => {
     refreshCryptoRates,
     getCryptoStatus,
     getCryptoRateFreshness,
+    // Number Format Service
+    numberFormatService,
+    getUserPreferences: () => database.getUserPreferences(),
+    updateUserPreferences: (category, settings) => database.updateUserPreferences(category, settings),
+    getCurrencyFormatPreferences: (currencyId) => database.getCurrencyFormatPreferences(currencyId),
+    getAllCurrencyFormatPreferences: () => database.getAllCurrencyFormatPreferences(),
+    updateCurrencyFormatPreferences: (currencyId, settings) => database.updateCurrencyFormatPreferences(currencyId, settings),
+    getDateFormatPreferences: () => database.getDateFormatPreferences(),
+    // Date Format Service
+    dateFormatService,
     fileStorage,
     saveExchangeRatesToFile
   };
