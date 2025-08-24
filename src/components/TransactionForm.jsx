@@ -26,6 +26,8 @@ const TransactionForm = ({ onSuccess }) => {
     debitAccount: '',
     creditAccount: '',
     amount: '',
+    accountId: '', // New field for the default account
+    destinationAccountId: '', // New field for destination account (transfers)
     currencyId: 'CUR_001', // Default to EUR (base currency)
     exchangeRate: 1.0,
     customerId: '',
@@ -35,6 +37,7 @@ const TransactionForm = ({ onSuccess }) => {
     notes: '',
     subcategoryId: ''
   });
+  const [isDescriptionUserModified, setIsDescriptionUserModified] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -50,6 +53,11 @@ const TransactionForm = ({ onSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Track if user modifies description
+    if (name === 'description') {
+      setIsDescriptionUserModified(true);
+    }
     
     // Handle subcategory selection and update category
     if (name === 'subcategoryId') {
@@ -114,6 +122,8 @@ const TransactionForm = ({ onSuccess }) => {
         debitAccount: '',
         creditAccount: '',
         amount: '',
+        accountId: '',
+        destinationAccountId: '',
         currencyId: 'CUR_001',
         exchangeRate: 1.0,
         customerId: '',
@@ -124,6 +134,7 @@ const TransactionForm = ({ onSuccess }) => {
         subcategoryId: ''
       });
       setSelectedCategory(null);
+      setIsDescriptionUserModified(false);
       
       if (onSuccess) {
         onSuccess();
@@ -137,12 +148,19 @@ const TransactionForm = ({ onSuccess }) => {
 
   const handleTransactionTypeChange = (transactionType) => {
     setSelectedTransactionType(transactionType);
-    // Clear selected subcategory when transaction type changes
+    // Set default account, destination account, description and clear selected subcategory when transaction type changes
     setFormData(prev => ({
       ...prev,
-      subcategoryId: ''
+      subcategoryId: '',
+      accountId: transactionType.defaultAccountId || '',
+      destinationAccountId: transactionType.destinationAccountId || '',
+      description: isDescriptionUserModified ? prev.description : transactionType.name
     }));
     setSelectedCategory(null);
+    // Only reset user modification flag if description wasn't manually changed
+    if (!isDescriptionUserModified) {
+      setIsDescriptionUserModified(false);
+    }
   };
 
   // Filter subcategories based on selected transaction type
@@ -164,7 +182,8 @@ const TransactionForm = ({ onSuccess }) => {
     
     setFormData(prev => ({
       ...prev,
-      subcategoryId: subcategoryId
+      subcategoryId: subcategoryId,
+      description: isDescriptionUserModified ? prev.description : selectedSubcategory?.name || ''
     }));
     setSelectedCategory(selectedSubcategory?.category || null);
   };
@@ -197,12 +216,100 @@ const TransactionForm = ({ onSuccess }) => {
             key={subcategory.id}
             className={`subcategory-card ${formData.subcategoryId === subcategory.id ? 'selected' : ''}`}
             onClick={() => handleSubcategorySelect(subcategory.id)}
+            style={{
+              background: formData.subcategoryId === subcategory.id && selectedTransactionType
+                ? `linear-gradient(135deg, ${selectedTransactionType.color}20, ${selectedTransactionType.color}40)`
+                : undefined,
+              borderColor: formData.subcategoryId === subcategory.id && selectedTransactionType
+                ? selectedTransactionType.color
+                : undefined
+            }}
           >
             <span className="subcategory-name">{subcategory.name}</span>
             <span className="subcategory-category">{subcategory.group?.name || 'No Group'}</span>
           </div>
         ))}
       </div>
+
+      {/* Default Account and Amount Section */}
+      {selectedTransactionType && (
+        <div className="transaction-quick-entry">
+          <div className="quick-entry-description">
+            <input
+              type="text"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder={t('enterDescription')}
+              className={!isDescriptionUserModified && formData.description ? 'default-description' : ''}
+            />
+          </div>
+          <div className="quick-entry-row">
+            <div className="quick-entry-account">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                {selectedTransactionType && selectedTransactionType.name === 'Transfer' && (
+                  <span style={{ fontSize: '1.5rem' }}>
+                    ⬅️
+                  </span>
+                )}
+                <select
+                  name="accountId" 
+                  value={formData.accountId || selectedTransactionType.defaultAccountId || ''}
+                  onChange={handleChange}
+                  style={{ flex: 1 }}
+                >
+                  <option value="">Select Account</option>
+                  {accountsWithTypes.map(account => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {selectedTransactionType && selectedTransactionType.name === 'Transfer' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>
+                    ➡️
+                  </span>
+                  <select
+                    name="destinationAccountId"
+                    value={formData.destinationAccountId || selectedTransactionType.destinationAccountId || ''}
+                    onChange={handleChange}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">Select Destination Account</option>
+                    {accountsWithTypes.map(account => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="quick-entry-amount">
+              <div className="amount-input-container">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                />
+                <span className="currency-symbol">
+                  {(() => {
+                    const selectedAccountId = formData.accountId || selectedTransactionType.defaultAccountId;
+                    const selectedAccount = accountsWithTypes.find(acc => acc.id === selectedAccountId);
+                    const currency = selectedAccount ? getActiveCurrencies().find(c => c.id === selectedAccount.currencyId) : null;
+                    return currency ? currency.symbol : '';
+                  })()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="form">
         {error && (

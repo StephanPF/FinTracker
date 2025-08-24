@@ -23,7 +23,8 @@
       "Read(/c:\\Users\\steph\\Desktop/**)",
       "Read(/c:\\Users\\steph\\Desktop/**)",
       "Bash(rg:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Read(/C:\\Users\\steph\\Desktop/**)"
     ],
     "deny": [],
     "ask": []

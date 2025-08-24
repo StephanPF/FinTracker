@@ -1647,7 +1647,7 @@ const DataManagement = () => {
 
             <div className="table-container">
               <h3>
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
+                {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
                 {reorderingAccounts && activeTab === 'accounts' && (
                   <span className="reordering-indicator"> - Reordering...</span>
                 )}
