@@ -35,6 +35,10 @@ class RelationalDatabase {
       accounts: {
         currencyId: { table: 'currencies', field: 'id', optional: true }
       },
+      transaction_types: {
+        defaultAccountId: { table: 'accounts', field: 'id', optional: true },
+        destinationAccountId: { table: 'accounts', field: 'id', optional: true }
+      },
       subcategories: {
         categoryId: { table: 'transaction_types', field: 'id' },
         groupId: { table: 'transaction_groups', field: 'id', optional: true }
@@ -60,6 +64,9 @@ class RelationalDatabase {
           }
         }
       }
+      
+      // Run migration for transaction types to add missing fields
+      this.migrateTransactionTypes();
       
       this.validateRelationships();
       return true;
@@ -1434,12 +1441,18 @@ class RelationalDatabase {
   }
 
   addCategory(categoryData) {
+    if (!this.validateForeignKeys('transaction_types', categoryData)) {
+      throw new Error('Invalid foreign key references in transaction type');
+    }
+    
     const newCategory = {
       id: 'CAT_' + Date.now(),
       name: categoryData.name,
       description: categoryData.description || '',
       color: categoryData.color || '#2196F3',
       icon: categoryData.icon || '💼',
+      defaultAccountId: categoryData.defaultAccountId || null,
+      destinationAccountId: categoryData.destinationAccountId || null,
       isActive: categoryData.isActive !== undefined ? categoryData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -1453,6 +1466,12 @@ class RelationalDatabase {
     const categoryIndex = this.tables.transaction_types.findIndex(category => category.id === id);
     if (categoryIndex === -1) {
       throw new Error(`Category with id ${id} not found`);
+    }
+
+    if (categoryData.defaultAccountId !== undefined || categoryData.destinationAccountId !== undefined) {
+      if (!this.validateForeignKeys('transaction_types', categoryData)) {
+        throw new Error('Invalid foreign key references in transaction type');
+      }
     }
 
     const updatedCategory = {
@@ -1660,6 +1679,8 @@ class RelationalDatabase {
         description: 'Money coming in',
         color: '#4CAF50',
         icon: '💰',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - where income typically goes
+        destinationAccountId: null, // Not relevant for income
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1669,6 +1690,8 @@ class RelationalDatabase {
         description: 'Money going out',
         color: '#F44336',
         icon: '💸',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - where expenses typically come from
+        destinationAccountId: null, // Not relevant for expenses
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1678,6 +1701,8 @@ class RelationalDatabase {
         description: 'Money movement between accounts',
         color: '#2196F3',
         icon: '🔄',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - typical source
+        destinationAccountId: 'ACC003', // Savings Account - typical destination
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1687,6 +1712,8 @@ class RelationalDatabase {
         description: 'Investment-related transactions',
         color: '#9C27B0',
         icon: '📈',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - where investment money comes from
+        destinationAccountId: null, // Not relevant for investment
         isActive: true,
         createdAt: new Date().toISOString()
       }
@@ -1701,6 +1728,8 @@ class RelationalDatabase {
         description: 'Argent qui rentre',
         color: '#4CAF50',
         icon: '💰',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - où vont typiquement les revenus
+        destinationAccountId: null, // Non pertinent pour les revenus
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1710,6 +1739,8 @@ class RelationalDatabase {
         description: 'Argent qui sort',
         color: '#F44336',
         icon: '💸',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - d'où viennent typiquement les dépenses
+        destinationAccountId: null, // Non pertinent pour les dépenses
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1719,6 +1750,8 @@ class RelationalDatabase {
         description: 'Mouvement d\'argent entre comptes',
         color: '#2196F3',
         icon: '🔄',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - source typique
+        destinationAccountId: 'ACC003', // Savings Account - destination typique
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1728,6 +1761,8 @@ class RelationalDatabase {
         description: 'Transactions liées aux investissements',
         color: '#9C27B0',
         icon: '📈',
+        defaultAccountId: 'ACC002', // Bank Account - Checking - d'où vient l'argent pour les investissements
+        destinationAccountId: null, // Non pertinent pour les investissements
         isActive: true,
         createdAt: new Date().toISOString()
       }
@@ -2889,6 +2924,37 @@ class RelationalDatabase {
     table.push(newRecord);
     this.saveTableToWorkbook(tableName);
     return newRecord;
+  }
+
+  // Migration method to add missing fields to existing transaction types
+  migrateTransactionTypes() {
+    if (this.tables.transaction_types && Array.isArray(this.tables.transaction_types)) {
+      let migrationNeeded = false;
+      
+      this.tables.transaction_types = this.tables.transaction_types.map(transactionType => {
+        let updated = { ...transactionType };
+        
+        // Add missing defaultAccountId field
+        if (updated.defaultAccountId === undefined) {
+          updated.defaultAccountId = null;
+          migrationNeeded = true;
+        }
+        
+        // Add missing destinationAccountId field
+        if (updated.destinationAccountId === undefined) {
+          updated.destinationAccountId = null;
+          migrationNeeded = true;
+        }
+        
+        return updated;
+      });
+      
+      // Save if migration was needed
+      if (migrationNeeded) {
+        console.log('Migrated transaction types to include account fields');
+        this.saveTableToWorkbook('transaction_types');
+      }
+    }
   }
 }
 

@@ -772,6 +772,37 @@ const DataManagement = () => {
           maxLength="2"
         />
       </div>
+      <div className="form-group">
+        <label>{t('defaultAccount')}</label>
+        <select
+          value={formData.defaultAccountId || ''}
+          onChange={(e) => handleInputChange('defaultAccountId', e.target.value)}
+        >
+          <option value="">{t('selectDefaultAccount')}</option>
+          {accountsWithTypes.map(account => (
+            <option key={account.id} value={account.id}>
+              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <label>{t('destinationAccount')}</label>
+        <select
+          value={formData.destinationAccountId || ''}
+          onChange={(e) => handleInputChange('destinationAccountId', e.target.value)}
+        >
+          <option value="">{t('selectDestinationAccount')}</option>
+          {accountsWithTypes.map(account => (
+            <option key={account.id} value={account.id}>
+              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+            </option>
+          ))}
+        </select>
+        <small style={{color: '#666', fontSize: '0.9em', marginTop: '4px', display: 'block'}}>
+          Only relevant for Transfer transaction types
+        </small>
+      </div>
       <div className="form-actions">
         <button type="submit" className="btn-primary">
           {editingId ? t('updateCategory') : t('addCategory')}
@@ -1190,6 +1221,32 @@ const DataManagement = () => {
             },
             { key: 'name', label: t('name') },
             { key: 'description', label: t('description') },
+            { 
+              key: 'defaultAccountId', 
+              label: t('defaultAccount'), 
+              render: (value, row) => {
+                if (!value || value === undefined) return '-';
+                const account = accountsWithTypes.find(acc => 
+                  acc.id === value || 
+                  acc.id === String(value) || 
+                  String(acc.id) === String(value)
+                );
+                return account ? account.name : <span style={{color: '#ff6b6b', fontSize: '0.9em'}}>Account Not Found ({value})</span>;
+              }
+            },
+            { 
+              key: 'destinationAccountId', 
+              label: t('destinationAccount'), 
+              render: (value) => {
+                if (!value || value === undefined) return '-';
+                const account = accountsWithTypes.find(acc => 
+                  acc.id === value || 
+                  acc.id === String(value) || 
+                  String(acc.id) === String(value)
+                );
+                return account ? account.name : <span style={{color: '#ff6b6b', fontSize: '0.9em'}}>Account Not Found ({value})</span>;
+              }
+            },
             { 
               key: 'color', 
               label: t('color'), 
