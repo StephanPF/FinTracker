@@ -15,6 +15,8 @@ class RelationalDatabase {
       exchange_rates: [],
       currency_settings: [],
       user_preferences: [],
+      api_usage: [],
+      api_settings: [],
       database_info: []
     };
     this.workbooks = {};
@@ -260,6 +262,9 @@ class RelationalDatabase {
       throw new Error('Invalid foreign key references in account');
     }
 
+    // Calculate next order value
+    const maxOrder = Math.max(...this.tables.accounts.map(acc => acc.order || 0), 0);
+    
     const newAccount = {
       id: 'ACC' + Date.now(),
       name: accountData.name,
@@ -268,6 +273,7 @@ class RelationalDatabase {
       balance: parseFloat(accountData.balance) || 0,
       description: accountData.description || '',
       includeInOverview: accountData.includeInOverview !== undefined ? accountData.includeInOverview : true,
+      order: accountData.order !== undefined ? accountData.order : maxOrder + 1,
       isActive: accountData.isActive !== undefined ? accountData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -598,7 +604,7 @@ class RelationalDatabase {
     const accountBalances = this.calculateIndividualAccountBalances();
     const accountTypes = this.getAccountTypes();
     
-    return this.tables.accounts.map(account => {
+    const accountsWithTypes = this.tables.accounts.map(account => {
       const accountType = accountTypes.find(type => type.id === account.accountTypeId);
       let calculatedBalance = accountBalances[account.id] || 0;
       
@@ -612,6 +618,19 @@ class RelationalDatabase {
         balance: calculatedBalance,
         accountType: accountType
       };
+    });
+    
+    // Sort by order field, then by name if order is not set
+    return accountsWithTypes.sort((a, b) => {
+      const orderA = a.order || 999999;
+      const orderB = b.order || 999999;
+      
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      
+      // If order is the same, sort by name
+      return (a.name || '').localeCompare(b.name || '');
     });
   }
 

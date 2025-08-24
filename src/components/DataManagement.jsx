@@ -70,6 +70,12 @@ const DataManagement = () => {
   const [showAccountTypesExplanation, setShowAccountTypesExplanation] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Drag & Drop state
+  const [draggedId, setDraggedId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+  const [dragLeaveTimeout, setDragLeaveTimeout] = useState(null);
+  const [reorderingAccounts, setReorderingAccounts] = useState(false);
 
   const resetForm = () => {
     // Initialize formData with default values for transactions
@@ -292,6 +298,7 @@ const DataManagement = () => {
       <table>
         <thead>
           <tr>
+            {activeTab === 'accounts' && <th className="drag-handle-header">Order</th>}
             {columns.map(col => (
               <th key={col.key}>{col.label}</th>
             ))}
@@ -300,7 +307,33 @@ const DataManagement = () => {
         </thead>
         <tbody>
           {data.map((row, index) => (
-            <tr key={row.id || index}>
+            <tr 
+              key={row.id || index}
+              className={`
+                ${activeTab === 'accounts' ? 'draggable-row' : ''}
+                ${draggedId === row.id ? 'dragging' : ''}
+                ${dragOverId === row.id ? 'drag-over' : ''}
+              `.trim()}
+              onDragEnter={activeTab === 'accounts' ? (e) => handleDragEnter(e, row.id) : undefined}
+              onDragOver={activeTab === 'accounts' ? (e) => handleDragOver(e, row.id) : undefined}
+              onDragLeave={activeTab === 'accounts' ? (e) => handleDragLeave(e, row.id) : undefined}
+              onDrop={activeTab === 'accounts' ? (e) => handleDrop(e, row.id) : undefined}
+            >
+              {activeTab === 'accounts' && (
+                <td className="drag-handle-cell">
+                  <div 
+                    className="drag-handle" 
+                    title="Drag to reorder"
+                    draggable="true"
+                    onDragStart={(e) => handleDragStart(e, row.id)}
+                    onDragEnd={handleDragEnd}
+                    onMouseDown={(e) => console.log('Mouse down on handle')}
+                    onMouseUp={(e) => console.log('Mouse up on handle')}
+                  >
+                    ⋮⋮
+                  </div>
+                </td>
+              )}
               {columns.map(col => (
                 <td key={col.key}>
                   {col.render ? col.render(row[col.key], row) : row[col.key]}
@@ -1214,6 +1247,138 @@ const DataManagement = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Drag & Drop handlers
+  const handleDragStart = (e, accountId) => {
+    console.log('Drag started for account:', accountId);
+    console.log('Drag event:', e);
+    setDraggedId(accountId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', accountId);
+    
+    // Add some visual feedback
+    e.dataTransfer.setDragImage(e.target, 10, 10);
+  };
+
+  const handleDragEnter = (e, accountId) => {
+    e.preventDefault();
+    console.log('Drag entered account:', accountId);
+    
+    // Clear any pending leave timeout
+    if (dragLeaveTimeout) {
+      clearTimeout(dragLeaveTimeout);
+      setDragLeaveTimeout(null);
+    }
+    
+    if (draggedId && draggedId !== accountId) {
+      setDragOverId(accountId);
+    }
+  };
+
+  const handleDragOver = (e, accountId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    
+    // Ensure the highlight stays on during drag over
+    if (draggedId && draggedId !== accountId && dragOverId !== accountId) {
+      setDragOverId(accountId);
+    }
+    
+    return false; // Allow drop
+  };
+
+  const handleDragLeave = (e, accountId) => {
+    // Use a timeout to prevent flickering when moving between child elements
+    const timeout = setTimeout(() => {
+      console.log('Drag leave timeout for account:', accountId);
+      if (dragOverId === accountId) {
+        setDragOverId(null);
+      }
+      setDragLeaveTimeout(null);
+    }, 100); // 100ms delay
+    
+    setDragLeaveTimeout(timeout);
+  };
+
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Dropped on account:', targetId, 'dragged:', draggedId);
+    
+    setDragOverId(null);
+    
+    if (draggedId && draggedId !== targetId) {
+      reorderAccounts(draggedId, targetId);
+    }
+    setDraggedId(null);
+  };
+
+  const handleDragEnd = () => {
+    console.log('Drag ended');
+    setDraggedId(null);
+    setDragOverId(null);
+    
+    // Clear any pending timeout
+    if (dragLeaveTimeout) {
+      clearTimeout(dragLeaveTimeout);
+      setDragLeaveTimeout(null);
+    }
+  };
+
+  const reorderAccounts = async (draggedId, targetId) => {
+    try {
+      console.log('Reordering accounts:', draggedId, 'to', targetId);
+      setReorderingAccounts(true);
+      
+      const accountsList = [...accountsWithTypes];
+      const draggedIndex = accountsList.findIndex(acc => acc.id === draggedId);
+      const targetIndex = accountsList.findIndex(acc => acc.id === targetId);
+      
+      if (draggedIndex === -1 || targetIndex === -1) {
+        setReorderingAccounts(false);
+        return;
+      }
+      
+      // Remove dragged item and insert at target position
+      const [draggedItem] = accountsList.splice(draggedIndex, 1);
+      accountsList.splice(targetIndex, 0, draggedItem);
+      
+      // Batch update all accounts that need reordering (async in background)
+      const updatePromises = [];
+      const accountsToUpdate = [];
+      
+      for (let i = 0; i < accountsList.length; i++) {
+        const account = accountsList[i];
+        const newOrder = i + 1;
+        if (account.order !== newOrder) {
+          accountsToUpdate.push({ ...account, order: newOrder });
+        }
+      }
+      
+      // Only update accounts that actually changed order
+      console.log(`Updating order for ${accountsToUpdate.length} accounts`);
+      
+      // Batch update in parallel instead of sequential
+      for (const accountData of accountsToUpdate) {
+        updatePromises.push(updateAccount(accountData.id, accountData));
+      }
+      
+      // Wait for all updates to complete in parallel
+      await Promise.all(updatePromises);
+      console.log('All account orders updated successfully');
+      
+      // Refresh UI after database operations complete
+      setRefreshKey(prev => prev + 1);
+      setReorderingAccounts(false);
+      
+    } catch (error) {
+      console.error('Error reordering accounts:', error);
+      // If there's an error, refresh to show the correct state
+      setRefreshKey(prev => prev + 1);
+      setReorderingAccounts(false);
+    }
+  };
+
   const { data: rawData, columns } = getTableData();
   const data = filterData(rawData, searchTerm);
 
@@ -1321,7 +1486,12 @@ const DataManagement = () => {
         </div>
 
             <div className="table-container">
-              <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})</h3>
+              <h3>
+                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
+                {reorderingAccounts && activeTab === 'accounts' && (
+                  <span className="reordering-indicator"> - Reordering...</span>
+                )}
+              </h3>
               {isLoadingTransactions && activeTab === 'transactions' ? (
                 <div className="loading-state">
                   <div className="spinner"></div>

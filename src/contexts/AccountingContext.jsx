@@ -68,7 +68,7 @@ export const AccountingProvider = ({ children }) => {
     setCustomers(database.getTable('customers'));
     setVendors(database.getTable('vendors'));
     setTags(database.getTable('tags'));
-    setProducts(database.getTable('products'));
+    setProducts(database.getTable('tags'));
     setTodos(database.getTable('todos'));
     setCategories(database.getTable('categories'));
     setSubcategories(database.getTable('subcategories'));

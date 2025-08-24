@@ -353,15 +353,7 @@ const AccountSummary = () => {
         <div className="accounts-grid">
           {accountsWithTypes
             .filter(account => account.isActive && account.includeInOverview !== false)
-            .sort((a, b) => {
-              // Sort by account type first, then by balance (highest first)
-              const typeOrder = { 'Asset': 1, 'Liability': 2, 'Income': 3, 'Expense': 4 };
-              const aType = typeOrder[a.accountType?.type] || 5;
-              const bType = typeOrder[b.accountType?.type] || 5;
-              
-              if (aType !== bType) return aType - bType;
-              return Math.abs(b.balance || 0) - Math.abs(a.balance || 0);
-            })
+            // Use the custom order from Account Management (already sorted by getAccountsWithTypes)
             .map(account => {
               const displayBalance = showNativeCurrency 
                 ? formatCurrencyAmount(account.balance, account.currencyId)
@@ -373,7 +365,7 @@ const AccountSummary = () => {
                     : formatCurrencyAmount(account.balance, getBaseCurrency()?.id));
               
               return (
-                <div key={account.id} className={`account-item ${account.accountType ? account.accountType.type.toLowerCase() : 'unknown'}`}>
+                <div key={account.id} className={`account-item ${account.accountType ? account.accountType.type.toLowerCase() : 'unknown'} ${account.accountType?.subtype === 'Retirement account' ? 'retirement' : ''}`}>
                   <div className="account-info">
                     <span className="account-name">{account.name}</span>
                     <span className="account-type">
@@ -399,70 +391,6 @@ const AccountSummary = () => {
             })}
         </div>
       </div>
-
-      {/* Retirement Accounts Section */}
-      {getRetirementAccounts().length > 0 && (
-        <div className="retirement-accounts-section">
-          <div className="section-header">
-            <h3>🏦 {t('retirement')} {t('accounts')}</h3>
-            <div className="currency-toggle">
-              <button 
-                className={`toggle-btn ${showNativeCurrency ? 'active' : ''}`}
-                onClick={() => setShowNativeCurrency(true)}
-              >
-                Native Currency
-              </button>
-              <button 
-                className={`toggle-btn ${!showNativeCurrency ? 'active' : ''}`}
-                onClick={() => setShowNativeCurrency(false)}
-              >
-                Base Currency
-              </button>
-            </div>
-          </div>
-          
-          <div className="accounts-grid">
-            {getRetirementAccounts()
-              .filter(account => account.isActive && account.includeInOverview !== false)
-              .sort((a, b) => Math.abs(b.balance || 0) - Math.abs(a.balance || 0))
-              .map(account => {
-                const displayBalance = showNativeCurrency 
-                  ? formatCurrencyAmount(account.balance, account.currencyId)
-                  : (exchangeRateService 
-                      ? exchangeRateService.formatAmount(
-                          exchangeRateService.convertToBaseCurrency(account.balance || 0, account.currencyId),
-                          getBaseCurrency()?.id
-                        )
-                      : formatCurrencyAmount(account.balance, getBaseCurrency()?.id));
-                
-                return (
-                  <div key={account.id} className="account-item retirement-account">
-                    <div className="account-info">
-                      <span className="account-name">{account.name}</span>
-                      <span className="account-type">
-                        {account.accountType ? account.accountType.type : 'Unknown'} 
-                        {account.accountType && account.accountType.subtype && ` - ${account.accountType.subtype}`}
-                      </span>
-                      {showNativeCurrency && account.currencyId !== getBaseCurrency()?.id && (
-                        <span className="account-currency">
-                          {currencies.find(c => c.id === account.currencyId)?.code || 'Unknown'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="account-balance">
-                      {displayBalance}
-                      {!showNativeCurrency && account.currencyId !== getBaseCurrency()?.id && (
-                        <div className="native-balance">
-                          ({formatCurrencyAmount(account.balance, account.currencyId)})
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
 
       {/* Recent Transactions Section */}
       <div className="recent-transactions-section">

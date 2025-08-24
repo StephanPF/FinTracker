@@ -637,6 +637,19 @@ body {
   --card-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
 }
 
+.summary-card.liabilities .card-values {
+  color: #fd7e14 !important;
+}
+
+.summary-card.liabilities .card-values .currency-value {
+  color: #fd7e14 !important;
+}
+
+.summary-card.liabilities .card-values .currency-value .amount {
+  color: #fd7e14 !important;
+  font-weight: 600;
+}
+
 .summary-card.net { 
   --card-gradient: linear-gradient(135deg, #4c6ef5 0%, #7c3aed 100%);
 }
@@ -645,7 +658,20 @@ body {
   --card-gradient: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
 }
 .summary-card.retirement { 
-  --card-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --card-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.summary-card.retirement .card-values {
+  color: #3b82f6 !important;
+}
+
+.summary-card.retirement .card-values .currency-value {
+  color: #3b82f6 !important;
+}
+
+.summary-card.retirement .card-values .currency-value .amount {
+  color: #3b82f6 !important;
+  font-weight: 600;
 }
 
 .card-header {
@@ -763,8 +789,16 @@ body {
 }
 
 .retirement-account {
-  border-left: 4px solid #f59e0b;
-  background: rgba(245, 158, 11, 0.02);
+  border-left: 4px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.02);
+}
+
+.account-item.asset.retirement {
+  border-left-color: #3b82f6 !important;
+}
+
+.account-item.retirement {
+  border-left-color: #3b82f6 !important;
 }
 
 .section-header {
@@ -2175,6 +2209,92 @@ body {
 
 .data-table tbody tr:hover {
   background: #f8f9fa;
+}
+
+/* Drag & Drop Styles */
+.drag-handle-header {
+  width: 40px;
+  text-align: center;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.drag-handle-cell {
+  width: 40px;
+  text-align: center;
+  vertical-align: middle;
+  cursor: grab;
+  user-select: none;
+}
+
+.drag-handle {
+  display: inline-block;
+  color: #9ca3af;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid transparent;
+}
+
+.drag-handle:hover {
+  color: #4f46e5;
+  background: #f3f4f6;
+  border-color: #e0e7ff;
+  transform: scale(1.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  transform: scale(0.95);
+}
+
+.draggable-row {
+  transition: all 0.2s ease;
+}
+
+.draggable-row:hover .drag-handle {
+  color: #4f46e5;
+}
+
+.draggable-row.dragging {
+  opacity: 0.6;
+  transform: scale(0.98);
+  background: #eff6ff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.draggable-row.drag-over {
+  background: #dbeafe !important;
+  border-top: 2px solid #3b82f6;
+  transform: translateY(-1px);
+}
+
+/* Prevent text selection during drag but allow drop events */
+.draggable-row.dragging * {
+  user-select: none;
+}
+
+.draggable-row.dragging .drag-handle-cell {
+  cursor: grabbing;
+}
+
+/* Reordering indicator */
+.reordering-indicator {
+  color: #6b7280;
+  font-size: 0.9em;
+  font-weight: 400;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .btn-edit {
