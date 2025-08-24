@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -13,6 +13,7 @@ const TransactionForm = ({ onSuccess }) => {
     getAccountsWithTypes,
     getActiveSubcategories,
     getSubcategoriesWithCategories,
+    getActiveCategories,
     currencies,
     exchangeRateService,
     getActiveCurrencies 
@@ -37,7 +38,15 @@ const TransactionForm = ({ onSuccess }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [transactionType, setTransactionType] = useState('expense');
+  const [selectedTransactionType, setSelectedTransactionType] = useState(null);
+
+  // Initialize with first transaction type on load
+  useEffect(() => {
+    const activeCategories = getActiveCategories();
+    if (activeCategories.length > 0 && !selectedTransactionType) {
+      setSelectedTransactionType(activeCategories[0]);
+    }
+  }, [getActiveCategories, selectedTransactionType]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -126,8 +135,8 @@ const TransactionForm = ({ onSuccess }) => {
     }
   };
 
-  const handleTransactionTypeChange = (type) => {
-    setTransactionType(type);
+  const handleTransactionTypeChange = (transactionType) => {
+    setSelectedTransactionType(transactionType);
     // Clear selected subcategory when transaction type changes
     setFormData(prev => ({
       ...prev,
@@ -140,29 +149,12 @@ const TransactionForm = ({ onSuccess }) => {
   const getSubcategoriesByTransactionType = () => {
     const subcategoriesWithCategories = getSubcategoriesWithCategories();
     
+    if (!selectedTransactionType) {
+      return subcategoriesWithCategories;
+    }
+    
     return subcategoriesWithCategories.filter(subcategory => {
-      if (!subcategory.category) return false;
-      
-      const categoryName = subcategory.category.name.toLowerCase();
-      
-      switch (transactionType) {
-        case 'expense':
-          return categoryName.includes('expense') || 
-                 categoryName.includes('cost') || 
-                 categoryName.includes('payment') ||
-                 categoryName.includes('purchase');
-        case 'income':
-          return categoryName.includes('income') || 
-                 categoryName.includes('revenue') || 
-                 categoryName.includes('earning') ||
-                 categoryName.includes('receipt');
-        case 'transfer':
-          return categoryName.includes('transfer') || 
-                 categoryName.includes('movement') ||
-                 categoryName.includes('internal');
-        default:
-          return true;
-      }
+      return subcategory.categoryId === selectedTransactionType.id;
     });
   };
 
@@ -181,27 +173,21 @@ const TransactionForm = ({ onSuccess }) => {
     <div className="transaction-form">
       {/* Transaction Type Selection Cards */}
       <div className="transaction-type-cards">
-        <div 
-          className={`transaction-type-card ${transactionType === 'expense' ? 'selected' : ''}`}
-          onClick={() => handleTransactionTypeChange('expense')}
-        >
-          <span className="card-icon">💸</span>
-          <span className="card-label">Expense</span>
-        </div>
-        <div 
-          className={`transaction-type-card ${transactionType === 'income' ? 'selected' : ''}`}
-          onClick={() => handleTransactionTypeChange('income')}
-        >
-          <span className="card-icon">💰</span>
-          <span className="card-label">Income</span>
-        </div>
-        <div 
-          className={`transaction-type-card ${transactionType === 'transfer' ? 'selected' : ''}`}
-          onClick={() => handleTransactionTypeChange('transfer')}
-        >
-          <span className="card-icon">🔄</span>
-          <span className="card-label">Transfer</span>
-        </div>
+        {getActiveCategories().map(transactionType => (
+          <div 
+            key={transactionType.id}
+            className={`transaction-type-card ${selectedTransactionType?.id === transactionType.id ? 'selected' : ''}`}
+            onClick={() => handleTransactionTypeChange(transactionType)}
+            style={{ 
+              background: selectedTransactionType?.id === transactionType.id 
+                ? `linear-gradient(135deg, ${transactionType.color}20, ${transactionType.color}40)` 
+                : undefined 
+            }}
+          >
+            <span className="card-icon">{transactionType.icon}</span>
+            <span className="card-label">{transactionType.name}</span>
+          </div>
+        ))}
       </div>
 
       {/* Subcategory Selection Cards */}
