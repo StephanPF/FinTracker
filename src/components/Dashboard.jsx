@@ -173,7 +173,6 @@ const Dashboard = () => {
 
         {activeTab === 'add-transaction' && (
           <div className="add-transaction-tab">
-            <h2>{t('addNewTransaction')}</h2>
             <TransactionForm onSuccess={() => setActiveTab('transactions')} />
           </div>
         )}

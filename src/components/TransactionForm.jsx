@@ -37,6 +37,7 @@ const TransactionForm = ({ onSuccess }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [transactionType, setTransactionType] = useState('expense');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -125,8 +126,98 @@ const TransactionForm = ({ onSuccess }) => {
     }
   };
 
+  const handleTransactionTypeChange = (type) => {
+    setTransactionType(type);
+    // Clear selected subcategory when transaction type changes
+    setFormData(prev => ({
+      ...prev,
+      subcategoryId: ''
+    }));
+    setSelectedCategory(null);
+  };
+
+  // Filter subcategories based on selected transaction type
+  const getSubcategoriesByTransactionType = () => {
+    const subcategoriesWithCategories = getSubcategoriesWithCategories();
+    
+    return subcategoriesWithCategories.filter(subcategory => {
+      if (!subcategory.category) return false;
+      
+      const categoryName = subcategory.category.name.toLowerCase();
+      
+      switch (transactionType) {
+        case 'expense':
+          return categoryName.includes('expense') || 
+                 categoryName.includes('cost') || 
+                 categoryName.includes('payment') ||
+                 categoryName.includes('purchase');
+        case 'income':
+          return categoryName.includes('income') || 
+                 categoryName.includes('revenue') || 
+                 categoryName.includes('earning') ||
+                 categoryName.includes('receipt');
+        case 'transfer':
+          return categoryName.includes('transfer') || 
+                 categoryName.includes('movement') ||
+                 categoryName.includes('internal');
+        default:
+          return true;
+      }
+    });
+  };
+
+  const handleSubcategorySelect = (subcategoryId) => {
+    const subcategoriesWithCategories = getSubcategoriesWithCategories();
+    const selectedSubcategory = subcategoriesWithCategories.find(sub => sub.id === subcategoryId);
+    
+    setFormData(prev => ({
+      ...prev,
+      subcategoryId: subcategoryId
+    }));
+    setSelectedCategory(selectedSubcategory?.category || null);
+  };
+
   return (
     <div className="transaction-form">
+      {/* Transaction Type Selection Cards */}
+      <div className="transaction-type-cards">
+        <div 
+          className={`transaction-type-card ${transactionType === 'expense' ? 'selected' : ''}`}
+          onClick={() => handleTransactionTypeChange('expense')}
+        >
+          <span className="card-icon">💸</span>
+          <span className="card-label">Expense</span>
+        </div>
+        <div 
+          className={`transaction-type-card ${transactionType === 'income' ? 'selected' : ''}`}
+          onClick={() => handleTransactionTypeChange('income')}
+        >
+          <span className="card-icon">💰</span>
+          <span className="card-label">Income</span>
+        </div>
+        <div 
+          className={`transaction-type-card ${transactionType === 'transfer' ? 'selected' : ''}`}
+          onClick={() => handleTransactionTypeChange('transfer')}
+        >
+          <span className="card-icon">🔄</span>
+          <span className="card-label">Transfer</span>
+        </div>
+      </div>
+
+      {/* Subcategory Selection Cards */}
+      <div className="subcategory-cards">
+        {getSubcategoriesByTransactionType().map(subcategory => (
+          <div
+            key={subcategory.id}
+            className={`subcategory-card ${formData.subcategoryId === subcategory.id ? 'selected' : ''}`}
+            onClick={() => handleSubcategorySelect(subcategory.id)}
+          >
+            <span className="subcategory-name">{subcategory.name}</span>
+            <span className="subcategory-category">{subcategory.category?.name}</span>
+          </div>
+        ))}
+      </div>
+
       <form onSubmit={handleSubmit} className="form">
         {error && (
           <div className="error-message">
