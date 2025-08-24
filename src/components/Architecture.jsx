@@ -55,8 +55,8 @@ const Architecture = () => {
       ],
       relationships: ['accounts']
     },
-    categories: {
-      name: 'categories.xlsx',
+    transaction_types: {
+      name: 'transaction_types.xlsx',
       title: t('categories'),
       icon: '🏷️',
       color: '#FF9800',
@@ -78,12 +78,12 @@ const Architecture = () => {
       fields: [
         { name: 'id', type: 'string', key: true, description: 'Unique identifier' },
         { name: 'name', type: 'string', required: true, description: 'Subcategory name' },
-        { name: 'categoryId', type: 'string', foreign: 'categories.id', description: 'Parent category reference' },
+        { name: 'categoryId', type: 'string', foreign: 'transaction_types.id', description: 'Parent category reference' },
         { name: 'description', type: 'string', description: 'Subcategory description' },
         { name: 'color', type: 'string', description: 'Display color' },
         { name: 'isActive', type: 'boolean', description: 'Active status' }
       ],
-      relationships: ['categories', 'transactions']
+      relationships: ['transaction_types', 'transactions']
     },
     customers: {
       name: 'customers.xlsx',

@@ -70,7 +70,7 @@ export const AccountingProvider = ({ children }) => {
     setTags(database.getTable('tags'));
     setProducts(database.getTable('tags'));
     setTodos(database.getTable('todos'));
-    setCategories(database.getTable('categories'));
+    setCategories(database.getTable('transaction_types'));
     setSubcategories(database.getTable('subcategories'));
     setCurrencies(database.getTable('currencies'));
     setExchangeRates(database.getTable('exchange_rates'));
@@ -574,10 +574,10 @@ export const AccountingProvider = ({ children }) => {
   const addCategory = async (categoryData) => {
     try {
       const newCategory = database.addCategory(categoryData);
-      setCategories([...database.getTable('categories')]);
+      setCategories([...database.getTable('transaction_types')]);
       
-      const buffer = database.exportTableToBuffer('categories');
-      await fileStorage.saveTable('categories', buffer);
+      const buffer = database.exportTableToBuffer('transaction_types');
+      await fileStorage.saveTable('transaction_types', buffer);
       
       return newCategory;
     } catch (error) {
@@ -589,10 +589,10 @@ export const AccountingProvider = ({ children }) => {
   const updateCategory = async (id, categoryData) => {
     try {
       const updatedCategory = database.updateCategory(id, categoryData);
-      setCategories([...database.getTable('categories')]);
+      setCategories([...database.getTable('transaction_types')]);
       
-      const buffer = database.exportTableToBuffer('categories');
-      await fileStorage.saveTable('categories', buffer);
+      const buffer = database.exportTableToBuffer('transaction_types');
+      await fileStorage.saveTable('transaction_types', buffer);
       
       return updatedCategory;
     } catch (error) {
@@ -604,10 +604,10 @@ export const AccountingProvider = ({ children }) => {
   const deleteCategory = async (id) => {
     try {
       const deletedCategory = database.deleteCategory(id);
-      setCategories([...database.getTable('categories')]);
+      setCategories([...database.getTable('transaction_types')]);
       
-      const buffer = database.exportTableToBuffer('categories');
-      await fileStorage.saveTable('categories', buffer);
+      const buffer = database.exportTableToBuffer('transaction_types');
+      await fileStorage.saveTable('transaction_types', buffer);
       
       return deletedCategory;
     } catch (error) {

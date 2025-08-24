@@ -151,7 +151,7 @@ const DataManagement = () => {
           case 'products':
             await updateProduct(editingId, formData);
             break;
-          case 'categories':
+          case 'transaction_types':
             await updateCategory(editingId, formData);
             break;
           case 'subcategories':
@@ -181,7 +181,7 @@ const DataManagement = () => {
           case 'products':
             await addProduct(formData);
             break;
-          case 'categories':
+          case 'transaction_types':
             await addCategory(formData);
             break;
           case 'subcategories':
@@ -238,7 +238,7 @@ const DataManagement = () => {
       case 'products':
         confirmMessage = t('deleteProductConfirm');
         break;
-      case 'categories':
+      case 'transaction_types':
         confirmMessage = t('deleteCategoryConfirm');
         break;
       case 'subcategories':
@@ -270,7 +270,7 @@ const DataManagement = () => {
           case 'products':
             await deleteProduct(record.id);
             break;
-          case 'categories':
+          case 'transaction_types':
             await deleteCategory(record.id);
             break;
           case 'subcategories':
@@ -700,7 +700,7 @@ const DataManagement = () => {
         />
       </div>
       <div className="form-group">
-        <label>Category</label>
+        <label>{t('category')}</label>
         <input
           type="text"
           value={formData.category || ''}
@@ -909,7 +909,7 @@ const DataManagement = () => {
         return t('addTransactionButton');
       case 'products':
         return `${t('add')} Tag`;
-      case 'categories':
+      case 'transaction_types':
         return t('addCategory');
       case 'subcategories':
         return t('addSubcategory');
@@ -932,7 +932,7 @@ const DataManagement = () => {
         return t('updateTransaction');
       case 'products':
         return `${t('update')} Tag`;
-      case 'categories':
+      case 'transaction_types':
         return t('updateCategory');
       case 'subcategories':
         return t('updateSubcategory');
@@ -1105,7 +1105,7 @@ const DataManagement = () => {
             { key: 'description', label: t('description') }
           ]
         };
-      case 'categories':
+      case 'transaction_types':
         return {
           data: categories,
           columns: [
@@ -1213,7 +1213,7 @@ const DataManagement = () => {
         return renderTransactionForm();
       case 'products':
         return renderProductForm();
-      case 'categories':
+      case 'transaction_types':
         return renderCategoryForm();
       case 'subcategories':
         return renderSubcategoryForm();
@@ -1385,7 +1385,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'categories', 'subcategories', 'currencies', 'vendors', 'products', 'transactions', 'customers'].map(tab => (
+        {['accounts', 'transaction_types', 'subcategories', 'currencies', 'vendors', 'products', 'transactions', 'customers'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'nav-btn active' : 'nav-btn'}

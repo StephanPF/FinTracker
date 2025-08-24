@@ -21,7 +21,9 @@
       "WebFetch(domain:cdn.jsdelivr.net)",
       "Bash(npm run lint:*)",
       "Read(/c:\\Users\\steph\\Desktop/**)",
-      "Read(/c:\\Users\\steph\\Desktop/**)"
+      "Read(/c:\\Users\\steph\\Desktop/**)",
+      "Bash(rg:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

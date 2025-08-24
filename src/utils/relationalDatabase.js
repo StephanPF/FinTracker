@@ -9,7 +9,7 @@ class RelationalDatabase {
       vendors: [],
       tags: [],
       todos: [],
-      categories: [],
+      transaction_types: [],
       subcategories: [],
       currencies: [],
       exchange_rates: [],
@@ -27,7 +27,7 @@ class RelationalDatabase {
         customerId: { table: 'customers', field: 'id', optional: true },
         vendorId: { table: 'vendors', field: 'id', optional: true },
         productId: { table: 'tags', field: 'id', optional: true },
-        categoryId: { table: 'categories', field: 'id', optional: true },
+        categoryId: { table: 'transaction_types', field: 'id', optional: true },
         subcategoryId: { table: 'subcategories', field: 'id', optional: true },
         currencyId: { table: 'currencies', field: 'id', optional: true }
       },
@@ -35,7 +35,7 @@ class RelationalDatabase {
         currencyId: { table: 'currencies', field: 'id', optional: true }
       },
       subcategories: {
-        categoryId: { table: 'categories', field: 'id' }
+        categoryId: { table: 'transaction_types', field: 'id' }
       },
       exchange_rates: {
         fromCurrencyId: { table: 'currencies', field: 'id' },
@@ -78,7 +78,7 @@ class RelationalDatabase {
       vendors: sampleData.vendors,
       tags: sampleData.tags,
       todos: sampleData.todos,
-      categories: this.generateCategories(language),
+      transaction_types: this.generateCategories(language),
       subcategories: this.generateSubcategories(language),
       currencies: this.generateCurrencies(),
       exchange_rates: this.generateExchangeRates(),
@@ -1423,11 +1423,11 @@ class RelationalDatabase {
 
   // Category CRUD methods
   getCategories() {
-    return this.tables.categories;
+    return this.tables.transaction_types;
   }
 
   getActiveCategories() {
-    return this.tables.categories.filter(category => category.isActive);
+    return this.tables.transaction_types.filter(category => category.isActive);
   }
 
   addCategory(categoryData) {
@@ -1441,30 +1441,30 @@ class RelationalDatabase {
       createdAt: new Date().toISOString()
     };
 
-    this.tables.categories.push(newCategory);
-    this.saveTableToWorkbook('categories');
+    this.tables.transaction_types.push(newCategory);
+    this.saveTableToWorkbook('transaction_types');
     return newCategory;
   }
 
   updateCategory(id, categoryData) {
-    const categoryIndex = this.tables.categories.findIndex(category => category.id === id);
+    const categoryIndex = this.tables.transaction_types.findIndex(category => category.id === id);
     if (categoryIndex === -1) {
       throw new Error(`Category with id ${id} not found`);
     }
 
     const updatedCategory = {
-      ...this.tables.categories[categoryIndex],
+      ...this.tables.transaction_types[categoryIndex],
       ...categoryData,
       id: id // Ensure ID doesn't change
     };
 
-    this.tables.categories[categoryIndex] = updatedCategory;
-    this.saveTableToWorkbook('categories');
+    this.tables.transaction_types[categoryIndex] = updatedCategory;
+    this.saveTableToWorkbook('transaction_types');
     return updatedCategory;
   }
 
   deleteCategory(id) {
-    const categoryIndex = this.tables.categories.findIndex(category => category.id === id);
+    const categoryIndex = this.tables.transaction_types.findIndex(category => category.id === id);
     if (categoryIndex === -1) {
       throw new Error(`Category with id ${id} not found`);
     }
@@ -1477,9 +1477,9 @@ class RelationalDatabase {
       throw new Error('Cannot delete category: it is used in subcategories or transactions');
     }
 
-    const deletedCategory = this.tables.categories[categoryIndex];
-    this.tables.categories.splice(categoryIndex, 1);
-    this.saveTableToWorkbook('categories');
+    const deletedCategory = this.tables.transaction_types[categoryIndex];
+    this.tables.transaction_types.splice(categoryIndex, 1);
+    this.saveTableToWorkbook('transaction_types');
     return deletedCategory;
   }
 
@@ -1501,7 +1501,7 @@ class RelationalDatabase {
   getSubcategoriesWithCategories() {
     return this.tables.subcategories.map(subcategory => ({
       ...subcategory,
-      category: this.getRecord('categories', subcategory.categoryId)
+      category: this.getRecord('transaction_types', subcategory.categoryId)
     }));
   }
 
@@ -2017,7 +2017,7 @@ class RelationalDatabase {
     const accounts = this.tables.accounts.filter(acc => acc.isActive);
     const vendors = this.tables.vendors;
     const customers = this.tables.customers;
-    const categories = this.tables.categories;
+    const categories = this.tables.transaction_types;
     const subcategories = this.tables.subcategories;
     const tags = this.tables.tags;
     
