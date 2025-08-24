@@ -35,6 +35,7 @@ export const AccountingProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [todos, setTodos] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [transactionGroups, setTransactionGroups] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [currencies, setCurrencies] = useState([]);
   const [exchangeRates, setExchangeRates] = useState([]);
@@ -71,6 +72,7 @@ export const AccountingProvider = ({ children }) => {
     setProducts(database.getTable('tags'));
     setTodos(database.getTable('todos'));
     setCategories(database.getTable('transaction_types'));
+    setTransactionGroups(database.getTable('transaction_groups'));
     setSubcategories(database.getTable('subcategories'));
     setCurrencies(database.getTable('currencies'));
     setExchangeRates(database.getTable('exchange_rates'));
@@ -616,6 +618,60 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
+  // Transaction Group methods
+  const getTransactionGroups = () => {
+    return database.getTransactionGroups();
+  };
+
+  const getActiveTransactionGroups = () => {
+    return database.getActiveTransactionGroups();
+  };
+
+  const addTransactionGroup = async (groupData) => {
+    try {
+      const newGroup = database.addTransactionGroup(groupData);
+      setTransactionGroups([...database.getTable('transaction_groups')]);
+      
+      const buffer = database.exportTableToBuffer('transaction_groups');
+      await fileStorage.saveTable('transaction_groups', buffer);
+      
+      return newGroup;
+    } catch (error) {
+      console.error('Error adding transaction group:', error);
+      throw error;
+    }
+  };
+
+  const updateTransactionGroup = async (id, groupData) => {
+    try {
+      const updatedGroup = database.updateTransactionGroup(id, groupData);
+      setTransactionGroups([...database.getTable('transaction_groups')]);
+      
+      const buffer = database.exportTableToBuffer('transaction_groups');
+      await fileStorage.saveTable('transaction_groups', buffer);
+      
+      return updatedGroup;
+    } catch (error) {
+      console.error('Error updating transaction group:', error);
+      throw error;
+    }
+  };
+
+  const deleteTransactionGroup = async (id) => {
+    try {
+      const deletedGroup = database.deleteTransactionGroup(id);
+      setTransactionGroups([...database.getTable('transaction_groups')]);
+      
+      const buffer = database.exportTableToBuffer('transaction_groups');
+      await fileStorage.saveTable('transaction_groups', buffer);
+      
+      return deletedGroup;
+    } catch (error) {
+      console.error('Error deleting transaction group:', error);
+      throw error;
+    }
+  };
+
   // Subcategory methods
   const getSubcategories = () => {
     return database.getSubcategories();
@@ -968,6 +1024,7 @@ export const AccountingProvider = ({ children }) => {
     tags,
     todos,
     categories,
+    transactionGroups,
     subcategories,
     currencies,
     exchangeRates,
@@ -1012,6 +1069,11 @@ export const AccountingProvider = ({ children }) => {
     addCategory,
     updateCategory,
     deleteCategory,
+    getTransactionGroups,
+    getActiveTransactionGroups,
+    addTransactionGroup,
+    updateTransactionGroup,
+    deleteTransactionGroup,
     getSubcategories,
     getActiveSubcategories,
     getSubcategoriesByCategory,

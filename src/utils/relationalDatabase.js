@@ -10,6 +10,7 @@ class RelationalDatabase {
       tags: [],
       todos: [],
       transaction_types: [],
+      transaction_groups: [],
       subcategories: [],
       currencies: [],
       exchange_rates: [],
@@ -35,7 +36,8 @@ class RelationalDatabase {
         currencyId: { table: 'currencies', field: 'id', optional: true }
       },
       subcategories: {
-        categoryId: { table: 'transaction_types', field: 'id' }
+        categoryId: { table: 'transaction_types', field: 'id' },
+        groupId: { table: 'transaction_groups', field: 'id', optional: true }
       },
       exchange_rates: {
         fromCurrencyId: { table: 'currencies', field: 'id' },
@@ -79,6 +81,7 @@ class RelationalDatabase {
       tags: sampleData.tags,
       todos: sampleData.todos,
       transaction_types: this.generateCategories(language),
+      transaction_groups: this.generateTransactionGroups(language),
       subcategories: this.generateSubcategories(language),
       currencies: this.generateCurrencies(),
       exchange_rates: this.generateExchangeRates(),
@@ -1483,6 +1486,66 @@ class RelationalDatabase {
     return deletedCategory;
   }
 
+  // Transaction Group CRUD methods
+  getTransactionGroups() {
+    return this.tables.transaction_groups;
+  }
+
+  getActiveTransactionGroups() {
+    return this.tables.transaction_groups.filter(group => group.isActive);
+  }
+
+  addTransactionGroup(groupData) {
+    const newGroup = {
+      id: `GRP_${String(this.tables.transaction_groups.length + 1).padStart(3, '0')}`,
+      name: groupData.name,
+      description: groupData.description || '',
+      color: groupData.color || '#6366f1',
+      isActive: groupData.isActive !== undefined ? groupData.isActive : true,
+      createdAt: new Date().toISOString()
+    };
+
+    this.tables.transaction_groups.push(newGroup);
+    this.saveTableToWorkbook('transaction_groups');
+    return newGroup;
+  }
+
+  updateTransactionGroup(id, groupData) {
+    const groupIndex = this.tables.transaction_groups.findIndex(group => group.id === id);
+    if (groupIndex === -1) {
+      throw new Error(`Transaction group with id ${id} not found`);
+    }
+
+    const updatedGroup = {
+      ...this.tables.transaction_groups[groupIndex],
+      ...groupData,
+      id: id // Ensure ID doesn't change
+    };
+
+    this.tables.transaction_groups[groupIndex] = updatedGroup;
+    this.saveTableToWorkbook('transaction_groups');
+    return updatedGroup;
+  }
+
+  deleteTransactionGroup(id) {
+    const groupIndex = this.tables.transaction_groups.findIndex(group => group.id === id);
+    if (groupIndex === -1) {
+      throw new Error(`Transaction group with id ${id} not found`);
+    }
+
+    // Check if group is used in subcategories
+    const usedInSubcategories = this.tables.subcategories.some(subcategory => subcategory.groupId === id);
+
+    if (usedInSubcategories) {
+      throw new Error('Cannot delete transaction group: it is used in categories');
+    }
+
+    const deletedGroup = this.tables.transaction_groups[groupIndex];
+    this.tables.transaction_groups.splice(groupIndex, 1);
+    this.saveTableToWorkbook('transaction_groups');
+    return deletedGroup;
+  }
+
   // Subcategory CRUD methods
   getSubcategories() {
     return this.tables.subcategories;
@@ -1501,7 +1564,8 @@ class RelationalDatabase {
   getSubcategoriesWithCategories() {
     return this.tables.subcategories.map(subcategory => ({
       ...subcategory,
-      category: this.getRecord('transaction_types', subcategory.categoryId)
+      category: this.getRecord('transaction_types', subcategory.categoryId),
+      group: subcategory.groupId ? this.getRecord('transaction_groups', subcategory.groupId) : null
     }));
   }
 
@@ -1569,6 +1633,14 @@ class RelationalDatabase {
       return this.generateFrenchCategories();
     } else {
       return this.generateEnglishCategories();
+    }
+  }
+
+  generateTransactionGroups(language) {
+    if (language === 'fr') {
+      return this.generateFrenchTransactionGroups();
+    } else {
+      return this.generateEnglishTransactionGroups();
     }
   }
 
@@ -1662,12 +1734,103 @@ class RelationalDatabase {
     ];
   }
 
+  generateEnglishTransactionGroups() {
+    return [
+      {
+        id: 'GRP_001',
+        name: 'Essential Expenses',
+        description: 'Basic needs and necessities',
+        color: '#ef4444',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_002',
+        name: 'Lifestyle & Recreation',
+        description: 'Entertainment and personal enjoyment',
+        color: '#f97316',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_003',
+        name: 'Professional & Business',
+        description: 'Work and business related expenses',
+        color: '#eab308',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_004',
+        name: 'Investment & Savings',
+        description: 'Financial growth and savings',
+        color: '#22c55e',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_005',
+        name: 'Health & Wellness',
+        description: 'Medical and wellness expenses',
+        color: '#06b6d4',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  generateFrenchTransactionGroups() {
+    return [
+      {
+        id: 'GRP_001',
+        name: 'Dépenses Essentielles',
+        description: 'Besoins de base et nécessités',
+        color: '#ef4444',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_002',
+        name: 'Style de Vie et Loisirs',
+        description: 'Divertissement et plaisir personnel',
+        color: '#f97316',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_003',
+        name: 'Professionnel et Affaires',
+        description: 'Dépenses liées au travail et aux affaires',
+        color: '#eab308',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_004',
+        name: 'Investissement et Épargne',
+        description: 'Croissance financière et épargne',
+        color: '#22c55e',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_005',
+        name: 'Santé et Bien-être',
+        description: 'Dépenses médicales et de bien-être',
+        color: '#06b6d4',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
   generateEnglishSubcategories() {
     return [
       // Income Subcategories
       {
         id: 'SUBCAT_001',
         categoryId: 'CAT_001',
+        groupId: 'GRP_001', // Work Income
         name: 'Salary/Wages',
         description: 'Regular employment income',
         isActive: true,
@@ -1676,6 +1839,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_002',
         categoryId: 'CAT_001',
+        groupId: 'GRP_001', // Work Income
         name: 'Freelance/Consulting',
         description: 'Independent work income',
         isActive: true,
@@ -1684,6 +1848,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_003',
         categoryId: 'CAT_001',
+        groupId: 'GRP_002', // Investment Income
         name: 'Investment Returns',
         description: 'Dividends, interest, capital gains',
         isActive: true,
@@ -1692,6 +1857,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_004',
         categoryId: 'CAT_001',
+        groupId: 'GRP_001', // Work Income
         name: 'Side Business',
         description: 'Income from side business or gig work',
         isActive: true,
@@ -1700,6 +1866,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_005',
         categoryId: 'CAT_001',
+        groupId: 'GRP_003', // Other Income
         name: 'Gifts/Bonuses',
         description: 'Gifts, bonuses, and unexpected income',
         isActive: true,
@@ -1710,6 +1877,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_006',
         categoryId: 'CAT_002',
+        groupId: 'GRP_004', // Essential Expenses
         name: 'Housing',
         description: 'Rent, mortgage, utilities, maintenance',
         isActive: true,
@@ -1718,6 +1886,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_007',
         categoryId: 'CAT_002',
+        groupId: 'GRP_004', // Essential Expenses
         name: 'Transportation',
         description: 'Gas, car payments, public transit',
         isActive: true,
@@ -1726,6 +1895,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_008',
         categoryId: 'CAT_002',
+        groupId: 'GRP_004', // Essential Expenses
         name: 'Food & Dining',
         description: 'Groceries, restaurants, takeout',
         isActive: true,
@@ -1734,6 +1904,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_009',
         categoryId: 'CAT_002',
+        groupId: 'GRP_004', // Essential Expenses
         name: 'Healthcare',
         description: 'Medical expenses, insurance, medications',
         isActive: true,
@@ -1742,6 +1913,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_010',
         categoryId: 'CAT_002',
+        groupId: 'GRP_005', // Lifestyle Expenses
         name: 'Entertainment',
         description: 'Movies, subscriptions, hobbies, travel',
         isActive: true,
@@ -1750,6 +1922,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_011',
         categoryId: 'CAT_002',
+        groupId: 'GRP_005', // Lifestyle Expenses
         name: 'Shopping',
         description: 'Clothing, electronics, home goods',
         isActive: true,
@@ -1758,6 +1931,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_012',
         categoryId: 'CAT_002',
+        groupId: 'GRP_004', // Essential Expenses
         name: 'Bills & Utilities',
         description: 'Phone, internet, insurance, subscriptions',
         isActive: true,
@@ -1768,6 +1942,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_013',
         categoryId: 'CAT_003',
+        groupId: null, // No group for transfers
         name: 'Account Transfer',
         description: 'Transfer between bank accounts',
         isActive: true,
@@ -1776,6 +1951,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_014',
         categoryId: 'CAT_003',
+        groupId: null, // No group for transfers
         name: 'Cash Withdrawal',
         description: 'ATM withdrawals and cash transactions',
         isActive: true,
@@ -1784,6 +1960,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_015',
         categoryId: 'CAT_003',
+        groupId: null, // No group for transfers
         name: 'Cash Deposit',
         description: 'Depositing cash into accounts',
         isActive: true,
@@ -1794,6 +1971,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_016',
         categoryId: 'CAT_004',
+        groupId: 'GRP_002', // Investment Income
         name: 'Stock Purchase',
         description: 'Buying individual stocks',
         isActive: true,
@@ -1802,6 +1980,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_017',
         categoryId: 'CAT_004',
+        groupId: 'GRP_002', // Investment Income
         name: 'Fund Investment',
         description: 'Mutual funds, ETFs, index funds',
         isActive: true,
@@ -1810,6 +1989,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_018',
         categoryId: 'CAT_004',
+        groupId: 'GRP_002', // Investment Income
         name: 'Bond Purchase',
         description: 'Government and corporate bonds',
         isActive: true,
@@ -1818,6 +1998,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_019',
         categoryId: 'CAT_004',
+        groupId: 'GRP_002', // Investment Income
         name: 'Cryptocurrency',
         description: 'Digital currency investments',
         isActive: true,
@@ -1826,6 +2007,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_020',
         categoryId: 'CAT_004',
+        groupId: 'GRP_002', // Investment Income
         name: 'Investment Fees',
         description: 'Brokerage fees, management fees',
         isActive: true,
@@ -1840,6 +2022,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_001',
         categoryId: 'CAT_001',
+        groupId: 'GRP_001', // Work Income
         name: 'Salaire/Rémunération',
         description: 'Revenus d\'emploi régulier',
         isActive: true,
@@ -1848,6 +2031,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_002',
         categoryId: 'CAT_001',
+        groupId: 'GRP_001', // Work Income
         name: 'Freelance/Conseil',
         description: 'Revenus de travail indépendant',
         isActive: true,
@@ -1856,6 +2040,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_003',
         categoryId: 'CAT_001',
+        groupId: 'GRP_002', // Investment Income
         name: 'Revenus de Placement',
         description: 'Dividendes, intérêts, plus-values',
         isActive: true,
@@ -1864,6 +2049,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_004',
         categoryId: 'CAT_001',
+        groupId: 'GRP_001', // Work Income
         name: 'Activité Secondaire',
         description: 'Revenus d\'activité secondaire ou travail à la demande',
         isActive: true,
@@ -1872,6 +2058,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_005',
         categoryId: 'CAT_001',
+        groupId: 'GRP_003', // Other Income
         name: 'Cadeaux/Primes',
         description: 'Cadeaux, primes et revenus inattendus',
         isActive: true,
@@ -1882,6 +2069,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_006',
         categoryId: 'CAT_002',
+        groupId: 'GRP_004', // Essential Expenses
         name: 'Logement',
         description: 'Loyer, hypothèque, services publics, entretien',
         isActive: true,
@@ -1890,6 +2078,7 @@ class RelationalDatabase {
       {
         id: 'SUBCAT_007',
         categoryId: 'CAT_002',
+        groupId: 'GRP_004', // Essential Expenses
         name: 'Transport',
         description: 'Essence, paiements auto, transport public',
         isActive: true,

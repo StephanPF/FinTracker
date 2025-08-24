@@ -10,6 +10,7 @@ class RelationalFileStorage {
       tags: 'tags.xlsx',
       todos: 'todos.xlsx',
       transaction_types: 'transaction_types.xlsx',
+      transaction_groups: 'transaction_groups.xlsx',
       subcategories: 'subcategories.xlsx',
       currencies: 'currencies.xlsx',
       exchange_rates: 'exchange_rates.xlsx',

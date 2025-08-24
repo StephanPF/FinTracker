@@ -31,6 +31,7 @@ const DataManagement = () => {
     getAccountTypes,
     categories,
     subcategories,
+    transactionGroups,
     getCategories,
     getActiveCategories,
     addCategory,
@@ -43,6 +44,11 @@ const DataManagement = () => {
     addSubcategory,
     updateSubcategory,
     deleteSubcategory,
+    getTransactionGroups,
+    getActiveTransactionGroups,
+    addTransactionGroup,
+    updateTransactionGroup,
+    deleteTransactionGroup,
     currencies,
     exchangeRates,
     exchangeRateService,
@@ -157,6 +163,9 @@ const DataManagement = () => {
           case 'subcategories':
             await updateSubcategory(editingId, formData);
             break;
+          case 'transaction_groups':
+            await updateTransactionGroup(editingId, formData);
+            break;
           case 'currencies':
             await updateCurrency(editingId, formData);
             break;
@@ -186,6 +195,9 @@ const DataManagement = () => {
             break;
           case 'subcategories':
             await addSubcategory(formData);
+            break;
+          case 'transaction_groups':
+            await addTransactionGroup(formData);
             break;
           case 'currencies':
             await addCurrency(formData);
@@ -244,6 +256,9 @@ const DataManagement = () => {
       case 'subcategories':
         confirmMessage = t('deleteSubcategoryConfirm');
         break;
+      case 'transaction_groups':
+        confirmMessage = t('deleteTransactionGroupConfirm');
+        break;
       case 'currencies':
         confirmMessage = 'Are you sure you want to delete this currency?';
         break;
@@ -275,6 +290,9 @@ const DataManagement = () => {
             break;
           case 'subcategories':
             await deleteSubcategory(record.id);
+            break;
+          case 'transaction_groups':
+            await deleteTransactionGroup(record.id);
             break;
           case 'currencies':
             await deleteCurrency(record.id);
@@ -765,6 +783,7 @@ const DataManagement = () => {
 
   const renderSubcategoryForm = () => {
     const activeCategoriesData = getActiveCategories();
+    const activeTransactionGroupsData = getActiveTransactionGroups();
     
     return (
       <form onSubmit={handleSubmit} className="data-form">
@@ -788,6 +807,20 @@ const DataManagement = () => {
             {activeCategoriesData.map(category => (
               <option key={category.id} value={category.id}>
                 {category.icon} {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
+          <label>{t('transactionGroup')}</label>
+          <select
+            value={formData.groupId || ''}
+            onChange={(e) => handleInputChange('groupId', e.target.value)}
+          >
+            <option value="">{t('selectTransactionGroup')}</option>
+            {activeTransactionGroupsData.map(group => (
+              <option key={group.id} value={group.id}>
+                {group.name}
               </option>
             ))}
           </select>
@@ -817,6 +850,42 @@ const DataManagement = () => {
       </form>
     );
   };
+
+  const renderTransactionGroupForm = () => (
+    <form onSubmit={handleSubmit} className="data-form">
+      <div className="form-group">
+        <label>{t('transactionGroupName')}</label>
+        <input
+          type="text"
+          value={formData.name || ''}
+          onChange={(e) => handleInputChange('name', e.target.value)}
+          required
+        />
+      </div>
+      <div className="form-group">
+        <label>{t('description')}</label>
+        <textarea
+          value={formData.description || ''}
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          placeholder="Optional description for this transaction group"
+        />
+      </div>
+      <div className="form-group">
+        <label>{t('color')}</label>
+        <input
+          type="color"
+          value={formData.color || '#6366f1'}
+          onChange={(e) => handleInputChange('color', e.target.value)}
+        />
+      </div>
+      <div className="form-actions">
+        <button type="submit" className="btn-primary">
+          {editingId ? t('updateTransactionGroup') : t('addTransactionGroup')}
+        </button>
+        <button type="button" onClick={resetForm} className="btn-secondary">{t('cancel')}</button>
+      </div>
+    </form>
+  );
 
   const renderCurrencyForm = () => (
     <form onSubmit={handleSubmit} className="data-form">
@@ -913,6 +982,8 @@ const DataManagement = () => {
         return t('addCategory');
       case 'subcategories':
         return t('addSubcategory');
+      case 'transaction_groups':
+        return t('addTransactionGroup');
       case 'currencies':
         return t('addCurrency');
       default:
@@ -936,6 +1007,8 @@ const DataManagement = () => {
         return t('updateCategory');
       case 'subcategories':
         return t('updateSubcategory');
+      case 'transaction_groups':
+        return t('updateTransactionGroup');
       case 'currencies':
         return t('updateCurrency');
       default:
@@ -1145,6 +1218,11 @@ const DataManagement = () => {
               label: t('category'), 
               render: (category) => category ? `${category.icon} ${category.name}` : 'N/A'
             },
+            { 
+              key: 'group', 
+              label: t('transactionGroup'), 
+              render: (group) => group ? group.name : '-'
+            },
             { key: 'description', label: t('description') },
             { 
               key: 'color', 
@@ -1163,6 +1241,29 @@ const DataManagement = () => {
           ]
         };
       }
+      case 'transaction_groups':
+        return {
+          data: transactionGroups,
+          columns: [
+            { key: 'id', label: t('id') },
+            { key: 'name', label: t('name') },
+            { key: 'description', label: t('description') },
+            { 
+              key: 'color', 
+              label: t('color'), 
+              render: (value) => (
+                <span style={{
+                  display: 'inline-block',
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: value,
+                  borderRadius: '3px',
+                  border: '1px solid #ccc'
+                }}></span>
+              )
+            }
+          ]
+        };
       case 'currencies':
         return {
           data: currencies,
@@ -1217,6 +1318,8 @@ const DataManagement = () => {
         return renderCategoryForm();
       case 'subcategories':
         return renderSubcategoryForm();
+      case 'transaction_groups':
+        return renderTransactionGroupForm();
       default:
         return null;
     }
@@ -1385,7 +1488,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'transaction_types', 'subcategories', 'currencies', 'vendors', 'products', 'transactions', 'customers'].map(tab => (
+        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'vendors', 'products', 'transactions', 'customers'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'nav-btn active' : 'nav-btn'}
