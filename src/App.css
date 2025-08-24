@@ -641,6 +641,13 @@ body {
   --card-gradient: linear-gradient(135deg, #4c6ef5 0%, #7c3aed 100%);
 }
 
+.summary-card.net-worth { 
+  --card-gradient: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+.summary-card.retirement { 
+  --card-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -696,6 +703,152 @@ body {
 .card-change.negative {
   background: rgba(239, 68, 68, 0.1);
   color: #dc2626;
+}
+
+/* New Overview Layout Styles */
+.card-values {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.currency-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.currency-value:last-child {
+  border-bottom: none;
+}
+
+.currency-value .amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.currency-value .currency-code {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.currency-value.positive .amount {
+  color: #059669;
+}
+
+.currency-value.negative .amount {
+  color: #dc2626;
+}
+
+/* Accounts Section */
+.accounts-section, .retirement-accounts-section {
+  margin: 2rem 0;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.retirement-accounts-section {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(217, 119, 6, 0.05) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.retirement-account {
+  border-left: 4px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.02);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Currency Toggle */
+.currency-toggle {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+.toggle-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  color: #374151;
+}
+
+.toggle-btn.active {
+  background: white;
+  color: #2563eb;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Account Items */
+.account-item .account-currency {
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 500;
+  background: rgba(37, 99, 235, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  margin-left: 0.5rem;
+}
+
+.account-balance .native-balance {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+/* Recent Transactions Section */
+.recent-transactions-section {
+  margin: 2rem 0 0 0;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.recent-transactions-section .section-header {
+  margin-bottom: 1rem;
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .accounts-grid {
@@ -3050,9 +3203,154 @@ body {
   margin-bottom: 1rem;
 }
 
+.form-group.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.form-group.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: normal;
+  margin: 0;
+}
+
+.form-group.checkbox-group input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Toggle switches for DataManagement tables */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.toggle-switch:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.toggle-switch:hover {
+  background-color: #f3f4f6;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  transition: all 0.2s ease;
+}
+
+.toggle-switch.enabled .toggle-slider {
+  background-color: #10b981;
+}
+
+.toggle-switch.disabled .toggle-slider {
+  background-color: #d1d5db;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-switch.enabled .toggle-slider::before {
+  transform: translateX(14px);
+}
+
+
 .form-section .form-group:last-child {
   margin-bottom: 0;
 }
+
+
+.card-header-controls {
+  display: flex;
+  align-items: center;
+}
+
+.card-subtitle-with-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+
+.card-toggle-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card-toggle-control .toggle-label {
+  font-size: 0.75rem;
+  color: #374151;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Redesigned toggle - button style */
+.mini-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: 26px;
+  padding: 0 16px;
+  margin-right: 0;
+  border-radius: 13px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.mini-toggle.enabled {
+  background-color: #10b981;
+  border-color: #059669;
+  color: white;
+}
+
+.mini-toggle.enabled:hover {
+  background-color: #059669;
+}
+
+.mini-toggle.disabled {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+
+.mini-toggle.disabled:hover {
+  background-color: #d1d5db;
+}
+
 
 @media (max-width: 768px) {
   .form-section {

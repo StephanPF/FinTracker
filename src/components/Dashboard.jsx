@@ -162,10 +162,6 @@ const Dashboard = () => {
         {activeTab === 'overview' && (
           <div className="overview-tab">
             <AccountSummary />
-            <div className="recent-transactions">
-              <h3>{t('recentTransactions')}</h3>
-              <TransactionList limit={5} />
-            </div>
           </div>
         )}
 

@@ -267,6 +267,7 @@ class RelationalDatabase {
       currencyId: accountData.currencyId || 'CUR_001', // Include currencyId with default fallback
       balance: parseFloat(accountData.balance) || 0,
       description: accountData.description || '',
+      includeInOverview: accountData.includeInOverview !== undefined ? accountData.includeInOverview : true,
       isActive: accountData.isActive !== undefined ? accountData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -885,6 +886,16 @@ class RelationalDatabase {
       },
       {
         id: 'ACCT_TYPE_004',
+        type: 'Asset',
+        subtype: 'Retirement account',
+        description: 'Retirement savings and pension accounts',
+        examples: '401k, IRA, Roth IRA, Pension Plans, 403b',
+        normalBalance: 'Debit',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ACCT_TYPE_005',
         type: 'Liability',
         subtype: 'Current Liability',
         description: 'Debts and obligations due within one year',
@@ -894,7 +905,7 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'ACCT_TYPE_005',
+        id: 'ACCT_TYPE_006',
         type: 'Liability',
         subtype: 'Long-term Liability',
         description: 'Debts and obligations due after one year',
@@ -940,6 +951,16 @@ class RelationalDatabase {
       },
       {
         id: 'ACCT_TYPE_004',
+        type: 'Actif',
+        subtype: 'Compte retraite',
+        description: 'Comptes d\'épargne retraite et de pension',
+        examples: 'REER, CELI, Fonds de pension, Régimes de retraite',
+        normalBalance: 'Débit',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ACCT_TYPE_005',
         type: 'Passif',
         subtype: 'Passif courant',
         description: 'Dettes et obligations exigibles dans un délai d\'un an',
@@ -949,7 +970,7 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'ACCT_TYPE_005',
+        id: 'ACCT_TYPE_006',
         type: 'Passif',
         subtype: 'Passif long terme',
         description: 'Dettes et obligations exigibles après un an',
@@ -972,6 +993,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 900,
           description: 'Cash on hand',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -984,6 +1006,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 4500,
           description: 'Main checking account',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -996,6 +1019,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 9000,
           description: 'Emergency savings',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1008,6 +1032,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 22500,
           description: 'Retirement and investment accounts',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1020,6 +1045,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 227000,
           description: 'Primary residence',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1032,6 +1058,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 2250,
           description: 'Main credit card debt',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1044,6 +1071,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 163500,
           description: 'Home mortgage loan',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1175,6 +1203,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 900,
           description: 'Argent liquide disponible',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1187,6 +1216,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 4500,
           description: 'Compte bancaire principal',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1199,6 +1229,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 9000,
           description: 'Épargne de précaution',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1211,6 +1242,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 22500,
           description: 'Comptes retraite et investissements',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1223,6 +1255,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 227000,
           description: 'Résidence principale',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1235,6 +1268,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 2250,
           description: 'Dette carte de crédit principale',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
@@ -1247,6 +1281,7 @@ class RelationalDatabase {
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 163500,
           description: 'Prêt hypothécaire résidentiel',
+          includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()

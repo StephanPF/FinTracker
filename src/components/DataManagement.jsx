@@ -58,6 +58,7 @@ const DataManagement = () => {
   const { formatDate, formatForInput } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
   const accountTypes = getAccountTypes();
+
   
   const [activeTab, setActiveTab] = useState('accounts');
   const [showForm, setShowForm] = useState(false);
@@ -68,6 +69,7 @@ const DataManagement = () => {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [showAccountTypesExplanation, setShowAccountTypesExplanation] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const resetForm = () => {
     // Initialize formData with default values for transactions
@@ -194,6 +196,21 @@ const DataManagement = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleToggleOverview = async (accountId, currentValue) => {
+    // Optimistic update: update UI immediately
+    setRefreshKey(prev => prev + 1);
+    
+    try {
+      // Update database in background
+      await updateAccount(accountId, { includeInOverview: !currentValue });
+    } catch (error) {
+      console.error('Failed to toggle Overview inclusion:', error);
+      alert('Failed to update account. Please try again.');
+      // Revert the optimistic update on error
+      setRefreshKey(prev => prev + 1);
+    }
   };
 
   const handleDelete = async (record) => {
@@ -933,6 +950,22 @@ const DataManagement = () => {
                 }
                 return (value || 0).toFixed(2);
               }
+            },
+            {
+              key: 'includeInOverview',
+              label: 'Analytics',
+              render: (value, row) => (
+                <button
+                  className={`toggle-switch ${value !== false ? 'enabled' : 'disabled'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleOverview(row.id, value !== false);
+                  }}
+                  title={`Click to ${value !== false ? 'exclude from' : 'include in'} Analytics`}
+                >
+                  <span className="toggle-slider"></span>
+                </button>
+              )
             }
           ]
         };
