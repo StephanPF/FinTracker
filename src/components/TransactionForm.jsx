@@ -199,7 +199,7 @@ const TransactionForm = ({ onSuccess }) => {
             onClick={() => handleSubcategorySelect(subcategory.id)}
           >
             <span className="subcategory-name">{subcategory.name}</span>
-            <span className="subcategory-category">{subcategory.category?.name}</span>
+            <span className="subcategory-category">{subcategory.group?.name || 'No Group'}</span>
           </div>
         ))}
       </div>
