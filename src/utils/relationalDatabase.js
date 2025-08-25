@@ -67,6 +67,7 @@ class RelationalDatabase {
       
       // Run migration for transaction types to add missing fields
       this.migrateTransactionTypes();
+      this.migrateSubcategories();
       
       this.validateRelationships();
       return true;
@@ -1571,17 +1572,17 @@ class RelationalDatabase {
 
   // Subcategory CRUD methods
   getSubcategories() {
-    return this.tables.subcategories;
+    return this.tables.subcategories.sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   getActiveSubcategories() {
-    return this.tables.subcategories.filter(subcategory => subcategory.isActive);
+    return this.tables.subcategories.filter(subcategory => subcategory.isActive).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   getSubcategoriesByCategory(categoryId) {
     return this.tables.subcategories.filter(subcategory => 
       subcategory.categoryId === categoryId && subcategory.isActive
-    );
+    ).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   getSubcategoriesWithCategories() {
@@ -1589,7 +1590,7 @@ class RelationalDatabase {
       ...subcategory,
       category: this.getRecord('transaction_types', subcategory.categoryId),
       group: subcategory.groupId ? this.getRecord('transaction_groups', subcategory.groupId) : null
-    }));
+    })).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   addSubcategory(subcategoryData) {
@@ -1597,11 +1598,16 @@ class RelationalDatabase {
       throw new Error('Invalid foreign key references in subcategory');
     }
 
+    // Get next order value
+    const maxOrder = Math.max(...this.tables.subcategories.map(sub => sub.order || 0), 0);
+
     const newSubcategory = {
       id: 'SUBCAT_' + Date.now(),
       categoryId: subcategoryData.categoryId,
+      groupId: subcategoryData.groupId || null,
       name: subcategoryData.name,
       description: subcategoryData.description || '',
+      order: subcategoryData.order !== undefined ? subcategoryData.order : maxOrder + 1,
       isActive: subcategoryData.isActive !== undefined ? subcategoryData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -2994,6 +3000,31 @@ class RelationalDatabase {
       if (migrationNeeded) {
         console.log('Migrated transaction types to include account fields and order');
         this.saveTableToWorkbook('transaction_types');
+      }
+    }
+  }
+
+  // Migration method to add missing fields to existing subcategories
+  migrateSubcategories() {
+    if (this.tables.subcategories && Array.isArray(this.tables.subcategories)) {
+      let migrationNeeded = false;
+      
+      this.tables.subcategories = this.tables.subcategories.map((subcategory, index) => {
+        let updated = { ...subcategory };
+        
+        // Add missing order field
+        if (updated.order === undefined) {
+          updated.order = index + 1;
+          migrationNeeded = true;
+        }
+        
+        return updated;
+      });
+      
+      // Save if migration was needed
+      if (migrationNeeded) {
+        console.log('Migrated subcategories to include order field');
+        this.saveTableToWorkbook('subcategories');
       }
     }
   }

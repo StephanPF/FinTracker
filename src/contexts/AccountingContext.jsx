@@ -73,7 +73,7 @@ export const AccountingProvider = ({ children }) => {
     setTodos(database.getTable('todos'));
     setCategories(database.getCategories());
     setTransactionGroups(database.getTable('transaction_groups'));
-    setSubcategories(database.getTable('subcategories'));
+    setSubcategories(database.getSubcategories());
     setCurrencies(database.getTable('currencies'));
     setExchangeRates(database.getTable('exchange_rates'));
     setCurrencySettings(database.getTable('currency_settings'));
@@ -692,7 +692,7 @@ export const AccountingProvider = ({ children }) => {
   const addSubcategory = async (subcategoryData) => {
     try {
       const newSubcategory = database.addSubcategory(subcategoryData);
-      setSubcategories([...database.getTable('subcategories')]);
+      setSubcategories([...database.getSubcategories()]);
       
       const buffer = database.exportTableToBuffer('subcategories');
       await fileStorage.saveTable('subcategories', buffer);
@@ -707,7 +707,7 @@ export const AccountingProvider = ({ children }) => {
   const updateSubcategory = async (id, subcategoryData) => {
     try {
       const updatedSubcategory = database.updateSubcategory(id, subcategoryData);
-      setSubcategories([...database.getTable('subcategories')]);
+      setSubcategories([...database.getSubcategories()]);
       
       const buffer = database.exportTableToBuffer('subcategories');
       await fileStorage.saveTable('subcategories', buffer);
@@ -722,7 +722,7 @@ export const AccountingProvider = ({ children }) => {
   const deleteSubcategory = async (id) => {
     try {
       const deletedSubcategory = database.deleteSubcategory(id);
-      setSubcategories([...database.getTable('subcategories')]);
+      setSubcategories([...database.getSubcategories()]);
       
       const buffer = database.exportTableToBuffer('subcategories');
       await fileStorage.saveTable('subcategories', buffer);

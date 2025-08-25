@@ -83,6 +83,7 @@ const DataManagement = () => {
   const [dragLeaveTimeout, setDragLeaveTimeout] = useState(null);
   const [reorderingAccounts, setReorderingAccounts] = useState(false);
   const [reorderingCategories, setReorderingCategories] = useState(false);
+  const [reorderingSubcategories, setReorderingSubcategories] = useState(false);
 
   const resetForm = () => {
     // Initialize formData with default values for transactions
@@ -317,7 +318,7 @@ const DataManagement = () => {
       <table>
         <thead>
           <tr>
-            {(activeTab === 'accounts' || activeTab === 'transaction_types') && <th className="drag-handle-header">Order</th>}
+            {(activeTab === 'accounts' || activeTab === 'transaction_types' || activeTab === 'subcategories') && <th className="drag-handle-header">Order</th>}
             {columns.map(col => (
               <th key={col.key}>{col.label}</th>
             ))}
@@ -329,16 +330,16 @@ const DataManagement = () => {
             <tr 
               key={row.id || index}
               className={`
-                ${(activeTab === 'accounts' || activeTab === 'transaction_types') ? 'draggable-row' : ''}
+                ${(activeTab === 'accounts' || activeTab === 'transaction_types' || activeTab === 'subcategories') ? 'draggable-row' : ''}
                 ${draggedId === row.id ? 'dragging' : ''}
                 ${dragOverId === row.id ? 'drag-over' : ''}
               `.trim()}
-              onDragEnter={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDragEnter(e, row.id) : undefined}
-              onDragOver={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDragOver(e, row.id) : undefined}
-              onDragLeave={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDragLeave(e, row.id) : undefined}
-              onDrop={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDrop(e, row.id) : undefined}
+              onDragEnter={(activeTab === 'accounts' || activeTab === 'transaction_types' || activeTab === 'subcategories') ? (e) => handleDragEnter(e, row.id) : undefined}
+              onDragOver={(activeTab === 'accounts' || activeTab === 'transaction_types' || activeTab === 'subcategories') ? (e) => handleDragOver(e, row.id) : undefined}
+              onDragLeave={(activeTab === 'accounts' || activeTab === 'transaction_types' || activeTab === 'subcategories') ? (e) => handleDragLeave(e, row.id) : undefined}
+              onDrop={(activeTab === 'accounts' || activeTab === 'transaction_types' || activeTab === 'subcategories') ? (e) => handleDrop(e, row.id) : undefined}
             >
-              {(activeTab === 'accounts' || activeTab === 'transaction_types') && (
+              {(activeTab === 'accounts' || activeTab === 'transaction_types' || activeTab === 'subcategories') && (
                 <td className="drag-handle-cell">
                   <div 
                     className="drag-handle" 
@@ -1473,6 +1474,8 @@ const DataManagement = () => {
         reorderAccounts(draggedId, targetId);
       } else if (activeTab === 'transaction_types') {
         reorderCategories(draggedId, targetId);
+      } else if (activeTab === 'subcategories') {
+        reorderSubcategories(draggedId, targetId);
       }
     }
     setDraggedId(null);
@@ -1609,6 +1612,71 @@ const DataManagement = () => {
     }
   };
 
+  const reorderSubcategories = async (draggedId, targetId) => {
+    try {
+      console.log('Reordering subcategories:', draggedId, 'to', targetId);
+      console.log('Current subcategories before reorder:', subcategories.map(s => ({id: s.id, name: s.name, order: s.order})));
+      setReorderingSubcategories(true);
+      
+      const subcategoriesList = [...subcategories];
+      const draggedIndex = subcategoriesList.findIndex(sub => sub.id === draggedId);
+      const targetIndex = subcategoriesList.findIndex(sub => sub.id === targetId);
+      
+      console.log('Dragged index:', draggedIndex, 'Target index:', targetIndex);
+      
+      if (draggedIndex === -1 || targetIndex === -1) {
+        console.log('Invalid indices found');
+        setReorderingSubcategories(false);
+        return;
+      }
+      
+      // Remove dragged item and insert at target position
+      const [draggedItem] = subcategoriesList.splice(draggedIndex, 1);
+      subcategoriesList.splice(targetIndex, 0, draggedItem);
+      
+      console.log('Subcategories after array reorder:', subcategoriesList.map(s => ({id: s.id, name: s.name, order: s.order})));
+      
+      // Batch update all subcategories that need reordering (async in background)
+      const updatePromises = [];
+      const subcategoriesToUpdate = [];
+      
+      for (let i = 0; i < subcategoriesList.length; i++) {
+        const subcategory = subcategoriesList[i];
+        const newOrder = i + 1;
+        if (subcategory.order !== newOrder) {
+          subcategoriesToUpdate.push({ ...subcategory, order: newOrder });
+        }
+      }
+      
+      // Only update subcategories that actually changed order
+      console.log(`Updating order for ${subcategoriesToUpdate.length} subcategories`);
+      
+      // Batch update in parallel instead of sequential
+      for (const subcategoryData of subcategoriesToUpdate) {
+        updatePromises.push(updateSubcategory(subcategoryData.id, subcategoryData));
+      }
+      
+      // Wait for all updates to complete in parallel
+      await Promise.all(updatePromises);
+      console.log('All subcategory orders updated successfully');
+      
+      // Force immediate UI refresh
+      setReorderingSubcategories(false);
+      setRefreshKey(prev => prev + 1);
+      
+      // Add a small delay to ensure database state is fully updated before next operation
+      setTimeout(() => {
+        console.log('Subcategories after reorder:', getSubcategories());
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error reordering subcategories:', error);
+      // If there's an error, refresh to show the correct state
+      setRefreshKey(prev => prev + 1);
+      setReorderingSubcategories(false);
+    }
+  };
+
   const { data: rawData, columns } = getTableData();
   const data = filterData(rawData, searchTerm);
 
@@ -1722,6 +1790,9 @@ const DataManagement = () => {
                   <span className="reordering-indicator"> - Reordering...</span>
                 )}
                 {reorderingCategories && activeTab === 'transaction_types' && (
+                  <span className="reordering-indicator"> - Reordering...</span>
+                )}
+                {reorderingSubcategories && activeTab === 'subcategories' && (
                   <span className="reordering-indicator"> - Reordering...</span>
                 )}
               </h3>
