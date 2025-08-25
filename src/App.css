@@ -801,6 +801,10 @@ body {
   border-left-color: #3b82f6 !important;
 }
 
+.account-item.business {
+  border-left-color: #d4af37 !important;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;

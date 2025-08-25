@@ -365,7 +365,7 @@ const AccountSummary = () => {
                     : formatCurrencyAmount(account.balance, getBaseCurrency()?.id));
               
               return (
-                <div key={account.id} className={`account-item ${account.accountType ? account.accountType.type.toLowerCase() : 'unknown'} ${account.accountType?.subtype === 'Retirement account' ? 'retirement' : ''}`}>
+                <div key={account.id} className={`account-item ${account.accountType ? account.accountType.type.toLowerCase() : 'unknown'} ${account.accountType?.subtype === 'Retirement account' ? 'retirement' : ''} ${account.accountType?.subtype === 'Business account' ? 'business' : ''}`}>
                   <div className="account-info">
                     <span className="account-name">{account.name}</span>
                     <span className="account-type">

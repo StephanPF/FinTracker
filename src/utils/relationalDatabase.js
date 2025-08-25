@@ -177,7 +177,7 @@ class RelationalDatabase {
     
     // Validate accounts against hardwired account types
     const accountRecords = this.tables['accounts'];
-    const validAccountTypeIds = ['ACCT_TYPE_001', 'ACCT_TYPE_002', 'ACCT_TYPE_003', 'ACCT_TYPE_004', 'ACCT_TYPE_005'];
+    const validAccountTypeIds = ['ACCT_TYPE_001', 'ACCT_TYPE_002', 'ACCT_TYPE_003', 'ACCT_TYPE_004', 'ACCT_TYPE_005', 'ACCT_TYPE_006', 'ACCT_TYPE_007'];
     
     for (const account of accountRecords) {
       if (account.accountTypeId && !validAccountTypeIds.includes(account.accountTypeId)) {
@@ -905,6 +905,16 @@ class RelationalDatabase {
       },
       {
         id: 'ACCT_TYPE_005',
+        type: 'Asset',
+        subtype: 'Business account',
+        description: 'Business-related asset accounts',
+        examples: 'Business Checking, Business Savings, Corporate Accounts',
+        normalBalance: 'Debit',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ACCT_TYPE_006',
         type: 'Liability',
         subtype: 'Current Liability',
         description: 'Debts and obligations due within one year',
@@ -914,7 +924,7 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'ACCT_TYPE_006',
+        id: 'ACCT_TYPE_007',
         type: 'Liability',
         subtype: 'Long-term Liability',
         description: 'Debts and obligations due after one year',
@@ -970,6 +980,16 @@ class RelationalDatabase {
       },
       {
         id: 'ACCT_TYPE_005',
+        type: 'Actif',
+        subtype: 'Compte d\'entreprise',
+        description: 'Comptes d\'actifs liés aux entreprises',
+        examples: 'Compte Chèque Entreprise, Épargne Entreprise, Comptes Corporatifs',
+        normalBalance: 'Débit',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ACCT_TYPE_006',
         type: 'Passif',
         subtype: 'Passif courant',
         description: 'Dettes et obligations exigibles dans un délai d\'un an',
@@ -979,7 +999,7 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'ACCT_TYPE_006',
+        id: 'ACCT_TYPE_007',
         type: 'Passif',
         subtype: 'Passif long terme',
         description: 'Dettes et obligations exigibles après un an',
