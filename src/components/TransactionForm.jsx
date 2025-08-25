@@ -14,6 +14,7 @@ const TransactionForm = ({ onSuccess }) => {
     getSubcategoriesWithCategories,
     getActiveCategories,
     getActivePayees,
+    getActiveTransactionGroups,
     currencies,
     exchangeRateService,
     getActiveCurrencies 
@@ -42,6 +43,7 @@ const TransactionForm = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedTransactionType, setSelectedTransactionType] = useState(null);
+  const [selectedTransactionGroup, setSelectedTransactionGroup] = useState(null);
   
   // Payee autocomplete state
   const [payeeInput, setPayeeInput] = useState('');
@@ -194,6 +196,7 @@ const TransactionForm = ({ onSuccess }) => {
 
   const handleTransactionTypeChange = (transactionType) => {
     setSelectedTransactionType(transactionType);
+    setSelectedTransactionGroup(null); // Reset transaction group selection
     // Set default account, destination account, description and clear selected subcategory when transaction type changes
     setFormData(prev => ({
       ...prev,
@@ -209,17 +212,10 @@ const TransactionForm = ({ onSuccess }) => {
     }
   };
 
-  // Filter subcategories based on selected transaction type
+  // This function is no longer needed since we now filter by transaction group
+  // Keeping it for backward compatibility but it will return empty array
   const getSubcategoriesByTransactionType = () => {
-    const subcategoriesWithCategories = getSubcategoriesWithCategories();
-    
-    if (!selectedTransactionType) {
-      return subcategoriesWithCategories;
-    }
-    
-    return subcategoriesWithCategories.filter(subcategory => {
-      return subcategory.categoryId === selectedTransactionType.id;
-    });
+    return [];
   };
 
   const handleSubcategorySelect = (subcategoryId) => {
@@ -232,6 +228,41 @@ const TransactionForm = ({ onSuccess }) => {
       description: isDescriptionUserModified ? prev.description : selectedSubcategory?.name || ''
     }));
     setSelectedCategory(selectedSubcategory?.category || null);
+  };
+
+  // Filter transaction groups based on selected transaction type
+  const getTransactionGroupsByType = () => {
+    const allGroups = getActiveTransactionGroups();
+    
+    if (!selectedTransactionType) {
+      return [];
+    }
+    
+    return allGroups.filter(group => 
+      group.transactionTypeId === selectedTransactionType.id
+    );
+  };
+
+  const handleTransactionGroupSelect = (group) => {
+    setSelectedTransactionGroup(group);
+    // Clear selected subcategory when transaction group changes
+    setFormData(prev => ({
+      ...prev,
+      subcategoryId: ''
+    }));
+  };
+
+  // Update subcategories filter to also consider selected transaction group
+  const getSubcategoriesByTransactionGroup = () => {
+    const subcategoriesWithCategories = getSubcategoriesWithCategories();
+    
+    if (!selectedTransactionGroup) {
+      return [];
+    }
+    
+    return subcategoriesWithCategories.filter(subcategory => {
+      return subcategory.groupId === selectedTransactionGroup.id;
+    });
   };
 
   // Payee autocomplete handlers
@@ -288,7 +319,8 @@ const TransactionForm = ({ onSuccess }) => {
 
   return (
     <div className="transaction-form">
-      {/* Transaction Type Selection Cards */}
+      <div className="transaction-panel">
+        {/* Transaction Type Selection Cards */}
       <div className="transaction-type-cards">
         {getActiveCategories().map(transactionType => (
           <div 
@@ -307,9 +339,33 @@ const TransactionForm = ({ onSuccess }) => {
         ))}
       </div>
 
+      {/* Transaction Groups Selection Cards */}
+      {selectedTransactionType && (
+        <div className="transaction-groups-cards">
+          {getTransactionGroupsByType().map(group => (
+            <div
+              key={group.id}
+              className={`transaction-group-card ${selectedTransactionGroup?.id === group.id ? 'selected' : ''}`}
+              onClick={() => handleTransactionGroupSelect(group)}
+              style={{
+                background: selectedTransactionGroup?.id === group.id && selectedTransactionType
+                  ? `linear-gradient(135deg, ${selectedTransactionType.color}20, ${selectedTransactionType.color}40)`
+                  : undefined,
+                borderColor: selectedTransactionGroup?.id === group.id && selectedTransactionType
+                  ? selectedTransactionType.color
+                  : undefined
+              }}
+            >
+              <span className="group-name">{group.name}</span>
+              <span className="group-description">{group.description || 'No description'}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Subcategory Selection Cards */}
       <div className="subcategory-cards">
-        {getSubcategoriesByTransactionType().map(subcategory => (
+        {getSubcategoriesByTransactionGroup().map(subcategory => (
           <div
             key={subcategory.id}
             className={`subcategory-card ${formData.subcategoryId === subcategory.id ? 'selected' : ''}`}
@@ -506,6 +562,7 @@ const TransactionForm = ({ onSuccess }) => {
         </div>
       )}
 
+      </div>
     </div>
   );
 };

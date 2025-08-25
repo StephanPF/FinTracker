@@ -1786,7 +1786,7 @@ const DataManagement = () => {
         )}
       </div>
 
-      {/* Portal-rendered dropdown to escape container clipping */}
+      {/* Portal-rendered dropdown */}
       {openDropdownId && createPortal(
         <div 
           className="dropdown-menu portal-dropdown"
@@ -1799,7 +1799,9 @@ const DataManagement = () => {
           }}
         >
           <button 
-            onClick={() => {
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               const currentRow = data.find(row => row.id === openDropdownId);
               if (currentRow) {
                 handleEdit(currentRow);
