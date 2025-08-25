@@ -776,7 +776,7 @@ body {
 
 /* Accounts Section */
 .accounts-section, .retirement-accounts-section {
-  margin: 2rem 0;
+  margin: 0;
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -5055,7 +5055,7 @@ body {
 /* Overview Cards */
 .summary-cards {
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0;
 }
 
 .summary-card {
