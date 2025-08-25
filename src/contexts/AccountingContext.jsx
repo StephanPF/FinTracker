@@ -43,6 +43,7 @@ export const AccountingProvider = ({ children }) => {
   const [apiUsage, setApiUsage] = useState([]);
   const [databaseInfo, setDatabaseInfo] = useState([]);
   const [payees, setPayees] = useState([]);
+  const [payers, setPayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,13 +63,35 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
+  // Ensure missing tables are initialized and saved to file storage
+  const initializeMissingTables = async () => {
+    try {
+      const tablesBefore = Object.keys(database.tables).length;
+      database.saveAllTablesToWorkbooks(); // This calls ensureAllTablesExist()
+      const tablesAfter = Object.keys(database.tables).length;
+      
+      // If new tables were created, save them to file storage
+      if (tablesAfter > tablesBefore) {
+        console.log('New tables created, saving to file storage...');
+        const buffers = database.exportAllTablesToBuffers();
+        await fileStorage.saveAllTables(buffers);
+      }
+    } catch (error) {
+      console.warn('Error initializing missing tables:', error);
+    }
+  };
+
   const updateStateFromDatabase = () => {
+    // Ensure all tables have workbooks initialized (including new tables like payers)
+    database.saveAllTablesToWorkbooks();
+    
     setAccounts(database.getTable('accounts'));
     setTransactions(database.getTable('transactions'));
     setTags(database.getTable('tags'));
     setProducts(database.getTable('tags'));
     setTodos(database.getTable('todos'));
     setPayees(database.getTable('payees'));
+    setPayers(database.getTable('payers'));
     setCategories(database.getCategories());
     setTransactionGroups(database.getTransactionGroups());
     setSubcategories(database.getSubcategories());
@@ -134,6 +157,9 @@ export const AccountingProvider = ({ children }) => {
       }
       if (files && await database.loadFromFiles(files)) {
         updateStateFromDatabase();
+        
+        // Initialize any missing tables (like payers for older databases)
+        await initializeMissingTables();
         
         // Get database language and set UI language accordingly
         const dbLanguage = database.getDatabaseLanguage();
@@ -346,6 +372,60 @@ export const AccountingProvider = ({ children }) => {
     return database.getActivePayees();
   };
 
+  // Payers CRUD methods
+  const addPayer = async (payerData) => {
+    try {
+      const newPayer = database.addPayer(payerData);
+      setPayers(database.getTable('payers'));
+      
+      const buffer = database.exportTableToBuffer('payers');
+      await fileStorage.saveTable('payers', buffer);
+      
+      return newPayer;
+    } catch (error) {
+      console.error('Error adding payer:', error);
+      throw error;
+    }
+  };
+
+  const updatePayer = async (id, payerData) => {
+    try {
+      const updatedPayer = database.updatePayer(id, payerData);
+      setPayers(database.getTable('payers'));
+      
+      const buffer = database.exportTableToBuffer('payers');
+      await fileStorage.saveTable('payers', buffer);
+      
+      return updatedPayer;
+    } catch (error) {
+      console.error('Error updating payer:', error);
+      throw error;
+    }
+  };
+
+  const deletePayer = async (id) => {
+    try {
+      const deletedPayer = database.deletePayer(id);
+      setPayers([...database.getTable('payers')]); // Create new array to force re-render
+      
+      const buffer = database.exportTableToBuffer('payers');
+      await fileStorage.saveTable('payers', buffer);
+      
+      return deletedPayer;
+    } catch (error) {
+      console.error('Error deleting payer:', error);
+      throw error;
+    }
+  };
+
+  const getPayers = () => {
+    return database.getPayers();
+  };
+
+  const getActivePayers = () => {
+    return database.getActivePayers();
+  };
+
   const updateTransaction = async (id, transactionData) => {
     try {
       const processedData = {
@@ -407,6 +487,7 @@ export const AccountingProvider = ({ children }) => {
       setTodos([]);
       setCategories([]);
       setPayees([]);
+      setPayers([]);
       setTransactionGroups([]);
       setSubcategories([]);
       
@@ -445,6 +526,7 @@ export const AccountingProvider = ({ children }) => {
     setTodos([]);
     setCategories([]);
     setPayees([]);
+    setPayers([]);
     setSubcategories([]);
     setDatabaseInfo([]);
     setDatabase(new RelationalDatabase());
@@ -485,6 +567,9 @@ export const AccountingProvider = ({ children }) => {
       
       if (files && await database.loadFromFiles(files)) {
         updateStateFromDatabase();
+        
+        // Initialize any missing tables (like payers for older databases)
+        await initializeMissingTables();
         
         // Get database language and set UI language accordingly
         const dbLanguage = database.getDatabaseLanguage();
@@ -1035,6 +1120,7 @@ export const AccountingProvider = ({ children }) => {
     exchangeRateService,
     databaseInfo,
     payees,
+    payers,
     isLoaded,
     loading,
     createNewDatabase,
@@ -1053,6 +1139,11 @@ export const AccountingProvider = ({ children }) => {
     deletePayee,
     getPayees,
     getActivePayees,
+    addPayer,
+    updatePayer,
+    deletePayer,
+    getPayers,
+    getActivePayers,
     addTodo,
     updateTodo,
     deleteTodo,

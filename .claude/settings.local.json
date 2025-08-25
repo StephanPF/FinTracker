@@ -33,6 +33,8 @@
       "Bash(npm start)",
       "Bash(npm run:*)",
       "Read(/C:\\Users\\steph\\Desktop/**)",
+      "Read(/C:\\Users\\steph\\Desktop/**)",
+      "Read(/C:\\Users\\steph\\Desktop/**)",
       "Read(/C:\\Users\\steph\\Desktop/**)"
     ],
     "deny": [],

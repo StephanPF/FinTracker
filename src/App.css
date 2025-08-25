@@ -934,7 +934,7 @@ body {
 .transaction-form {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0 2rem 2rem 2rem;
   animation: slideUp 0.5s ease-out;
 }
 
@@ -942,12 +942,294 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1rem 2rem 2rem 2rem;
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.1),
     0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
+}
+
+.transaction-date-field {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* React DatePicker Styling */
+.transaction-date-field .date-picker-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #374151;
+  transition: all 0.2s ease;
+  min-width: 200px;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  cursor: pointer;
+}
+
+.transaction-date-field .date-picker-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.transaction-date-field .date-picker-input::placeholder {
+  color: #9ca3af;
+  font-weight: normal;
+}
+
+/* DatePicker Popup Styling */
+.date-picker-popper {
+  z-index: 1000;
+}
+
+.date-picker-popper .react-datepicker {
+  font-family: 'Inter', sans-serif;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.date-picker-popper .react-datepicker__header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 12px 12px 0 0;
+  padding: 1rem;
+}
+
+.date-picker-popper .react-datepicker__current-month {
+  color: #374151;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.date-picker-popper .react-datepicker__day-name {
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.date-picker-popper .react-datepicker__day {
+  color: #374151;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin: 2px;
+}
+
+.date-picker-popper .react-datepicker__day:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+.date-picker-popper .react-datepicker__day--selected {
+  background: #3b82f6;
+  color: white;
+}
+
+.date-picker-popper .react-datepicker__day--today {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+}
+
+.date-picker-popper .react-datepicker__navigation {
+  border: none;
+  background: none;
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+
+.date-picker-popper .react-datepicker__navigation:hover {
+  color: #3b82f6;
+}
+
+/* Description and Payee Side by Side Layout */
+.description-payee-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+  margin: 0 0 1rem 0;
+}
+
+.description-field {
+  flex: 0 0 350px;
+}
+
+.payee-field {
+  flex: 0 0 200px;
+  position: relative;
+}
+
+.description-field input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #374151;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.description-field input:focus {
+  outline: none;
+  border-color: #4c6ef5;
+  box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+.payee-field input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.payee-field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.payee-field .payee-autocomplete-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.payee-field .payee-autocomplete-container input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Required vs Optional Field Styling */
+/* Required fields - solid borders with subtle red tint */
+.description-field input,
+.payee-field input,
+.date-picker-input,
+.quick-entry-account select,
+.quick-entry-amount input {
+  border: 2px solid #e5e7eb !important;
+  background: rgba(239, 68, 68, 0.02) !important;
+}
+
+.description-field input:focus,
+.payee-field input:focus,
+.date-picker-input:focus,
+.quick-entry-account select:focus,
+.quick-entry-amount input:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Optional fields - dashed borders with neutral background */
+.tag-reference-field input,
+.tag-reference-field .tag-autocomplete-container input,
+.quick-entry-description textarea {
+  border: 2px dashed #d1d5db !important;
+  background: rgba(156, 163, 175, 0.02) !important;
+}
+
+.tag-reference-field input:focus,
+.tag-reference-field .tag-autocomplete-container input:focus,
+.quick-entry-description textarea:focus {
+  border-color: #6b7280 !important;
+  border-style: solid !important;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1) !important;
+}
+
+/* Field Legend Styling */
+.field-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.required-indicator {
+  color: #ef4444;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.optional-indicator {
+  color: #9ca3af;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+/* Add Transaction Button */
+.transaction-submit-section {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0 1rem 0;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 2rem;
+}
+
+.add-transaction-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 12px rgba(59, 130, 246, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  text-align: center;
+}
+
+.add-transaction-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(59, 130, 246, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+}
+
+.add-transaction-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 8px rgba(59, 130, 246, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.add-transaction-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 
+    0 2px 6px rgba(156, 163, 175, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .form-header {
@@ -6688,15 +6970,15 @@ body {
 .transaction-type-card {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem 2rem;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  min-width: 120px;
+  min-width: 100px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -6712,11 +6994,11 @@ body {
 }
 
 .transaction-type-card .card-icon {
-  font-size: 2rem;
+  font-size: 1.75rem;
 }
 
 .transaction-type-card .card-label {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
@@ -6894,8 +7176,8 @@ body {
 
 /* Transaction Quick Entry */
 .transaction-quick-entry {
-  padding: 0.75rem 0;
-  margin-bottom: 1rem;
+  padding: 0.25rem 0;
+  margin-bottom: 0.5rem;
 }
 
 .quick-entry-description {

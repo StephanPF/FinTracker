@@ -11,6 +11,7 @@ const DataManagement = () => {
     transactions, 
     tags,
     payees,
+    payers,
     addAccount,
     addProduct,
     addTransaction,
@@ -25,6 +26,11 @@ const DataManagement = () => {
     deletePayee,
     getPayees,
     getActivePayees,
+    addPayer,
+    updatePayer,
+    deletePayer,
+    getPayers,
+    getActivePayers,
     resetToSetup,
     getAccountsWithTypes,
     getAccountTypes,
@@ -158,6 +164,9 @@ const DataManagement = () => {
           case 'payees':
             await updatePayee(editingId, formData);
             break;
+          case 'payers':
+            await updatePayer(editingId, formData);
+            break;
           case 'transaction_types':
             await updateCategory(editingId, formData);
             break;
@@ -187,6 +196,9 @@ const DataManagement = () => {
             break;
           case 'payees':
             await addPayee(formData);
+            break;
+          case 'payers':
+            await addPayer(formData);
             break;
           case 'transaction_types':
             await addCategory(formData);
@@ -288,6 +300,9 @@ const DataManagement = () => {
       case 'payees':
         confirmMessage = 'Are you sure you want to delete this payee?';
         break;
+      case 'payers':
+        confirmMessage = 'Are you sure you want to delete this payer?';
+        break;
       case 'transaction_types':
         confirmMessage = t('deleteCategoryConfirm');
         break;
@@ -319,6 +334,9 @@ const DataManagement = () => {
             break;
           case 'payees':
             await deletePayee(record.id);
+            break;
+          case 'payers':
+            await deletePayer(record.id);
             break;
           case 'transaction_types':
             await deleteCategory(record.id);
@@ -658,6 +676,27 @@ const DataManagement = () => {
     </form>
   );
 
+  const renderPayerForm = () => (
+    <form onSubmit={handleSubmit} className="data-form">
+      <div className="form-group">
+        <label>Payer Name</label>
+        <input
+          type="text"
+          value={formData.name || ''}
+          onChange={(e) => handleInputChange('name', e.target.value)}
+          required
+          placeholder="Enter payer name"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-actions">
+        <button type="submit" className="btn-primary">
+          {editingId ? 'Update Payer' : 'Add Payer'}
+        </button>
+      </div>
+    </form>
+  );
+
   const renderCategoryForm = () => (
     <form onSubmit={handleSubmit} className="data-form">
       <div className="form-group">
@@ -929,6 +968,8 @@ const DataManagement = () => {
         return `${t('add')} Tag`;
       case 'payees':
         return 'Add Payee';
+      case 'payers':
+        return 'Add Payer';
       case 'transaction_types':
         return t('addCategory');
       case 'subcategories':
@@ -952,6 +993,8 @@ const DataManagement = () => {
         return `${t('update')} Tag`;
       case 'payees':
         return 'Update Payee';
+      case 'payers':
+        return 'Update Payer';
       case 'transaction_types':
         return t('updateCategory');
       case 'subcategories':
@@ -1101,6 +1144,14 @@ const DataManagement = () => {
       case 'payees':
         return {
           data: payees,
+          columns: [
+            { key: 'id', label: 'ID' },
+            { key: 'name', label: 'Name' }
+          ]
+        };
+      case 'payers':
+        return {
+          data: payers,
           columns: [
             { key: 'id', label: 'ID' },
             { key: 'name', label: 'Name' }
@@ -1274,6 +1325,8 @@ const DataManagement = () => {
         return renderProductForm();
       case 'payees':
         return renderPayeeForm();
+      case 'payers':
+        return renderPayerForm();
       case 'transaction_types':
         return renderCategoryForm();
       case 'subcategories':
@@ -1651,7 +1704,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'transactions'].map(tab => (
+        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'payers', 'transactions'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'nav-btn active' : 'nav-btn'}
@@ -1662,7 +1715,7 @@ const DataManagement = () => {
               setSearchTerm('');
             }}
           >
-            {tab === 'payees' ? 'Payees' : t(tab)}
+            {tab === 'payees' ? 'Payees' : tab === 'payers' ? 'Payers' : t(tab)}
           </button>
         ))}
       </nav>

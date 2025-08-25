@@ -17,7 +17,8 @@ class RelationalDatabase {
       api_usage: [],
       api_settings: [],
       database_info: [],
-      payees: []
+      payees: [],
+      payers: []
     };
     this.workbooks = {};
     this.relationships = {
@@ -96,6 +97,7 @@ class RelationalDatabase {
       api_usage: this.generateApiUsage(),
       api_settings: this.generateApiSettings(),
       payees: [],
+      payers: [],
       
       database_info: [
         {
@@ -416,7 +418,7 @@ class RelationalDatabase {
 
   exportTableToBuffer(tableName) {
     if (!this.workbooks[tableName]) {
-      return null;
+      this.workbooks[tableName] = XLSX.utils.book_new();
     }
     
     this.saveTableToWorkbook(tableName);
@@ -539,8 +541,28 @@ class RelationalDatabase {
 
   // Ensure all tables are saved to workbooks (including empty ones)
   saveAllTablesToWorkbooks() {
+    // Ensure all required tables exist (for backwards compatibility)
+    this.ensureAllTablesExist();
+    
     for (const tableName of Object.keys(this.tables)) {
       this.saveTableToWorkbook(tableName);
+    }
+  }
+
+  // Ensure all required tables exist, even for older databases
+  ensureAllTablesExist() {
+    const requiredTables = [
+      'accounts', 'transactions', 'tags', 'todos', 'transaction_types',
+      'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
+      'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
+      'database_info', 'payees', 'payers'
+    ];
+
+    for (const tableName of requiredTables) {
+      if (!this.tables[tableName]) {
+        console.log(`Initializing missing table: ${tableName}`);
+        this.tables[tableName] = [];
+      }
     }
   }
 
@@ -3025,6 +3047,76 @@ class RelationalDatabase {
 
   getActivePayees() {
     return this.getPayees().filter(payee => payee.isActive);
+  }
+
+  // Payers CRUD methods
+  addPayer(payerData) {
+    // Initialize payers table if it doesn't exist
+    if (!this.tables.payers) {
+      this.tables.payers = [];
+    }
+    
+    const id = this.generateId('PAYER');
+    const newPayer = {
+      id,
+      name: payerData.name,
+      isActive: payerData.isActive !== undefined ? payerData.isActive : true,
+      createdAt: new Date().toISOString()
+    };
+
+    this.tables.payers.push(newPayer);
+    this.saveTableToWorkbook('payers');
+    return newPayer;
+  }
+
+  updatePayer(id, payerData) {
+    // Initialize payers table if it doesn't exist
+    if (!this.tables.payers) {
+      this.tables.payers = [];
+    }
+    
+    const payerIndex = this.tables.payers.findIndex(payer => payer.id === id);
+    if (payerIndex === -1) {
+      throw new Error(`Payer with id ${id} not found`);
+    }
+
+    const updatedPayer = {
+      ...this.tables.payers[payerIndex],
+      ...payerData,
+      id: id // Ensure ID doesn't change
+    };
+
+    this.tables.payers[payerIndex] = updatedPayer;
+    this.saveTableToWorkbook('payers');
+    return updatedPayer;
+  }
+
+  deletePayer(id) {
+    // Initialize payers table if it doesn't exist
+    if (!this.tables.payers) {
+      this.tables.payers = [];
+    }
+    
+    const payerIndex = this.tables.payers.findIndex(payer => payer.id === id);
+    if (payerIndex === -1) {
+      throw new Error(`Payer with id ${id} not found`);
+    }
+
+    const deletedPayer = this.tables.payers.splice(payerIndex, 1)[0];
+    this.saveTableToWorkbook('payers');
+    return deletedPayer;
+  }
+
+  getPayers() {
+    // Initialize payers table if it doesn't exist
+    if (!this.tables.payers) {
+      this.tables.payers = [];
+    }
+    return this.tables.payers;
+  }
+
+  getActivePayers() {
+    return this.getPayers().filter(payer => payer.isActive);
   }
 }
 

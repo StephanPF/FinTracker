@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const TransactionForm = ({ onSuccess }) => {
   const { 
@@ -17,7 +19,8 @@ const TransactionForm = ({ onSuccess }) => {
     getActiveTransactionGroups,
     currencies,
     exchangeRateService,
-    getActiveCurrencies 
+    getActiveCurrencies,
+    database 
   } = useAccounting();
   const { t } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
@@ -44,6 +47,7 @@ const TransactionForm = ({ onSuccess }) => {
   const [error, setError] = useState('');
   const [selectedTransactionType, setSelectedTransactionType] = useState(null);
   const [selectedTransactionGroup, setSelectedTransactionGroup] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   
   // Payee autocomplete state
   const [payeeInput, setPayeeInput] = useState('');
@@ -54,6 +58,9 @@ const TransactionForm = ({ onSuccess }) => {
   const [tagInput, setTagInput] = useState('');
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [filteredTags, setFilteredTags] = useState([]);
+  
+  // Date input ref
+  const dateInputRef = useRef(null);
 
   // Initialize with first transaction type and transaction group on load
   useEffect(() => {
@@ -100,6 +107,45 @@ const TransactionForm = ({ onSuccess }) => {
       setShowTagDropdown(false);
     }
   }, [tagInput, tags]);
+
+  // Get user's preferred date format from settings
+  const getUserDateFormat = () => {
+    if (database) {
+      const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
+      if (datePrefs && datePrefs.settings.dateFormat) {
+        return datePrefs.settings.dateFormat;
+      }
+    }
+    return 'DD/MM/YYYY'; // Default format
+  };
+
+  // Convert settings date format to react-datepicker format
+  const convertToDatePickerFormat = (settingsFormat) => {
+    const formatMap = {
+      'DD/MM/YYYY': 'dd/MM/yyyy',
+      'MM/DD/YYYY': 'MM/dd/yyyy', 
+      'YYYY-MM-DD': 'yyyy-MM-dd',
+      'DD.MM.YYYY': 'dd.MM.yyyy',
+      'MMM DD, YYYY': 'MMM dd, yyyy'
+    };
+    return formatMap[settingsFormat] || 'dd/MM/yyyy';
+  };
+
+  const userDateFormat = getUserDateFormat();
+  const datePickerFormat = convertToDatePickerFormat(userDateFormat);
+
+  // Handle date picker changes
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    // Update formData with ISO date string
+    if (date) {
+      const dateString = date.toISOString().split('T')[0];
+      setFormData(prev => ({
+        ...prev,
+        date: dateString
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -335,6 +381,20 @@ const TransactionForm = ({ onSuccess }) => {
   return (
     <div className="transaction-form">
       <div className="transaction-panel">
+        {/* Date Field */}
+        <div className="transaction-date-field">
+          <DatePicker
+            selected={selectedDate}
+            onChange={handleDateChange}
+            dateFormat={datePickerFormat}
+            className="date-picker-input"
+            placeholderText={`Select date (${userDateFormat}) *`}
+            showPopperArrow={false}
+            popperClassName="date-picker-popper"
+            required
+          />
+        </div>
+
         {/* Transaction Type Selection Cards */}
       <div className="transaction-type-cards">
         {getActiveCategories().map(transactionType => (
@@ -398,18 +458,48 @@ const TransactionForm = ({ onSuccess }) => {
         ))}
       </div>
 
-      {/* Default Account and Amount Section */}
+      {/* Description and Payee Fields Side by Side */}
       {selectedTransactionType && (
         <div className="transaction-quick-entry">
-          <div className="quick-entry-description">
-            <input
-              type="text"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder={t('enterDescription')}
-              className={!isDescriptionUserModified && formData.description ? 'default-description' : ''}
-            />
+          <div className="description-payee-row">
+            <div className="description-field">
+              <input
+                type="text"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder={`${t('enterDescription')} *`}
+                className={!isDescriptionUserModified && formData.description ? 'default-description' : ''}
+              />
+            </div>
+            <div className="payee-field">
+              <div className="payee-autocomplete-container">
+                <input
+                  type="text"
+                  id="payee"
+                  name="payee"
+                  value={payeeInput}
+                  onChange={handlePayeeInputChange}
+                  onBlur={handlePayeeInputBlur}
+                  onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
+                  placeholder="👤 Start typing payee name... *"
+                />
+                
+                {showPayeeDropdown && filteredPayees.length > 0 && (
+                  <div className="payee-dropdown">
+                    {filteredPayees.map(payee => (
+                      <div
+                        key={payee.id}
+                        className="payee-dropdown-item"
+                        onClick={() => handlePayeeSelect(payee)}
+                      >
+                        {payee.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <div className="quick-entry-row">
             <div className="quick-entry-account">
@@ -478,39 +568,6 @@ const TransactionForm = ({ onSuccess }) => {
         </div>
       )}
 
-      {/* Payee Autocomplete Section */}
-      {selectedTransactionType && (
-        <div className="transaction-quick-entry">
-          <div className="quick-entry-description">
-            <div className="payee-autocomplete-container">
-              <input
-                type="text"
-                id="payee"
-                name="payee"
-                value={payeeInput}
-                onChange={handlePayeeInputChange}
-                onBlur={handlePayeeInputBlur}
-                onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
-                placeholder="👤 Start typing payee name..."
-              />
-              
-              {showPayeeDropdown && filteredPayees.length > 0 && (
-                <div className="payee-dropdown">
-                  {filteredPayees.map(payee => (
-                    <div
-                      key={payee.id}
-                      className="payee-option"
-                      onClick={() => handlePayeeSelect(payee)}
-                    >
-                      {payee.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Tag and Reference Side by Side Section */}
       {selectedTransactionType && (
@@ -572,6 +629,20 @@ const TransactionForm = ({ onSuccess }) => {
               rows="3"
             />
           </div>
+        </div>
+      )}
+
+      {/* Add Transaction Button */}
+      {selectedTransactionType && (
+        <div className="transaction-submit-section">
+          <button 
+            type="submit" 
+            className="add-transaction-btn"
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? 'Adding Transaction...' : 'Add Transaction'}
+          </button>
         </div>
       )}
 
