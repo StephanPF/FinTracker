@@ -348,5 +348,27 @@ export const en = {
   multipleLocations: "Store backups in multiple locations (cloud storage, external drive)",
   testRestores: "Test restore procedures periodically",
   dateNaming: "Keep backup files named with dates for easy organization",
-  encryptBackups: "Consider encrypting backups containing sensitive financial data"
+  encryptBackups: "Consider encrypting backups containing sensitive financial data",
+  
+  // Application Reset
+  applicationReset: "Application Reset",
+  resetWarning: "Warning! This will permanently delete all your data. This action is not reversible!",
+  deleteAllData: "Delete all my data",
+  dataDeletionWarning: "Data Deletion Warning",
+  deletionWillRemove: "This action will permanently delete:",
+  allAccountsBalances: "All accounts and balances",
+  allTransactionHistory: "All transaction history",
+  allCategoriesSubcategories: "All transaction categories and subcategories",
+  allTransactionTypes: "All transaction types and groups",
+  allTagsCustomData: "All tags and custom data",
+  onlySystemSettings: "Currency settings, user preferences, and system configurations will be preserved.",
+  finalWarning: "Final Warning",
+  deleteAllConfirmation: "Warning! By clicking 'DELETE ALL', you will delete all your data permanently. This action is not reversible.",
+  typeCodeToConfirm: "Type the following code to confirm:",
+  enterCodeAbove: "Enter the code above",
+  typeWordAbove: "Type the word above",
+  deleteAll: "DELETE ALL",
+  deleting: "Deleting...",
+  dataDeletedSuccess: "All data has been successfully deleted and reset to defaults.",
+  errorDeletingData: "Error deleting data. Please try again."
 };

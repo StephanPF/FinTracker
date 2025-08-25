@@ -348,5 +348,27 @@ export const fr = {
   multipleLocations: "Stocker les sauvegardes dans plusieurs emplacements (stockage cloud, disque externe)",
   testRestores: "Tester périodiquement les procédures de restauration",
   dateNaming: "Garder les fichiers de sauvegarde nommés avec des dates pour une organisation facile",
-  encryptBackups: "Considérer le chiffrement des sauvegardes contenant des données financières sensibles"
+  encryptBackups: "Considérer le chiffrement des sauvegardes contenant des données financières sensibles",
+  
+  // Application Reset
+  applicationReset: "Réinitialisation de l'Application",
+  resetWarning: "Attention! Cela supprimera définitivement toutes vos données. Cette action n'est pas réversible!",
+  deleteAllData: "Supprimer toutes mes données",
+  dataDeletionWarning: "Avertissement de Suppression des Données",
+  deletionWillRemove: "Cette action supprimera définitivement :",
+  allAccountsBalances: "Tous les comptes et soldes",
+  allTransactionHistory: "Tout l'historique des transactions",
+  allCategoriesSubcategories: "Toutes les catégories et sous-catégories de transaction",
+  allTransactionTypes: "Tous les types et groupes de transaction",
+  allTagsCustomData: "Tous les tags et données personnalisées",
+  onlySystemSettings: "Les paramètres de devise, préférences utilisateur et configurations système seront préservés.",
+  finalWarning: "Avertissement Final",
+  deleteAllConfirmation: "Attention! En cliquant sur 'SUPPRIMER TOUT', vous supprimerez toutes vos données définitivement. Cette action n'est pas réversible.",
+  typeCodeToConfirm: "Tapez le code suivant pour confirmer :",
+  enterCodeAbove: "Entrez le code ci-dessus",
+  typeWordAbove: "Tapez le mot ci-dessus",
+  deleteAll: "SUPPRIMER TOUT",
+  deleting: "Suppression...",
+  dataDeletedSuccess: "Toutes les données ont été supprimées avec succès et réinitialisées aux valeurs par défaut.",
+  errorDeletingData: "Erreur lors de la suppression des données. Veuillez réessayer."
 };

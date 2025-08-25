@@ -339,6 +339,47 @@ export const AccountingProvider = ({ children }) => {
     // So the recent databases list can show the current database as active
   };
 
+  const resetDatabase = async () => {
+    try {
+      // Clear all data from database
+      database.clearAllData();
+      
+      // Reset state to empty values (preserve currency data)
+      setAccounts([]);
+      setTransactions([]);
+      setTags([]);
+      setTodos([]);
+      setCategories([]);
+      setTransactionGroups([]);
+      setSubcategories([]);
+      
+      // Currency state will be preserved - do not reset:
+      // setCurrencies([]);     // KEEP existing currencies
+      // setExchangeRates([]);  // KEEP existing exchange rates
+      
+      // Save all cleared tables to files
+      const tablesToSave = [
+        'accounts', 'transactions', 'tags', 'todos',
+        'transaction_types', 'transaction_groups', 'subcategories',
+        'currencies', 'exchange_rates', 'currency_settings',
+        'user_preferences', 'api_usage', 'api_settings', 'database_info'
+      ];
+      
+      for (const tableName of tablesToSave) {
+        const buffer = database.exportTableToBuffer(tableName);
+        await fileStorage.saveTable(tableName, buffer);
+      }
+      
+      // Reinitialize with default data
+      await initializeDatabase();
+      
+      return true;
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      throw error;
+    }
+  };
+
   const closeDatabase = () => {
     setIsLoaded(false);
     setAccounts([]);
@@ -954,6 +995,7 @@ export const AccountingProvider = ({ children }) => {
     getSummary,
     getTransactionsWithDetails,
     resetToSetup,
+    resetDatabase,
     closeDatabase,
     getRecentDatabases,
     loadRecentDatabase,

@@ -433,6 +433,106 @@ class RelationalDatabase {
     return buffers;
   }
 
+  // Clear all data from all tables and reset to defaults
+  clearAllData() {
+    // Clear all table data
+    this.tables.accounts = [];
+    this.tables.transactions = [];
+    this.tables.tags = [];
+    this.tables.todos = [];
+    this.tables.transaction_types = [];
+    this.tables.transaction_groups = [];
+    this.tables.subcategories = [];
+    
+    // PRESERVE currency data - do not reset currencies, exchange rates, or currency settings
+    // Users' currency configurations should remain intact after reset
+    
+    // Reset other system tables to defaults (but preserve existing preferences if they exist)
+    if (this.tables.user_preferences.length === 0) {
+      this.tables.user_preferences = [...this.getDefaultUserPreferences()];
+    }
+    this.tables.api_usage = [];
+    if (this.tables.api_settings.length === 0) {
+      this.tables.api_settings = [...this.getDefaultApiSettings()];
+    }
+    
+    // Update database info to reflect the reset
+    const existingInfo = [...this.tables.database_info];
+    this.tables.database_info = [...this.getDefaultDatabaseInfo()];
+    
+    // Preserve version if it exists
+    const existingVersion = existingInfo.find(item => item.key === 'version');
+    if (existingVersion) {
+      const versionIndex = this.tables.database_info.findIndex(item => item.key === 'version');
+      if (versionIndex !== -1) {
+        this.tables.database_info[versionIndex].value = existingVersion.value;
+      }
+    }
+    
+    // Update lastModified to current time
+    const modifiedIndex = this.tables.database_info.findIndex(item => item.key === 'lastModified');
+    if (modifiedIndex !== -1) {
+      this.tables.database_info[modifiedIndex].value = new Date().toISOString();
+    }
+    
+    // Clear workbooks to force regeneration
+    this.workbooks = {};
+    
+    console.log('All data cleared and reset to defaults (currencies preserved)');
+  }
+
+  // Helper methods to get default data
+  getDefaultCurrencies() {
+    return [
+      { id: 'CUR_001', code: 'EUR', name: 'Euro', symbol: '€', type: 'fiat', decimalPlaces: 2, isActive: true },
+      { id: 'CUR_002', code: 'USD', name: 'US Dollar', symbol: '$', type: 'fiat', decimalPlaces: 2, isActive: true },
+      { id: 'CUR_003', code: 'GBP', name: 'British Pound', symbol: '£', type: 'fiat', decimalPlaces: 2, isActive: true },
+      { id: 'CUR_004', code: 'JPY', name: 'Japanese Yen', symbol: '¥', type: 'fiat', decimalPlaces: 0, isActive: true },
+      { id: 'CUR_005', code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', type: 'fiat', decimalPlaces: 2, isActive: true },
+      { id: 'CUR_006', code: 'AUD', name: 'Australian Dollar', symbol: 'A$', type: 'fiat', decimalPlaces: 2, isActive: true },
+      { id: 'CUR_007', code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', type: 'fiat', decimalPlaces: 2, isActive: true },
+      { id: 'CUR_008', code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', type: 'fiat', decimalPlaces: 2, isActive: true }
+    ];
+  }
+
+  getDefaultExchangeRates() {
+    return [
+      { id: 'EXR_001', fromCurrencyId: 'CUR_002', toCurrencyId: 'CUR_001', rate: 0.85, rateDate: new Date().toISOString(), source: 'manual' },
+      { id: 'EXR_002', fromCurrencyId: 'CUR_003', toCurrencyId: 'CUR_001', rate: 1.15, rateDate: new Date().toISOString(), source: 'manual' },
+      { id: 'EXR_003', fromCurrencyId: 'CUR_004', toCurrencyId: 'CUR_001', rate: 0.0065, rateDate: new Date().toISOString(), source: 'manual' },
+      { id: 'EXR_004', fromCurrencyId: 'CUR_005', toCurrencyId: 'CUR_001', rate: 0.68, rateDate: new Date().toISOString(), source: 'manual' },
+      { id: 'EXR_005', fromCurrencyId: 'CUR_006', toCurrencyId: 'CUR_001', rate: 0.62, rateDate: new Date().toISOString(), source: 'manual' },
+      { id: 'EXR_006', fromCurrencyId: 'CUR_007', toCurrencyId: 'CUR_001', rate: 0.25, rateDate: new Date().toISOString(), source: 'manual' },
+      { id: 'EXR_007', fromCurrencyId: 'CUR_008', toCurrencyId: 'CUR_001', rate: 0.92, rateDate: new Date().toISOString(), source: 'manual' }
+    ];
+  }
+
+  getDefaultCurrencySettings() {
+    return [
+      { id: 'CS_001', baseCurrencyId: 'CUR_001', autoUpdateRates: false, rateUpdateFrequency: 'daily', lastRateUpdate: null }
+    ];
+  }
+
+  getDefaultUserPreferences() {
+    return [
+      { id: 'UP_001', key: 'dateFormat', value: 'YYYY-MM-DD' },
+      { id: 'UP_002', key: 'numberFormat', value: 'en-US' },
+      { id: 'UP_003', key: 'language', value: 'en' }
+    ];
+  }
+
+  getDefaultApiSettings() {
+    return [];
+  }
+
+  getDefaultDatabaseInfo() {
+    return [
+      { id: 'DI_001', key: 'version', value: '1.0' },
+      { id: 'DI_002', key: 'createdAt', value: new Date().toISOString() },
+      { id: 'DI_003', key: 'lastModified', value: new Date().toISOString() }
+    ];
+  }
+
   // Ensure all tables are saved to workbooks (including empty ones)
   saveAllTablesToWorkbooks() {
     for (const tableName of Object.keys(this.tables)) {

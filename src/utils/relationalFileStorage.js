@@ -157,7 +157,13 @@ class RelationalFileStorage {
       
       if (this.supportsFileSystemAccess && this.fileHandles[table]) {
         const writable = await this.fileHandles[table].createWritable();
-        await writable.write(data);
+        
+        // Create a Blob from the buffer data for File System Access API
+        const blob = new Blob([data], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        await writable.write(blob);
         await writable.close();
         return true;
       } else {

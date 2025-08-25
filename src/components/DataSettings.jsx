@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccounting } from '../contexts/AccountingContext';
 
 const DataSettings = () => {
   const { t } = useLanguage();
-  const { database, fileStorage } = useAccounting();
+  const { database, fileStorage, resetDatabase } = useAccounting();
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupStatus, setBackupStatus] = useState('');
+  
+  // Application Reset states
+  const [showResetPopup, setShowResetPopup] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [userInputCode, setUserInputCode] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const createBackup = async () => {
     try {
@@ -74,6 +82,71 @@ const DataSettings = () => {
       }, 5000);
     } finally {
       setIsCreatingBackup(false);
+    }
+  };
+
+  // Generate random 8-letter code
+  const generateResetCode = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+  };
+
+  // Handle delete all data button click
+  const handleDeleteAllData = () => {
+    const code = generateResetCode();
+    setResetCode(code);
+    setUserInputCode('');
+    setResetError('');
+    setShowResetPopup(true);
+  };
+
+  // Handle reset popup cancel
+  const handleResetCancel = () => {
+    setShowResetPopup(false);
+    setResetCode('');
+    setUserInputCode('');
+    setResetError('');
+  };
+
+  // Handle code input change
+  const handleCodeInputChange = (e) => {
+    setUserInputCode(e.target.value.toUpperCase());
+    if (resetError) {
+      setResetError(''); // Clear error when user starts typing
+    }
+  };
+
+  // Handle delete all confirmation
+  const handleDeleteAllConfirm = async () => {
+    if (userInputCode !== resetCode) {
+      setResetError(t('typeWordAbove'));
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      setResetError('');
+
+      // Call resetDatabase function to clear all data
+      await resetDatabase();
+
+      // Close popup and show success
+      setShowResetPopup(false);
+      setResetCode('');
+      setUserInputCode('');
+      
+      // Show success message (you could add a success state if needed)
+      alert(t('dataDeletedSuccess'));
+      
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      setResetError(t('errorDeletingData'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -205,7 +278,112 @@ const DataSettings = () => {
             </div>
           </div>
         </div>
+
+        {/* Application Reset Panel */}
+        <div className="settings-panel reset-panel">
+          <div className="panel-header">
+            <div className="panel-title">
+              <span className="panel-icon">⚠️</span>
+              <div>
+                <h3>{t('applicationReset')}</h3>
+                <p className="warning-text">{t('resetWarning')}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="panel-content">
+            <div className="reset-warning">
+              <div className="warning-box">
+                <span className="warning-icon">🚨</span>
+                <div className="warning-content">
+                  <h4>{t('dataDeletionWarning')}</h4>
+                  <p>{t('deletionWillRemove')}</p>
+                  <ul className="deletion-list">
+                    <li>• {t('allAccountsBalances')}</li>
+                    <li>• {t('allTransactionHistory')}</li>
+                    <li>• {t('allCategoriesSubcategories')}</li>
+                    <li>• {t('allTransactionTypes')}</li>
+                    <li>• {t('allTagsCustomData')}</li>
+                  </ul>
+                  <p className="warning-note">{t('onlySystemSettings')}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="reset-actions">
+              <button
+                className="delete-all-btn"
+                onClick={handleDeleteAllData}
+              >
+                <span className="delete-icon">🗑️</span>
+                {t('deleteAllData')}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Reset Confirmation Popup - Rendered using Portal */}
+      {showResetPopup && createPortal(
+        <div className="reset-popup-overlay" onClick={(e) => e.target === e.currentTarget && handleResetCancel()}>
+          <div className="reset-popup">
+            <div className="popup-header">
+              <h3>⚠️ {t('finalWarning')}</h3>
+            </div>
+            
+            <div className="popup-content">
+              <p className="popup-warning">
+                {t('deleteAllConfirmation')}
+              </p>
+              
+              <div className="code-section">
+                <p className="code-instruction">{t('typeCodeToConfirm')}</p>
+                <div className="reset-code">{resetCode}</div>
+                <input
+                  type="text"
+                  value={userInputCode}
+                  onChange={handleCodeInputChange}
+                  placeholder={t('enterCodeAbove')}
+                  className={`code-input ${resetError ? 'error' : ''}`}
+                  maxLength={8}
+                  disabled={isDeleting}
+                  autoFocus
+                />
+                {resetError && (
+                  <div className="code-error">{resetError}</div>
+                )}
+              </div>
+            </div>
+            
+            <div className="popup-actions">
+              <button
+                className="cancel-btn"
+                onClick={handleResetCancel}
+                disabled={isDeleting}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                className={`delete-confirm-btn ${isDeleting ? 'deleting' : ''}`}
+                onClick={handleDeleteAllConfirm}
+                disabled={isDeleting || !userInputCode}
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="spinner">⏳</span>
+                    {t('deleting')}
+                  </>
+                ) : (
+                  <>
+                    {t('deleteAll')}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

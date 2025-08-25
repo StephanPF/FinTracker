@@ -6971,3 +6971,332 @@ body {
     font-size: 0.95rem;
   }
 }
+
+/* Application Reset Styles */
+.data-settings .reset-panel {
+  border: 2px solid #ef4444;
+  background: #fef2f2;
+}
+
+.data-settings .reset-panel .panel-header {
+  border-bottom-color: #fecaca;
+}
+
+.data-settings .reset-panel .warning-text {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.data-settings .reset-warning {
+  margin-bottom: 2rem;
+}
+
+.data-settings .warning-box {
+  background: #fee2e2;
+  border: 2px solid #fca5a5;
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.data-settings .warning-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.data-settings .warning-content h4 {
+  color: #991b1b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+}
+
+.data-settings .warning-content p {
+  color: #7f1d1d;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+}
+
+.data-settings .deletion-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem 0;
+}
+
+.data-settings .deletion-list li {
+  color: #7f1d1d;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-settings .warning-note {
+  color: #991b1b;
+  font-weight: 500;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0.75rem 0 0 0;
+}
+
+.data-settings .reset-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.data-settings .delete-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.data-settings .delete-all-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+.data-settings .delete-icon {
+  font-size: 1.2rem;
+}
+
+/* Reset Popup Styles */
+.reset-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+  padding: 1rem;
+}
+
+.reset-popup {
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 500px;
+  width: 100%;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  border: 2px solid #ef4444;
+  position: relative;
+  margin: auto;
+}
+
+.reset-popup .popup-header {
+  background: #fee2e2;
+  padding: 1.5rem;
+  border-bottom: 1px solid #fca5a5;
+  border-radius: 10px 10px 0 0;
+}
+
+.reset-popup .popup-header h3 {
+  margin: 0;
+  color: #991b1b;
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reset-popup .popup-content {
+  padding: 2rem;
+}
+
+.reset-popup .popup-warning {
+  color: #7f1d1d;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0 0 2rem 0;
+  text-align: center;
+  background: #fef2f2;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
+.reset-popup .code-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.reset-popup .code-instruction {
+  color: #374151;
+  font-size: 0.95rem;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+}
+
+.reset-popup .reset-code {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 2px solid #fca5a5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.reset-popup .code-input {
+  width: 100%;
+  max-width: 200px;
+  padding: 0.875rem;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+}
+
+.reset-popup .code-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.reset-popup .code-input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.reset-popup .code-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.reset-popup .popup-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 10px 10px;
+}
+
+.reset-popup .cancel-btn {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.reset-popup .cancel-btn:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.reset-popup .cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reset-popup .delete-confirm-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reset-popup .delete-confirm-btn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.reset-popup .delete-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reset-popup .delete-confirm-btn.deleting {
+  background: #6b7280;
+}
+
+.reset-popup .spinner {
+  font-size: 1rem;
+}
+
+/* Ensure popup appears above all other elements */
+.reset-popup-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+}
+
+/* Additional fallback positioning */
+.reset-popup {
+  transform: none !important;
+  position: static !important;
+}
+
+@media (max-width: 768px) {
+  .reset-popup-overlay {
+    padding: 0.5rem;
+  }
+  
+  .reset-popup {
+    width: calc(100% - 1rem);
+    max-width: 450px;
+    margin: 0;
+  }
+  
+  .reset-popup .popup-content {
+    padding: 1.5rem;
+  }
+  
+  .reset-popup .popup-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .reset-popup .reset-code {
+    font-size: 1.3rem;
+    padding: 0.875rem;
+  }
+}
