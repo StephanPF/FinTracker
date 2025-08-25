@@ -82,6 +82,7 @@ const DataManagement = () => {
   const [dragOverId, setDragOverId] = useState(null);
   const [dragLeaveTimeout, setDragLeaveTimeout] = useState(null);
   const [reorderingAccounts, setReorderingAccounts] = useState(false);
+  const [reorderingCategories, setReorderingCategories] = useState(false);
 
   const resetForm = () => {
     // Initialize formData with default values for transactions
@@ -316,7 +317,7 @@ const DataManagement = () => {
       <table>
         <thead>
           <tr>
-            {activeTab === 'accounts' && <th className="drag-handle-header">Order</th>}
+            {(activeTab === 'accounts' || activeTab === 'transaction_types') && <th className="drag-handle-header">Order</th>}
             {columns.map(col => (
               <th key={col.key}>{col.label}</th>
             ))}
@@ -328,16 +329,16 @@ const DataManagement = () => {
             <tr 
               key={row.id || index}
               className={`
-                ${activeTab === 'accounts' ? 'draggable-row' : ''}
+                ${(activeTab === 'accounts' || activeTab === 'transaction_types') ? 'draggable-row' : ''}
                 ${draggedId === row.id ? 'dragging' : ''}
                 ${dragOverId === row.id ? 'drag-over' : ''}
               `.trim()}
-              onDragEnter={activeTab === 'accounts' ? (e) => handleDragEnter(e, row.id) : undefined}
-              onDragOver={activeTab === 'accounts' ? (e) => handleDragOver(e, row.id) : undefined}
-              onDragLeave={activeTab === 'accounts' ? (e) => handleDragLeave(e, row.id) : undefined}
-              onDrop={activeTab === 'accounts' ? (e) => handleDrop(e, row.id) : undefined}
+              onDragEnter={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDragEnter(e, row.id) : undefined}
+              onDragOver={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDragOver(e, row.id) : undefined}
+              onDragLeave={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDragLeave(e, row.id) : undefined}
+              onDrop={(activeTab === 'accounts' || activeTab === 'transaction_types') ? (e) => handleDrop(e, row.id) : undefined}
             >
-              {activeTab === 'accounts' && (
+              {(activeTab === 'accounts' || activeTab === 'transaction_types') && (
                 <td className="drag-handle-cell">
                   <div 
                     className="drag-handle" 
@@ -1463,12 +1464,16 @@ const DataManagement = () => {
   const handleDrop = (e, targetId) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Dropped on account:', targetId, 'dragged:', draggedId);
+    console.log('Dropped on:', activeTab, targetId, 'dragged:', draggedId);
     
     setDragOverId(null);
     
     if (draggedId && draggedId !== targetId) {
-      reorderAccounts(draggedId, targetId);
+      if (activeTab === 'accounts') {
+        reorderAccounts(draggedId, targetId);
+      } else if (activeTab === 'transaction_types') {
+        reorderCategories(draggedId, targetId);
+      }
     }
     setDraggedId(null);
   };
@@ -1536,6 +1541,71 @@ const DataManagement = () => {
       // If there's an error, refresh to show the correct state
       setRefreshKey(prev => prev + 1);
       setReorderingAccounts(false);
+    }
+  };
+
+  const reorderCategories = async (draggedId, targetId) => {
+    try {
+      console.log('Reordering categories:', draggedId, 'to', targetId);
+      console.log('Current categories before reorder:', categories.map(c => ({id: c.id, name: c.name, order: c.order})));
+      setReorderingCategories(true);
+      
+      const categoriesList = [...categories];
+      const draggedIndex = categoriesList.findIndex(cat => cat.id === draggedId);
+      const targetIndex = categoriesList.findIndex(cat => cat.id === targetId);
+      
+      console.log('Dragged index:', draggedIndex, 'Target index:', targetIndex);
+      
+      if (draggedIndex === -1 || targetIndex === -1) {
+        console.log('Invalid indices found');
+        setReorderingCategories(false);
+        return;
+      }
+      
+      // Remove dragged item and insert at target position
+      const [draggedItem] = categoriesList.splice(draggedIndex, 1);
+      categoriesList.splice(targetIndex, 0, draggedItem);
+      
+      console.log('Categories after array reorder:', categoriesList.map(c => ({id: c.id, name: c.name, order: c.order})));
+      
+      // Batch update all categories that need reordering (async in background)
+      const updatePromises = [];
+      const categoriesToUpdate = [];
+      
+      for (let i = 0; i < categoriesList.length; i++) {
+        const category = categoriesList[i];
+        const newOrder = i + 1;
+        if (category.order !== newOrder) {
+          categoriesToUpdate.push({ ...category, order: newOrder });
+        }
+      }
+      
+      // Only update categories that actually changed order
+      console.log(`Updating order for ${categoriesToUpdate.length} categories`);
+      
+      // Batch update in parallel instead of sequential
+      for (const categoryData of categoriesToUpdate) {
+        updatePromises.push(updateCategory(categoryData.id, categoryData));
+      }
+      
+      // Wait for all updates to complete in parallel
+      await Promise.all(updatePromises);
+      console.log('All category orders updated successfully');
+      
+      // Force immediate UI refresh
+      setReorderingCategories(false);
+      setRefreshKey(prev => prev + 1);
+      
+      // Add a small delay to ensure database state is fully updated before next operation
+      setTimeout(() => {
+        console.log('Categories after reorder:', getCategories());
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error reordering categories:', error);
+      // If there's an error, refresh to show the correct state
+      setRefreshKey(prev => prev + 1);
+      setReorderingCategories(false);
     }
   };
 
@@ -1649,6 +1719,9 @@ const DataManagement = () => {
               <h3>
                 {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
                 {reorderingAccounts && activeTab === 'accounts' && (
+                  <span className="reordering-indicator"> - Reordering...</span>
+                )}
+                {reorderingCategories && activeTab === 'transaction_types' && (
                   <span className="reordering-indicator"> - Reordering...</span>
                 )}
               </h3>

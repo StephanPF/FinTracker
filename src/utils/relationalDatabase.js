@@ -1433,17 +1433,20 @@ class RelationalDatabase {
 
   // Category CRUD methods
   getCategories() {
-    return this.tables.transaction_types;
+    return this.tables.transaction_types.sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   getActiveCategories() {
-    return this.tables.transaction_types.filter(category => category.isActive);
+    return this.tables.transaction_types.filter(category => category.isActive).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   addCategory(categoryData) {
     if (!this.validateForeignKeys('transaction_types', categoryData)) {
       throw new Error('Invalid foreign key references in transaction type');
     }
+    
+    // Get next order value
+    const maxOrder = Math.max(...this.tables.transaction_types.map(cat => cat.order || 0), 0);
     
     const newCategory = {
       id: 'CAT_' + Date.now(),
@@ -1453,6 +1456,7 @@ class RelationalDatabase {
       icon: categoryData.icon || '💼',
       defaultAccountId: categoryData.defaultAccountId || null,
       destinationAccountId: categoryData.destinationAccountId || null,
+      order: categoryData.order !== undefined ? categoryData.order : maxOrder + 1,
       isActive: categoryData.isActive !== undefined ? categoryData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -2962,7 +2966,7 @@ class RelationalDatabase {
     if (this.tables.transaction_types && Array.isArray(this.tables.transaction_types)) {
       let migrationNeeded = false;
       
-      this.tables.transaction_types = this.tables.transaction_types.map(transactionType => {
+      this.tables.transaction_types = this.tables.transaction_types.map((transactionType, index) => {
         let updated = { ...transactionType };
         
         // Add missing defaultAccountId field
@@ -2977,12 +2981,18 @@ class RelationalDatabase {
           migrationNeeded = true;
         }
         
+        // Add missing order field
+        if (updated.order === undefined) {
+          updated.order = index + 1;
+          migrationNeeded = true;
+        }
+        
         return updated;
       });
       
       // Save if migration was needed
       if (migrationNeeded) {
-        console.log('Migrated transaction types to include account fields');
+        console.log('Migrated transaction types to include account fields and order');
         this.saveTableToWorkbook('transaction_types');
       }
     }
