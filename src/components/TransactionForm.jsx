@@ -55,13 +55,21 @@ const TransactionForm = ({ onSuccess }) => {
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [filteredTags, setFilteredTags] = useState([]);
 
-  // Initialize with first transaction type on load
+  // Initialize with first transaction type and transaction group on load
   useEffect(() => {
     const activeCategories = getActiveCategories();
     if (activeCategories.length > 0 && !selectedTransactionType) {
-      setSelectedTransactionType(activeCategories[0]);
+      const firstTransactionType = activeCategories[0];
+      setSelectedTransactionType(firstTransactionType);
+      
+      // Auto-select the first transaction group for the first transaction type
+      const availableGroups = getActiveTransactionGroups().filter(group => 
+        group.transactionTypeId === firstTransactionType.id
+      );
+      const firstGroup = availableGroups.length > 0 ? availableGroups[0] : null;
+      setSelectedTransactionGroup(firstGroup);
     }
-  }, [getActiveCategories, selectedTransactionType]);
+  }, [getActiveCategories, getActiveTransactionGroups, selectedTransactionType]);
 
   // Filter payees based on input
   useEffect(() => {
@@ -196,7 +204,14 @@ const TransactionForm = ({ onSuccess }) => {
 
   const handleTransactionTypeChange = (transactionType) => {
     setSelectedTransactionType(transactionType);
-    setSelectedTransactionGroup(null); // Reset transaction group selection
+    
+    // Auto-select the first transaction group for this transaction type
+    const availableGroups = getActiveTransactionGroups().filter(group => 
+      group.transactionTypeId === transactionType.id
+    );
+    const firstGroup = availableGroups.length > 0 ? availableGroups[0] : null;
+    setSelectedTransactionGroup(firstGroup);
+    
     // Set default account, destination account, description and clear selected subcategory when transaction type changes
     setFormData(prev => ({
       ...prev,
@@ -357,7 +372,6 @@ const TransactionForm = ({ onSuccess }) => {
               }}
             >
               <span className="group-name">{group.name}</span>
-              <span className="group-description">{group.description || 'No description'}</span>
             </div>
           ))}
         </div>
@@ -380,7 +394,6 @@ const TransactionForm = ({ onSuccess }) => {
             }}
           >
             <span className="subcategory-name">{subcategory.name}</span>
-            <span className="subcategory-category">{subcategory.group?.name || 'No Group'}</span>
           </div>
         ))}
       </div>
