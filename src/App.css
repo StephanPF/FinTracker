@@ -2467,6 +2467,118 @@ body {
   }
 }
 
+/* Tag autocomplete styles - matching payee/description field */
+.tag-autocomplete-container {
+  position: relative;
+}
+
+.tag-autocomplete-container input {
+  width: calc(350px + 1.5rem + 200px);
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #374151;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tag-autocomplete-container input:focus {
+  outline: none;
+  border-color: #4c6ef5;
+  box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+.tag-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-top: 4px;
+}
+
+.tag-option {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: background-color 0.2s ease;
+}
+
+.tag-option:last-child {
+  border-bottom: none;
+}
+
+.tag-option:hover {
+  background-color: #f3f4f6;
+}
+
+/* Tag and Reference side by side styling - matching description field total width */
+.quick-entry-row .tag-reference-field {
+  flex: none;
+  position: relative;
+  width: calc((350px + 1.5rem + 200px - 1.5rem) / 2); /* Description width minus gap, divided by 2 */
+}
+
+.tag-reference-field .tag-autocomplete-container input,
+.tag-reference-field input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #374151;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tag-reference-field .tag-autocomplete-container input:focus,
+.tag-reference-field input:focus {
+  outline: none;
+  border-color: #4c6ef5;
+  box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+/* Notes field styling - matching description field */
+.quick-entry-description textarea {
+  width: calc(350px + 1.5rem + 200px);
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #374151;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 3rem;
+}
+
+.quick-entry-description textarea:focus {
+  outline: none;
+  border-color: #4c6ef5;
+  box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+/* Responsive adjustments for tag field */
+@media (max-width: 768px) {
+  .tag-autocomplete-container input {
+    width: 100%;
+  }
+  
+  .quick-entry-description textarea {
+    width: 100%;
+  }
+}
+
 /* Currency Manager Styles */
 .currency-manager {
   padding: 1rem;
@@ -6696,8 +6808,8 @@ body {
 
 /* Transaction Quick Entry */
 .transaction-quick-entry {
-  padding: 1.5rem 0;
-  margin-bottom: 2rem;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
 }
 
 .quick-entry-description {
@@ -6800,8 +6912,8 @@ body {
 
 @media (max-width: 768px) {
   .transaction-quick-entry {
-    padding: 1rem;
-    margin-bottom: 1.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
   }
   
   .quick-entry-row {

@@ -34,7 +34,8 @@ const TransactionForm = ({ onSuccess }) => {
     reference: '',
     notes: '',
     subcategoryId: '',
-    payee: ''
+    payee: '',
+    tag: ''
   });
   const [isDescriptionUserModified, setIsDescriptionUserModified] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -46,6 +47,11 @@ const TransactionForm = ({ onSuccess }) => {
   const [payeeInput, setPayeeInput] = useState('');
   const [showPayeeDropdown, setShowPayeeDropdown] = useState(false);
   const [filteredPayees, setFilteredPayees] = useState([]);
+  
+  // Tag autocomplete state
+  const [tagInput, setTagInput] = useState('');
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [filteredTags, setFilteredTags] = useState([]);
 
   // Initialize with first transaction type on load
   useEffect(() => {
@@ -69,6 +75,21 @@ const TransactionForm = ({ onSuccess }) => {
       setShowPayeeDropdown(false);
     }
   }, [payeeInput, getActivePayees]);
+
+  // Filter tags based on input
+  useEffect(() => {
+    if (tagInput.length > 0) {
+      const activeTags = tags.filter(tag => tag.isActive !== false); // Filter active tags
+      const filtered = activeTags.filter(tag => 
+        tag.name.toLowerCase().includes(tagInput.toLowerCase())
+      );
+      setFilteredTags(filtered);
+      setShowTagDropdown(true);
+    } else {
+      setFilteredTags([]);
+      setShowTagDropdown(false);
+    }
+  }, [tagInput, tags]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -151,12 +172,15 @@ const TransactionForm = ({ onSuccess }) => {
         reference: '',
         notes: '',
         subcategoryId: '',
-        payee: ''
+        payee: '',
+        tag: ''
       });
       setSelectedCategory(null);
       setIsDescriptionUserModified(false);
       setPayeeInput('');
       setShowPayeeDropdown(false);
+      setTagInput('');
+      setShowTagDropdown(false);
       
       if (onSuccess) {
         onSuccess();
@@ -233,6 +257,32 @@ const TransactionForm = ({ onSuccess }) => {
     // Delay hiding dropdown to allow for click events
     setTimeout(() => {
       setShowPayeeDropdown(false);
+    }, 200);
+  };
+
+  // Tag autocomplete handlers
+  const handleTagInputChange = (e) => {
+    const value = e.target.value;
+    setTagInput(value);
+    setFormData(prev => ({
+      ...prev,
+      tag: value
+    }));
+  };
+
+  const handleTagSelect = (tag) => {
+    setTagInput(tag.name);
+    setFormData(prev => ({
+      ...prev,
+      tag: tag.name
+    }));
+    setShowTagDropdown(false);
+  };
+
+  const handleTagInputBlur = () => {
+    // Delay hiding dropdown to allow for click events
+    setTimeout(() => {
+      setShowTagDropdown(false);
     }, 200);
   };
 
@@ -389,6 +439,69 @@ const TransactionForm = ({ onSuccess }) => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tag and Reference Side by Side Section */}
+      {selectedTransactionType && (
+        <div className="transaction-quick-entry">
+          <div className="quick-entry-row">
+            <div className="tag-reference-field">
+              <div className="tag-autocomplete-container">
+                <input
+                  type="text"
+                  id="tag"
+                  name="tag"
+                  value={tagInput}
+                  onChange={handleTagInputChange}
+                  onBlur={handleTagInputBlur}
+                  onFocus={() => tagInput.length > 0 && setShowTagDropdown(true)}
+                  placeholder="🏷️ Start typing tag name..."
+                />
+                
+                {showTagDropdown && filteredTags.length > 0 && (
+                  <div className="tag-dropdown">
+                    {filteredTags.map(tag => (
+                      <div
+                        key={tag.id}
+                        className="tag-option"
+                        onClick={() => handleTagSelect(tag)}
+                      >
+                        {tag.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="tag-reference-field">
+              <input
+                type="text"
+                id="reference"
+                name="reference"
+                value={formData.reference}
+                onChange={handleChange}
+                placeholder="📄 Enter reference (optional)..."
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notes Field Section */}
+      {selectedTransactionType && (
+        <div className="transaction-quick-entry">
+          <div className="quick-entry-description">
+            <textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              placeholder="📝 Add notes (optional)..."
+              rows="3"
+            />
           </div>
         </div>
       )}
