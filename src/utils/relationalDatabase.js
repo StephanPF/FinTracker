@@ -5,8 +5,6 @@ class RelationalDatabase {
     this.tables = {
       accounts: [],
       transactions: [],
-      customers: [],
-      vendors: [],
       tags: [],
       todos: [],
       transaction_types: [],
@@ -25,8 +23,6 @@ class RelationalDatabase {
       transactions: {
         debitAccountId: { table: 'accounts', field: 'id' },
         creditAccountId: { table: 'accounts', field: 'id' },
-        customerId: { table: 'customers', field: 'id', optional: true },
-        vendorId: { table: 'vendors', field: 'id', optional: true },
         productId: { table: 'tags', field: 'id', optional: true },
         categoryId: { table: 'transaction_types', field: 'id', optional: true },
         subcategoryId: { table: 'subcategories', field: 'id', optional: true },
@@ -85,8 +81,6 @@ class RelationalDatabase {
     this.tables = {
       accounts: sampleData.accounts,
       transactions: [],
-      customers: sampleData.customers,
-      vendors: sampleData.vendors,
       tags: sampleData.tags,
       todos: sampleData.todos,
       transaction_types: this.generateCategories(language),
@@ -214,8 +208,6 @@ class RelationalDatabase {
       debitAccountId: transactionData.debitAccountId,
       creditAccountId: transactionData.creditAccountId,
       amount: parseFloat(transactionData.amount),
-      customerId: transactionData.customerId || null,
-      vendorId: transactionData.vendorId || null,
       productId: transactionData.productId || null,
       categoryId: transactionData.categoryId || null,
       subcategoryId: transactionData.subcategoryId || null,
@@ -296,40 +288,6 @@ class RelationalDatabase {
     return newAccount;
   }
 
-  addCustomer(customerData) {
-    const newCustomer = {
-      id: 'CUST' + Date.now(),
-      name: customerData.name,
-      email: customerData.email || '',
-      phone: customerData.phone || '',
-      address: customerData.address || '',
-      isActive: customerData.isActive !== undefined ? customerData.isActive : true,
-      createdAt: new Date().toISOString()
-    };
-
-    this.tables.customers.push(newCustomer);
-    this.saveTableToWorkbook('customers');
-
-    return newCustomer;
-  }
-
-  addVendor(vendorData) {
-    const newVendor = {
-      id: 'VEND' + Date.now(),
-      name: vendorData.name,
-      email: vendorData.email || '',
-      phone: vendorData.phone || '',
-      address: vendorData.address || '',
-      category: vendorData.category || '',
-      isActive: vendorData.isActive !== undefined ? vendorData.isActive : true,
-      createdAt: new Date().toISOString()
-    };
-
-    this.tables.vendors.push(newVendor);
-    this.saveTableToWorkbook('vendors');
-
-    return newVendor;
-  }
 
   addProduct(productData) {
     // Create new tag/product entry
@@ -365,41 +323,6 @@ class RelationalDatabase {
     return updatedAccount;
   }
 
-  updateCustomer(id, customerData) {
-    const customerIndex = this.tables.customers.findIndex(customer => customer.id === id);
-    if (customerIndex === -1) {
-      throw new Error(`Customer with id ${id} not found`);
-    }
-
-    const updatedCustomer = {
-      ...this.tables.customers[customerIndex],
-      ...customerData,
-      id: id // Ensure ID doesn't change
-    };
-
-    this.tables.customers[customerIndex] = updatedCustomer;
-    this.saveTableToWorkbook('customers');
-
-    return updatedCustomer;
-  }
-
-  updateVendor(id, vendorData) {
-    const vendorIndex = this.tables.vendors.findIndex(vendor => vendor.id === id);
-    if (vendorIndex === -1) {
-      throw new Error(`Vendor with id ${id} not found`);
-    }
-
-    const updatedVendor = {
-      ...this.tables.vendors[vendorIndex],
-      ...vendorData,
-      id: id // Ensure ID doesn't change
-    };
-
-    this.tables.vendors[vendorIndex] = updatedVendor;
-    this.saveTableToWorkbook('vendors');
-
-    return updatedVendor;
-  }
 
   updateProduct(id, productData) {
     const productIndex = this.tables.tags.findIndex(product => product.id === id);
@@ -531,8 +454,6 @@ class RelationalDatabase {
       ...transaction,
       debitAccount: this.getRecord('accounts', transaction.debitAccountId),
       creditAccount: this.getRecord('accounts', transaction.creditAccountId),
-      customer: transaction.customerId ? this.getRecord('customers', transaction.customerId) : null,
-      vendor: transaction.vendorId ? this.getRecord('vendors', transaction.vendorId) : null,
       product: transaction.productId ? this.getRecord('tags', transaction.productId) : null
     }));
   }
@@ -680,49 +601,6 @@ class RelationalDatabase {
     return deletedAccount;
   }
 
-  deleteCustomer(id) {
-    const customerIndex = this.tables.customers.findIndex(customer => customer.id === id);
-    if (customerIndex === -1) {
-      throw new Error(`Customer with id ${id} not found`);
-    }
-
-    // Check if customer is used in transactions
-    const usedInTransactions = this.tables.transactions.some(
-      transaction => transaction.customerId === id
-    );
-
-    if (usedInTransactions) {
-      throw new Error('Cannot delete customer: it is used in transactions');
-    }
-
-    const deletedCustomer = this.tables.customers[customerIndex];
-    this.tables.customers.splice(customerIndex, 1);
-    this.saveTableToWorkbook('customers');
-
-    return deletedCustomer;
-  }
-
-  deleteVendor(id) {
-    const vendorIndex = this.tables.vendors.findIndex(vendor => vendor.id === id);
-    if (vendorIndex === -1) {
-      throw new Error(`Vendor with id ${id} not found`);
-    }
-
-    // Check if vendor is used in transactions
-    const usedInTransactions = this.tables.transactions.some(
-      transaction => transaction.vendorId === id
-    );
-
-    if (usedInTransactions) {
-      throw new Error('Cannot delete vendor: it is used in transactions');
-    }
-
-    const deletedVendor = this.tables.vendors[vendorIndex];
-    this.tables.vendors.splice(vendorIndex, 1);
-    this.saveTableToWorkbook('vendors');
-
-    return deletedVendor;
-  }
 
   deleteTransaction(id) {
     const transactionIndex = this.tables.transactions.findIndex(transaction => transaction.id === id);
@@ -1108,50 +986,6 @@ class RelationalDatabase {
           lastUpdated: new Date().toISOString()
         }
       ],
-      customers: [
-        {
-          id: 'CUST001',
-          name: 'John Smith',
-          email: 'john.smith@email.com',
-          phone: '+1-555-0123',
-          address: '123 Main Street, Anytown, USA',
-          category: 'Individual',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'CUST002',
-          name: 'Sarah Johnson',
-          email: 'sarah.johnson@email.com',
-          phone: '+1-555-0456',
-          address: '456 Oak Avenue, Springfield, USA',
-          category: 'Individual',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        }
-      ],
-      vendors: [
-        {
-          id: 'VEND001',
-          name: 'Local Grocery Store',
-          email: 'info@localgrocery.com',
-          phone: '+1-555-0789',
-          address: '789 Commercial Blvd, City, USA',
-          category: 'Retail',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'VEND002',
-          name: 'City Utilities',
-          email: 'billing@cityutilities.gov',
-          phone: '+1-555-0321',
-          address: '321 Municipal Plaza, City, USA',
-          category: 'Utilities',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        }
-      ],
       tags: [
         {
           id: 'TAG001',
@@ -1316,50 +1150,6 @@ class RelationalDatabase {
           isActive: true,
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString()
-        }
-      ],
-      customers: [
-        {
-          id: 'CUST001',
-          name: 'Jean Dupont',
-          email: 'jean.dupont@email.fr',
-          phone: '+33-1-23-45-67-89',
-          address: '123 Rue de la Paix, Paris, France',
-          category: 'Particulier',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'CUST002',
-          name: 'Marie Martin',
-          email: 'marie.martin@email.fr',
-          phone: '+33-1-98-76-54-32',
-          address: '456 Avenue des Champs, Lyon, France',
-          category: 'Particulier',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        }
-      ],
-      vendors: [
-        {
-          id: 'VEND001',
-          name: 'Supermarché Local',
-          email: 'info@supermarchelocal.fr',
-          phone: '+33-1-11-22-33-44',
-          address: '789 Boulevard Commercial, Ville, France',
-          category: 'Commerce',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'VEND002',
-          name: 'Services Municipaux',
-          email: 'facturation@ville.fr',
-          phone: '+33-1-55-66-77-88',
-          address: '321 Place de la Mairie, Ville, France',
-          category: 'Services Publics',
-          isActive: true,
-          createdAt: new Date().toISOString()
         }
       ],
       tags: [
@@ -2254,8 +2044,6 @@ class RelationalDatabase {
     
     // Get available accounts
     const accounts = this.tables.accounts.filter(acc => acc.isActive);
-    const vendors = this.tables.vendors;
-    const customers = this.tables.customers;
     const categories = this.tables.transaction_types;
     const subcategories = this.tables.subcategories;
     const tags = this.tables.tags;
@@ -2311,10 +2099,6 @@ class RelationalDatabase {
         debitAccountId: debitAccount.id,
         creditAccountId: creditAccount.id,
         amount: parseFloat(amount),
-        customerId: Math.random() > 0.7 && customers.length > 0 ? 
-          customers[Math.floor(Math.random() * customers.length)].id : null,
-        vendorId: Math.random() > 0.6 && vendors.length > 0 ? 
-          vendors[Math.floor(Math.random() * vendors.length)].id : null,
         productId: Math.random() > 0.8 && tags.length > 0 ? 
           tags[Math.floor(Math.random() * tags.length)].id : null,
         categoryId: Math.random() > 0.5 && categories.length > 0 ? 

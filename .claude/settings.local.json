@@ -24,7 +24,8 @@
       "Read(/c:\\Users\\steph\\Desktop/**)",
       "Bash(rg:*)",
       "Bash(findstr:*)",
-      "Read(/C:\\Users\\steph\\Desktop/**)"
+      "Read(/C:\\Users\\steph\\Desktop/**)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

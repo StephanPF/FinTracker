@@ -33,14 +33,12 @@ const Architecture = () => {
         { name: 'amount', type: 'number', required: true, description: 'Transaction amount' },
         { name: 'debitAccountId', type: 'string', foreign: 'accounts.id', description: 'Debit account reference' },
         { name: 'creditAccountId', type: 'string', foreign: 'accounts.id', description: 'Credit account reference' },
-        { name: 'customerId', type: 'string', foreign: 'customers.id', optional: true, description: 'Customer reference' },
-        { name: 'vendorId', type: 'string', foreign: 'vendors.id', optional: true, description: 'Vendor reference' },
         { name: 'productId', type: 'string', foreign: 'tags.id', optional: true, description: 'Tag/Product reference' },
         { name: 'subcategoryId', type: 'string', foreign: 'subcategories.id', optional: true, description: 'Subcategory reference' },
         { name: 'reference', type: 'string', optional: true, description: 'External reference' },
         { name: 'notes', type: 'string', optional: true, description: 'Additional notes' }
       ],
-      relationships: ['accounts', 'customers', 'vendors', 'tags', 'subcategories']
+      relationships: ['accounts', 'tags', 'subcategories']
     },
     account_types: {
       name: 'account_types.xlsx',
@@ -84,34 +82,6 @@ const Architecture = () => {
         { name: 'isActive', type: 'boolean', description: 'Active status' }
       ],
       relationships: ['transaction_types', 'transactions']
-    },
-    customers: {
-      name: 'customers.xlsx',
-      title: t('customers'),
-      icon: '👥',
-      color: '#E91E63',
-      fields: [
-        { name: 'id', type: 'string', key: true, description: 'Unique identifier' },
-        { name: 'name', type: 'string', required: true, description: 'Customer name' },
-        { name: 'email', type: 'string', description: 'Email address' },
-        { name: 'phone', type: 'string', description: 'Phone number' },
-        { name: 'address', type: 'string', description: 'Physical address' }
-      ],
-      relationships: ['transactions']
-    },
-    vendors: {
-      name: 'vendors.xlsx',
-      title: t('vendors'),
-      icon: '🏢',
-      color: '#795548',
-      fields: [
-        { name: 'id', type: 'string', key: true, description: 'Unique identifier' },
-        { name: 'name', type: 'string', required: true, description: 'Vendor name' },
-        { name: 'contactPerson', type: 'string', description: 'Contact person' },
-        { name: 'email', type: 'string', description: 'Email address' },
-        { name: 'phone', type: 'string', description: 'Phone number' }
-      ],
-      relationships: ['transactions']
     },
     tags: {
       name: 'tags.xlsx',

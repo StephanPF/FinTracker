@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import TransactionList from './TransactionList';
 
 const AccountSummary = () => {
-  const { accounts, customers, vendors, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService } = useAccounting();
+  const { accounts, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService } = useAccounting();
   const { t } = useLanguage();
   const summary = getSummary();
   const accountsWithTypes = getAccountsWithTypes();

@@ -8,22 +8,14 @@ const DataManagement = () => {
   const { 
     accounts, 
     transactions, 
-    customers, 
-    vendors, 
     tags,
     addAccount,
-    addCustomer,
-    addVendor,
     addProduct,
     addTransaction,
     updateAccount,
-    updateCustomer,
-    updateVendor,
     updateProduct,
     updateTransaction,
     deleteAccount,
-    deleteCustomer,
-    deleteVendor,
     deleteTransaction,
     deleteProduct,
     resetToSetup,
@@ -148,12 +140,6 @@ const DataManagement = () => {
           case 'accounts':
             await updateAccount(editingId, formData);
             break;
-          case 'customers':
-            await updateCustomer(editingId, formData);
-            break;
-          case 'vendors':
-            await updateVendor(editingId, formData);
-            break;
           case 'transactions':
             await updateTransaction(editingId, formData);
             break;
@@ -180,12 +166,6 @@ const DataManagement = () => {
         switch (activeTab) {
           case 'accounts':
             await addAccount(formData);
-            break;
-          case 'customers':
-            await addCustomer(formData);
-            break;
-          case 'vendors':
-            await addVendor(formData);
             break;
           case 'transactions':
             await addTransaction(formData);
@@ -241,12 +221,6 @@ const DataManagement = () => {
       case 'accounts':
         confirmMessage = t('deleteAccountConfirm');
         break;
-      case 'customers':
-        confirmMessage = t('deleteCustomerConfirm');
-        break;
-      case 'vendors':
-        confirmMessage = t('deleteVendorConfirm');
-        break;
       case 'transactions':
         confirmMessage = t('deleteTransactionConfirm');
         break;
@@ -275,12 +249,6 @@ const DataManagement = () => {
         switch (activeTab) {
           case 'accounts':
             await deleteAccount(record.id);
-            break;
-          case 'customers':
-            await deleteCustomer(record.id);
-            break;
-          case 'vendors':
-            await deleteVendor(record.id);
             break;
           case 'transactions':
             await deleteTransaction(record.id);
@@ -457,92 +425,7 @@ const DataManagement = () => {
     </form>
   );
 
-  const renderCustomerForm = () => (
-    <form onSubmit={handleSubmit} className="data-form">
-      <div className="form-group">
-        <label>Customer Name</label>
-        <input
-          type="text"
-          value={formData.name || ''}
-          onChange={(e) => handleInputChange('name', e.target.value)}
-          required
-        />
-      </div>
-      <div className="form-group">
-        <label>Email</label>
-        <input
-          type="email"
-          value={formData.email || ''}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-        />
-      </div>
-      <div className="form-group">
-        <label>Phone</label>
-        <input
-          type="tel"
-          value={formData.phone || ''}
-          onChange={(e) => handleInputChange('phone', e.target.value)}
-        />
-      </div>
-      <div className="form-group">
-        <label>Address</label>
-        <textarea
-          value={formData.address || ''}
-          onChange={(e) => handleInputChange('address', e.target.value)}
-        />
-      </div>
-      <div className="form-actions">
-        <button type="submit" className="btn-primary">
-          {editingId ? t('updateCustomer') : t('addCustomer')}
-        </button>
-        <button type="button" onClick={resetForm} className="btn-secondary">{t('cancel')}</button>
-      </div>
-    </form>
-  );
 
-  const renderVendorForm = () => (
-    <form onSubmit={handleSubmit} className="data-form">
-      <div className="form-group">
-        <label>Vendor Name</label>
-        <input
-          type="text"
-          value={formData.name || ''}
-          onChange={(e) => handleInputChange('name', e.target.value)}
-          required
-        />
-      </div>
-      <div className="form-group">
-        <label>Contact Person</label>
-        <input
-          type="text"
-          value={formData.contactPerson || ''}
-          onChange={(e) => handleInputChange('contactPerson', e.target.value)}
-        />
-      </div>
-      <div className="form-group">
-        <label>Email</label>
-        <input
-          type="email"
-          value={formData.email || ''}
-          onChange={(e) => handleInputChange('email', e.target.value)}
-        />
-      </div>
-      <div className="form-group">
-        <label>Phone</label>
-        <input
-          type="tel"
-          value={formData.phone || ''}
-          onChange={(e) => handleInputChange('phone', e.target.value)}
-        />
-      </div>
-      <div className="form-actions">
-        <button type="submit" className="btn-primary">
-          {editingId ? t('updateVendor') : t('addVendor')}
-        </button>
-        <button type="button" onClick={resetForm} className="btn-secondary">{t('cancel')}</button>
-      </div>
-    </form>
-  );
 
   const renderTransactionForm = () => (
     <form onSubmit={handleSubmit} className="data-form">
@@ -628,34 +511,6 @@ const DataManagement = () => {
           {subcategories.map(subcategory => (
             <option key={subcategory.id} value={subcategory.id}>
               {subcategory.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>{t('customer')}</label>
-        <select
-          value={formData.customerId || ''}
-          onChange={(e) => handleInputChange('customerId', e.target.value)}
-        >
-          <option value="">{t('selectCustomer')}</option>
-          {customers.map(customer => (
-            <option key={customer.id} value={customer.id}>
-              {customer.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>{t('vendor')}</label>
-        <select
-          value={formData.vendorId || ''}
-          onChange={(e) => handleInputChange('vendorId', e.target.value)}
-        >
-          <option value="">{t('selectVendor')}</option>
-          {vendors.map(vendor => (
-            <option key={vendor.id} value={vendor.id}>
-              {vendor.name}
             </option>
           ))}
         </select>
@@ -1004,10 +859,6 @@ const DataManagement = () => {
     switch (activeTab) {
       case 'accounts':
         return t('addAccount');
-      case 'customers':
-        return t('addCustomer');
-      case 'vendors':
-        return t('addVendor');
       case 'transactions':
         return t('addTransactionButton');
       case 'products':
@@ -1029,10 +880,6 @@ const DataManagement = () => {
     switch (activeTab) {
       case 'accounts':
         return t('updateAccount');
-      case 'customers':
-        return t('updateCustomer');
-      case 'vendors':
-        return t('updateVendor');
       case 'transactions':
         return t('updateTransaction');
       case 'products':
@@ -1109,26 +956,6 @@ const DataManagement = () => {
             }
           ]
         };
-      case 'customers':
-        return {
-          data: customers,
-          columns: [
-            { key: 'id', label: t('id') },
-            { key: 'name', label: t('name') },
-            { key: 'email', label: t('email') },
-            { key: 'phone', label: t('phone') }
-          ]
-        };
-      case 'vendors':
-        return {
-          data: vendors,
-          columns: [
-            { key: 'id', label: t('id') },
-            { key: 'name', label: t('name') },
-            { key: 'contactPerson', label: t('contact') },
-            { key: 'email', label: t('email') }
-          ]
-        };
       case 'transactions':
         return {
           data: transactions,
@@ -1172,15 +999,6 @@ const DataManagement = () => {
                   return `- ${subcategoryName}`;
                 }
                 return '-';
-              }
-            },
-            { 
-              key: 'vendorId', 
-              label: t('vendor'),
-              render: (value) => {
-                if (!value) return '-';
-                const vendor = vendors.find(v => v.id === value);
-                return vendor ? vendor.name : t('unknownAccount');
               }
             },
             { 
@@ -1366,10 +1184,6 @@ const DataManagement = () => {
     switch (activeTab) {
       case 'accounts':
         return renderAccountForm();
-      case 'customers':
-        return renderCustomerForm();
-      case 'vendors':
-        return renderVendorForm();
       case 'transactions':
         return renderTransactionForm();
       case 'products':
@@ -1751,7 +1565,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'vendors', 'products', 'transactions', 'customers'].map(tab => (
+        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'transactions'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'nav-btn active' : 'nav-btn'}

@@ -22,6 +22,34 @@ const Dashboard = () => {
   const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false);
   const hamburgerRef = useRef(null);
 
+  // Helper function to handle tab navigation with scroll-to-top
+  const handleTabNavigation = (tabName) => {
+    setActiveTab(tabName);
+    // Scroll to top of the page when navigating to any tab
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // Helper function for hamburger menu navigation
+  const handleMenuNavigation = (tabName) => {
+    handleTabNavigation(tabName);
+    setHamburgerMenuOpen(false);
+  };
+
+  // Scroll to top when activeTab changes to overview (handles database load scenario)
+  useEffect(() => {
+    if (activeTab === 'overview' && isLoaded) {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [activeTab, isLoaded]);
+
   // Close hamburger menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -75,25 +103,25 @@ const Dashboard = () => {
         <div className="nav-buttons">
           <button 
             className={activeTab === 'overview' ? 'nav-btn active' : 'nav-btn'}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTabNavigation('overview')}
           >
             <span>📈 {t('overview')}</span>
           </button>
           <button 
             className={activeTab === 'transactions' ? 'nav-btn active' : 'nav-btn'}
-            onClick={() => setActiveTab('transactions')}
+            onClick={() => handleTabNavigation('transactions')}
           >
             <span>💰 {t('transactions')}</span>
           </button>
           <button 
             className={activeTab === 'add-transaction' ? 'nav-btn active' : 'nav-btn'}
-            onClick={() => setActiveTab('add-transaction')}
+            onClick={() => handleTabNavigation('add-transaction')}
           >
             <span>➕ {t('addTransaction')}</span>
           </button>
           <button 
             className={activeTab === 'data-management' ? 'nav-btn active' : 'nav-btn'}
-            onClick={() => setActiveTab('data-management')}
+            onClick={() => handleTabNavigation('data-management')}
           >
             <span>🗂️ {t('dataManagement')}</span>
           </button>
@@ -112,31 +140,19 @@ const Dashboard = () => {
             
             {hamburgerMenuOpen && (
               <div className="hamburger-dropdown">
-                <div className="menu-item" onClick={() => {
-                  setActiveTab('todo');
-                  setHamburgerMenuOpen(false);
-                }}>
+                <div className="menu-item" onClick={() => handleMenuNavigation('todo')}>
                   <span className="menu-icon">🎯</span>
                   <span className="menu-text">TODO</span>
                 </div>
-                <div className="menu-item" onClick={() => {
-                  setActiveTab('architecture');
-                  setHamburgerMenuOpen(false);
-                }}>
+                <div className="menu-item" onClick={() => handleMenuNavigation('architecture')}>
                   <span className="menu-icon">🏗️</span>
                   <span className="menu-text">{t('architecture')}</span>
                 </div>
-                <div className="menu-item" onClick={() => {
-                  setActiveTab('stress-test');
-                  setHamburgerMenuOpen(false);
-                }}>
+                <div className="menu-item" onClick={() => handleMenuNavigation('stress-test')}>
                   <span className="menu-icon">🧪</span>
                   <span className="menu-text">Stress Test</span>
                 </div>
-                <div className="menu-item" onClick={() => {
-                  setActiveTab('settings');
-                  setHamburgerMenuOpen(false);
-                }}>
+                <div className="menu-item" onClick={() => handleMenuNavigation('settings')}>
                   <span className="menu-icon">⚙️</span>
                   <span className="menu-text">Settings</span>
                 </div>

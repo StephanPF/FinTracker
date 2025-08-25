@@ -29,8 +29,6 @@ export const AccountingProvider = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [vendors, setVendors] = useState([]);
   const [tags, setTags] = useState([]);
   const [products, setProducts] = useState([]);
   const [todos, setTodos] = useState([]);
@@ -66,8 +64,6 @@ export const AccountingProvider = ({ children }) => {
   const updateStateFromDatabase = () => {
     setAccounts(database.getTable('accounts'));
     setTransactions(database.getTable('transactions'));
-    setCustomers(database.getTable('customers'));
-    setVendors(database.getTable('vendors'));
     setTags(database.getTable('tags'));
     setProducts(database.getTable('tags'));
     setTodos(database.getTable('todos'));
@@ -192,35 +188,6 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
-  const addCustomer = async (customerData) => {
-    try {
-      const newCustomer = database.addCustomer(customerData);
-      setCustomers(database.getTable('customers'));
-      
-      const buffer = database.exportTableToBuffer('customers');
-      await fileStorage.saveTable('customers', buffer);
-      
-      return newCustomer;
-    } catch (error) {
-      console.error('Error adding customer:', error);
-      throw error;
-    }
-  };
-
-  const addVendor = async (vendorData) => {
-    try {
-      const newVendor = database.addVendor(vendorData);
-      setVendors(database.getTable('vendors'));
-      
-      const buffer = database.exportTableToBuffer('vendors');
-      await fileStorage.saveTable('vendors', buffer);
-      
-      return newVendor;
-    } catch (error) {
-      console.error('Error adding vendor:', error);
-      throw error;
-    }
-  };
 
   const addProduct = async (productData) => {
     try {
@@ -256,35 +223,6 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
-  const updateCustomer = async (id, customerData) => {
-    try {
-      const updatedCustomer = database.updateCustomer(id, customerData);
-      setCustomers(database.getTable('customers'));
-      
-      const buffer = database.exportTableToBuffer('customers');
-      await fileStorage.saveTable('customers', buffer);
-      
-      return updatedCustomer;
-    } catch (error) {
-      console.error('Error updating customer:', error);
-      throw error;
-    }
-  };
-
-  const updateVendor = async (id, vendorData) => {
-    try {
-      const updatedVendor = database.updateVendor(id, vendorData);
-      setVendors(database.getTable('vendors'));
-      
-      const buffer = database.exportTableToBuffer('vendors');
-      await fileStorage.saveTable('vendors', buffer);
-      
-      return updatedVendor;
-    } catch (error) {
-      console.error('Error updating vendor:', error);
-      throw error;
-    }
-  };
 
   const updateProduct = async (id, productData) => {
     try {
@@ -316,35 +254,6 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
-  const deleteCustomer = async (id) => {
-    try {
-      const deletedCustomer = database.deleteCustomer(id);
-      setCustomers([...database.getTable('customers')]); // Create new array to force re-render
-      
-      const buffer = database.exportTableToBuffer('customers');
-      await fileStorage.saveTable('customers', buffer);
-      
-      return deletedCustomer;
-    } catch (error) {
-      console.error('Error deleting customer:', error);
-      throw error;
-    }
-  };
-
-  const deleteVendor = async (id) => {
-    try {
-      const deletedVendor = database.deleteVendor(id);
-      setVendors([...database.getTable('vendors')]); // Create new array to force re-render
-      
-      const buffer = database.exportTableToBuffer('vendors');
-      await fileStorage.saveTable('vendors', buffer);
-      
-      return deletedVendor;
-    } catch (error) {
-      console.error('Error deleting vendor:', error);
-      throw error;
-    }
-  };
 
   const deleteTransaction = async (id) => {
     try {
@@ -414,8 +323,6 @@ export const AccountingProvider = ({ children }) => {
       totalExpenses: balances.Expense || 0,
       accountsCount: accounts.length,
       transactionsCount: transactions.length,
-      customersCount: customers.length,
-      vendorsCount: vendors.length,
       productsCount: tags.length,
       todosCount: todos.length
     };
@@ -436,8 +343,6 @@ export const AccountingProvider = ({ children }) => {
     setIsLoaded(false);
     setAccounts([]);
     setTransactions([]);
-    setCustomers([]);
-    setVendors([]);
     setTags([]);
     setTodos([]);
     setCategories([]);
@@ -1019,8 +924,6 @@ export const AccountingProvider = ({ children }) => {
     database,
     accounts,
     transactions,
-    customers,
-    vendors,
     tags,
     todos,
     categories,
@@ -1038,17 +941,11 @@ export const AccountingProvider = ({ children }) => {
     loadExistingDatabase,
     addTransaction,
     addAccount,
-    addCustomer,
-    addVendor,
     addProduct,
     updateTransaction,
     updateAccount,
-    updateCustomer,
-    updateVendor,
     updateProduct,
     deleteAccount,
-    deleteCustomer,
-    deleteVendor,
     deleteTransaction,
     deleteProduct,
     addTodo,
