@@ -39,6 +39,8 @@ const CurrencyManager = () => {
   const [apiFormData, setApiFormData] = useState({});
   const [isUpdatingRates, setIsUpdatingRates] = useState(false);
   const [rateUpdateStatus, setRateUpdateStatus] = useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [dropdownUp, setDropdownUp] = useState(false);
 
   // Initialize API form data from current settings
   useEffect(() => {
@@ -59,6 +61,21 @@ const CurrencyManager = () => {
       }
     }
   }, [apiSettings, apiFormData]);
+
+  // Handle clicks outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.actions-dropdown')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    if (openDropdownId) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openDropdownId]);
+
   const [exchangeRateForm, setExchangeRateForm] = useState({
     fromCurrencyId: '',
     toCurrencyId: '',
@@ -101,6 +118,26 @@ const CurrencyManager = () => {
     setFormData({});
     setEditingId(null);
     setShowForm(false);
+  };
+
+  const handleDropdownClick = (e, currencyId) => {
+    e.stopPropagation();
+    
+    if (openDropdownId === currencyId) {
+      setOpenDropdownId(null);
+      return;
+    }
+    
+    const button = e.target;
+    const rect = button.getBoundingClientRect();
+    const dropdownHeight = 80; // Approximate height for 2 items
+    
+    // Check if dropdown would go off-screen if placed below
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const shouldFlipUp = spaceBelow < dropdownHeight;
+    
+    setDropdownUp(shouldFlipUp);
+    setOpenDropdownId(currencyId);
   };
 
   // Exchange rate form handling
@@ -300,21 +337,35 @@ const CurrencyManager = () => {
                 </td>
                 <td className="actions-cell">
                   <div className="actions-dropdown">
-                    <button className="btn-dropdown">⋮</button>
-                    <div className="dropdown-menu">
-                      <button 
-                        onClick={() => handleCurrencyEdit(currency)}
-                        className="dropdown-item"
-                      >
-                        ✏️ {t('edit')}
-                      </button>
-                      <button 
-                        onClick={() => handleCurrencyDelete(currency)}
-                        className="dropdown-item"
-                      >
-                        🗑️ {t('delete')}
-                      </button>
-                    </div>
+                    <button 
+                      onClick={(e) => handleDropdownClick(e, currency.id)}
+                      className="btn-dropdown"
+                      title="More actions"
+                    >
+                      ⋮
+                    </button>
+                    {openDropdownId === currency.id && (
+                      <div className={`dropdown-menu ${dropdownUp ? 'dropdown-up' : ''}`}>
+                        <button 
+                          onClick={() => {
+                            handleCurrencyEdit(currency);
+                            setOpenDropdownId(null);
+                          }}
+                          className="dropdown-item"
+                        >
+                          ✏️ {t('edit')}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            handleCurrencyDelete(currency);
+                            setOpenDropdownId(null);
+                          }}
+                          className="dropdown-item"
+                        >
+                          🗑️ {t('delete')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -67,6 +67,7 @@ const DataManagement = () => {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [showAccountTypesExplanation, setShowAccountTypesExplanation] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [dropdownUp, setDropdownUp] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Drag & Drop state
@@ -214,6 +215,26 @@ const DataManagement = () => {
     }
   };
 
+  const handleDropdownClick = (e, rowId) => {
+    e.stopPropagation();
+    
+    if (openDropdownId === rowId) {
+      setOpenDropdownId(null);
+      return;
+    }
+    
+    const button = e.target;
+    const rect = button.getBoundingClientRect();
+    const dropdownHeight = 80; // Approximate height for 2 items
+    
+    // Check if dropdown would go off-screen if placed below
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const shouldFlipUp = spaceBelow < dropdownHeight;
+    
+    setDropdownUp(shouldFlipUp);
+    setOpenDropdownId(rowId);
+  };
+
   const handleDelete = async (record) => {
     // Get confirmation message based on record type
     let confirmMessage;
@@ -331,14 +352,16 @@ const DataManagement = () => {
               <td className="actions-cell">
                 <div className="actions-dropdown">
                   <button 
-                    onClick={() => setOpenDropdownId(openDropdownId === row.id ? null : row.id)}
+                    onClick={(e) => handleDropdownClick(e, row.id)}
                     className="btn-dropdown"
                     title="More actions"
                   >
                     ⋮
                   </button>
                   {openDropdownId === row.id && (
-                    <div className="dropdown-menu">
+                    <div 
+                      className={`dropdown-menu ${dropdownUp ? 'dropdown-up' : ''}`}
+                    >
                       <button 
                         onClick={() => {
                           handleEdit(row);

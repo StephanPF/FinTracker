@@ -2178,7 +2178,7 @@ body {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .table-container h3 {
@@ -2374,12 +2374,15 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   z-index: 1000;
   min-width: 120px;
-  overflow: hidden;
-  display: none;
+  overflow: visible;
+  display: block;
 }
 
-.actions-dropdown:hover .dropdown-menu {
-  display: block;
+/* Removed hover rule to prevent conflicts with click-controlled dropdowns */
+
+.dropdown-menu.dropdown-up {
+  top: auto;
+  bottom: 100%;
 }
 
 /* Currency Manager Styles */
