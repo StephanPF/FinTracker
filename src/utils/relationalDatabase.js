@@ -2444,6 +2444,17 @@ class RelationalDatabase {
         isActive: true,
         isBase: false,
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CUR_008',
+        code: 'CHF',
+        name: 'Swiss Franc',
+        symbol: 'CHF',
+        type: 'fiat',
+        decimalPlaces: 2,
+        isActive: true,
+        isBase: false,
+        createdAt: new Date().toISOString()
       }
     ];
   }
@@ -2504,6 +2515,15 @@ class RelationalDatabase {
         date: today,
         source: 'manual',
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_007',
+        fromCurrencyId: 'CUR_008', // CHF
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 0.93,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
       }
     ];
   }
@@ -2547,6 +2567,17 @@ class RelationalDatabase {
           currencySymbolPosition: 'before',
           decimalSeparator: 'dot',
           thousandsSeparator: 'comma',
+          decimalPrecision: 'auto',
+          negativeDisplay: 'minus',
+          largeNumberNotation: 'full',
+          currencyCodeDisplay: 'symbol-only'
+        };
+      } else if (currency.code === 'CHF') {
+        // Swiss convention
+        defaultSettings = {
+          currencySymbolPosition: 'before',
+          decimalSeparator: 'dot',
+          thousandsSeparator: 'apostrophe',
           decimalPrecision: 'auto',
           negativeDisplay: 'minus',
           largeNumberNotation: 'full',

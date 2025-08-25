@@ -181,8 +181,8 @@ class NumberFormatService {
     if (symbolPosition === 'after') {
       return `${formattedAmount} ${currencyDisplay}`;
     } else {
-      // Special case for AED - always include space after symbol when positioned before
-      if (currency.code === 'AED') {
+      // Special case for AED and CHF - always include space after symbol when positioned before
+      if (currency.code === 'AED' || currency.code === 'CHF') {
         return `${currencyDisplay} ${formattedAmount}`;
       }
       return `${currencyDisplay}${formattedAmount}`;
