@@ -6725,3 +6725,249 @@ body {
     width: 100%;
   }
 }
+
+/* Data Settings Styles */
+.data-settings {
+  padding: 2rem;
+}
+
+.data-settings .section-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.data-settings .section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+}
+
+.data-settings .section-header p {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.data-settings .settings-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.data-settings .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.data-settings .panel-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.data-settings .panel-icon {
+  font-size: 1.5rem;
+}
+
+.data-settings .panel-title h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.data-settings .panel-title p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.data-settings .panel-content {
+  display: grid;
+  gap: 2rem;
+}
+
+.data-settings .backup-info {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.data-settings .info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.data-settings .info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.data-settings .info-label {
+  font-weight: 500;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.data-settings .info-value {
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 0.9rem;
+}
+
+.data-settings .backup-description h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-settings .backup-contents {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.5rem;
+}
+
+.data-settings .backup-contents li {
+  padding: 0.5rem 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-settings .backup-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.data-settings .backup-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.data-settings .backup-btn:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.data-settings .backup-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.data-settings .backup-btn.creating {
+  background: #6b7280;
+}
+
+.data-settings .backup-icon,
+.data-settings .spinner {
+  font-size: 1.2rem;
+}
+
+.data-settings .backup-status {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  max-width: 400px;
+}
+
+.data-settings .backup-status.success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.data-settings .backup-status.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.data-settings .backup-notes {
+  background: #fffbeb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #fde68a;
+}
+
+.data-settings .backup-notes h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-settings .tips-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.data-settings .tips-list li {
+  padding: 0.5rem 0;
+  color: #92400e;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .data-settings {
+    padding: 1rem;
+  }
+  
+  .data-settings .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .data-settings .backup-contents {
+    grid-template-columns: 1fr;
+  }
+  
+  .data-settings .backup-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+  }
+}

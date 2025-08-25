@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import CurrencyFormatSettings from './CurrencyFormatSettings';
 import DateSettings from './DateSettings';
+import DataSettings from './DataSettings';
 
 const Settings = () => {
   const { t } = useLanguage();
@@ -19,10 +20,16 @@ const Settings = () => {
       label: 'Date',
       icon: '📅',
       component: DateSettings
+    },
+    {
+      id: 'data',
+      label: 'Data',
+      icon: '📁',
+      component: DataSettings
     }
   ];
 
-  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || NumberFormatSettings;
+  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || CurrencyFormatSettings;
 
   return (
     <div className="settings-container">
