@@ -72,7 +72,7 @@ export const AccountingProvider = ({ children }) => {
     setProducts(database.getTable('tags'));
     setTodos(database.getTable('todos'));
     setCategories(database.getCategories());
-    setTransactionGroups(database.getTable('transaction_groups'));
+    setTransactionGroups(database.getTransactionGroups());
     setSubcategories(database.getSubcategories());
     setCurrencies(database.getTable('currencies'));
     setExchangeRates(database.getTable('exchange_rates'));
@@ -630,7 +630,7 @@ export const AccountingProvider = ({ children }) => {
   const addTransactionGroup = async (groupData) => {
     try {
       const newGroup = database.addTransactionGroup(groupData);
-      setTransactionGroups([...database.getTable('transaction_groups')]);
+      setTransactionGroups([...database.getTransactionGroups()]);
       
       const buffer = database.exportTableToBuffer('transaction_groups');
       await fileStorage.saveTable('transaction_groups', buffer);
@@ -645,7 +645,7 @@ export const AccountingProvider = ({ children }) => {
   const updateTransactionGroup = async (id, groupData) => {
     try {
       const updatedGroup = database.updateTransactionGroup(id, groupData);
-      setTransactionGroups([...database.getTable('transaction_groups')]);
+      setTransactionGroups([...database.getTransactionGroups()]);
       
       const buffer = database.exportTableToBuffer('transaction_groups');
       await fileStorage.saveTable('transaction_groups', buffer);
@@ -660,7 +660,7 @@ export const AccountingProvider = ({ children }) => {
   const deleteTransactionGroup = async (id) => {
     try {
       const deletedGroup = database.deleteTransactionGroup(id);
-      setTransactionGroups([...database.getTable('transaction_groups')]);
+      setTransactionGroups([...database.getTransactionGroups()]);
       
       const buffer = database.exportTableToBuffer('transaction_groups');
       await fileStorage.saveTable('transaction_groups', buffer);

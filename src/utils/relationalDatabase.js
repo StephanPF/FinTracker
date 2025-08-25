@@ -68,6 +68,7 @@ class RelationalDatabase {
       // Run migration for transaction types to add missing fields
       this.migrateTransactionTypes();
       this.migrateSubcategories();
+      this.migrateTransactionGroups();
       
       this.validateRelationships();
       return true;
@@ -1512,19 +1513,23 @@ class RelationalDatabase {
 
   // Transaction Group CRUD methods
   getTransactionGroups() {
-    return this.tables.transaction_groups;
+    return this.tables.transaction_groups.sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   getActiveTransactionGroups() {
-    return this.tables.transaction_groups.filter(group => group.isActive);
+    return this.tables.transaction_groups.filter(group => group.isActive).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   addTransactionGroup(groupData) {
+    // Get next order value
+    const maxOrder = Math.max(...this.tables.transaction_groups.map(grp => grp.order || 0), 0);
+
     const newGroup = {
       id: `GRP_${String(this.tables.transaction_groups.length + 1).padStart(3, '0')}`,
       name: groupData.name,
       description: groupData.description || '',
       color: groupData.color || '#6366f1',
+      order: groupData.order !== undefined ? groupData.order : maxOrder + 1,
       isActive: groupData.isActive !== undefined ? groupData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -3025,6 +3030,31 @@ class RelationalDatabase {
       if (migrationNeeded) {
         console.log('Migrated subcategories to include order field');
         this.saveTableToWorkbook('subcategories');
+      }
+    }
+  }
+
+  // Migration method to add missing fields to existing transaction groups
+  migrateTransactionGroups() {
+    if (this.tables.transaction_groups && Array.isArray(this.tables.transaction_groups)) {
+      let migrationNeeded = false;
+      
+      this.tables.transaction_groups = this.tables.transaction_groups.map((group, index) => {
+        let updated = { ...group };
+        
+        // Add missing order field
+        if (updated.order === undefined) {
+          updated.order = index + 1;
+          migrationNeeded = true;
+        }
+        
+        return updated;
+      });
+      
+      // Save if migration was needed
+      if (migrationNeeded) {
+        console.log('Migrated transaction groups to include order field');
+        this.saveTableToWorkbook('transaction_groups');
       }
     }
   }
