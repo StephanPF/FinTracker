@@ -5,8 +5,6 @@ class RelationalFileStorage {
     this.dbTables = {
       accounts: 'accounts.xlsx',
       transactions: 'transactions.xlsx',
-      customers: 'customers.xlsx',
-      vendors: 'vendors.xlsx',
       tags: 'tags.xlsx',
       todos: 'todos.xlsx',
       transaction_types: 'transaction_types.xlsx',

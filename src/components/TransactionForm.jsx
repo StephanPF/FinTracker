@@ -5,8 +5,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 const TransactionForm = ({ onSuccess }) => {
   const { 
     accounts, 
-    customers, 
-    vendors, 
     tags, 
     addTransaction, 
     resetToSetup, 
@@ -30,8 +28,6 @@ const TransactionForm = ({ onSuccess }) => {
     destinationAccountId: '', // New field for destination account (transfers)
     currencyId: 'CUR_001', // Default to EUR (base currency)
     exchangeRate: 1.0,
-    customerId: '',
-    vendorId: '',
     productId: '',
     reference: '',
     notes: '',
@@ -492,41 +488,6 @@ const TransactionForm = ({ onSuccess }) => {
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="vendorId">🏢 {t('vendor')}</label>
-              <select
-                id="vendorId"
-                name="vendorId"
-                value={formData.vendorId}
-                onChange={handleChange}
-              >
-                <option value="">{t('selectVendor')}</option>
-                {vendors.map(vendor => (
-                  <option key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="customerId">👥 {t('customer')}</label>
-              <select
-                id="customerId"
-                name="customerId"
-                value={formData.customerId}
-                onChange={handleChange}
-              >
-                <option value="">{t('selectCustomer')}</option>
-                {customers.map(customer => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <div className="form-group">
               <label htmlFor="productId">📦 {t('productService')}</label>
