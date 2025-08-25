@@ -9,6 +9,7 @@ const TransactionForm = ({ onSuccess }) => {
     accounts, 
     tags, 
     payees,
+    payers,
     addTransaction, 
     resetToSetup, 
     getAccountsWithTypes,
@@ -16,6 +17,7 @@ const TransactionForm = ({ onSuccess }) => {
     getSubcategoriesWithCategories,
     getActiveCategories,
     getActivePayees,
+    getActivePayers,
     getActiveTransactionGroups,
     currencies,
     exchangeRateService,
@@ -39,6 +41,7 @@ const TransactionForm = ({ onSuccess }) => {
     notes: '',
     subcategoryId: '',
     payee: '',
+    payer: '',
     tag: ''
   });
   const [isDescriptionUserModified, setIsDescriptionUserModified] = useState(false);
@@ -53,6 +56,11 @@ const TransactionForm = ({ onSuccess }) => {
   const [payeeInput, setPayeeInput] = useState('');
   const [showPayeeDropdown, setShowPayeeDropdown] = useState(false);
   const [filteredPayees, setFilteredPayees] = useState([]);
+  
+  // Payer autocomplete state
+  const [payerInput, setPayerInput] = useState('');
+  const [showPayerDropdown, setShowPayerDropdown] = useState(false);
+  const [filteredPayers, setFilteredPayers] = useState([]);
   
   // Tag autocomplete state
   const [tagInput, setTagInput] = useState('');
@@ -92,6 +100,21 @@ const TransactionForm = ({ onSuccess }) => {
       setShowPayeeDropdown(false);
     }
   }, [payeeInput, getActivePayees]);
+
+  // Filter payers based on input
+  useEffect(() => {
+    if (payerInput.length > 0) {
+      const activePayers = getActivePayers();
+      const filtered = activePayers.filter(payer => 
+        payer.name.toLowerCase().includes(payerInput.toLowerCase())
+      );
+      setFilteredPayers(filtered);
+      setShowPayerDropdown(true);
+    } else {
+      setFilteredPayers([]);
+      setShowPayerDropdown(false);
+    }
+  }, [payerInput, getActivePayers]);
 
   // Filter tags based on input
   useEffect(() => {
@@ -229,12 +252,15 @@ const TransactionForm = ({ onSuccess }) => {
         notes: '',
         subcategoryId: '',
         payee: '',
+        payer: '',
         tag: ''
       });
       setSelectedCategory(null);
       setIsDescriptionUserModified(false);
       setPayeeInput('');
       setShowPayeeDropdown(false);
+      setPayerInput('');
+      setShowPayerDropdown(false);
       setTagInput('');
       setShowTagDropdown(false);
       
@@ -264,9 +290,24 @@ const TransactionForm = ({ onSuccess }) => {
       subcategoryId: '',
       accountId: transactionType.defaultAccountId || '',
       destinationAccountId: transactionType.destinationAccountId || '',
-      description: isDescriptionUserModified ? prev.description : transactionType.name
+      description: isDescriptionUserModified ? prev.description : transactionType.name,
+      payee: transactionType.name !== 'Expenses' ? '' : prev.payee, // Clear payee if not Expenses
+      payer: transactionType.name !== 'Income' ? '' : prev.payer // Clear payer if not Income
     }));
     setSelectedCategory(null);
+    
+    // Clear payee input if not Expenses transaction type
+    if (transactionType.name !== 'Expenses') {
+      setPayeeInput('');
+      setShowPayeeDropdown(false);
+    }
+    
+    // Clear payer input if not Income transaction type
+    if (transactionType.name !== 'Income') {
+      setPayerInput('');
+      setShowPayerDropdown(false);
+    }
+    
     // Only reset user modification flag if description wasn't manually changed
     if (!isDescriptionUserModified) {
       setIsDescriptionUserModified(false);
@@ -349,6 +390,32 @@ const TransactionForm = ({ onSuccess }) => {
     // Delay hiding dropdown to allow for click events
     setTimeout(() => {
       setShowPayeeDropdown(false);
+    }, 200);
+  };
+
+  // Payer autocomplete handlers
+  const handlePayerInputChange = (e) => {
+    const value = e.target.value;
+    setPayerInput(value);
+    setFormData(prev => ({
+      ...prev,
+      payer: value
+    }));
+  };
+
+  const handlePayerSelect = (payer) => {
+    setPayerInput(payer.name);
+    setFormData(prev => ({
+      ...prev,
+      payer: payer.name
+    }));
+    setShowPayerDropdown(false);
+  };
+
+  const handlePayerInputBlur = () => {
+    // Delay hiding dropdown to allow for click events
+    setTimeout(() => {
+      setShowPayerDropdown(false);
     }, 200);
   };
 
@@ -472,34 +539,66 @@ const TransactionForm = ({ onSuccess }) => {
                 className={!isDescriptionUserModified && formData.description ? 'default-description' : ''}
               />
             </div>
-            <div className="payee-field">
-              <div className="payee-autocomplete-container">
-                <input
-                  type="text"
-                  id="payee"
-                  name="payee"
-                  value={payeeInput}
-                  onChange={handlePayeeInputChange}
-                  onBlur={handlePayeeInputBlur}
-                  onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
-                  placeholder="👤 Start typing payee name... *"
-                />
-                
-                {showPayeeDropdown && filteredPayees.length > 0 && (
-                  <div className="payee-dropdown">
-                    {filteredPayees.map(payee => (
-                      <div
-                        key={payee.id}
-                        className="payee-dropdown-item"
-                        onClick={() => handlePayeeSelect(payee)}
-                      >
-                        {payee.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
+            {selectedTransactionType.name === 'Expenses' && (
+              <div className="payee-field">
+                <div className="payee-autocomplete-container">
+                  <input
+                    type="text"
+                    id="payee"
+                    name="payee"
+                    value={payeeInput}
+                    onChange={handlePayeeInputChange}
+                    onBlur={handlePayeeInputBlur}
+                    onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
+                    placeholder="👤 Start typing payee name... *"
+                  />
+                  
+                  {showPayeeDropdown && filteredPayees.length > 0 && (
+                    <div className="payee-dropdown">
+                      {filteredPayees.map(payee => (
+                        <div
+                          key={payee.id}
+                          className="payee-dropdown-item"
+                          onClick={() => handlePayeeSelect(payee)}
+                        >
+                          {payee.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+            {selectedTransactionType.name === 'Income' && (
+              <div className="payee-field">
+                <div className="payee-autocomplete-container">
+                  <input
+                    type="text"
+                    id="payer"
+                    name="payer"
+                    value={payerInput}
+                    onChange={handlePayerInputChange}
+                    onBlur={handlePayerInputBlur}
+                    onFocus={() => payerInput.length > 0 && setShowPayerDropdown(true)}
+                    placeholder="💼 Start typing payer name... *"
+                  />
+                  
+                  {showPayerDropdown && filteredPayers.length > 0 && (
+                    <div className="payee-dropdown">
+                      {filteredPayers.map(payer => (
+                        <div
+                          key={payer.id}
+                          className="payee-dropdown-item"
+                          onClick={() => handlePayerSelect(payer)}
+                        >
+                          {payer.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <div className="quick-entry-row">
             <div className="quick-entry-account">
