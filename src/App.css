@@ -2193,6 +2193,7 @@ body {
 
 .data-table {
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .data-table table {
@@ -2372,8 +2373,10 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  z-index: 1000;
-  min-width: 120px;
+  z-index: 9999;
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
   overflow: visible;
   display: block;
 }
@@ -2383,6 +2386,12 @@ body {
 .dropdown-menu.dropdown-up {
   top: auto;
   bottom: 100%;
+}
+
+.portal-dropdown {
+  width: 120px !important;
+  min-width: 120px !important;
+  max-width: 120px !important;
 }
 
 /* Currency Manager Styles */

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDate } from '../hooks/useDate';
@@ -69,6 +70,7 @@ const DataManagement = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [dropdownUp, setDropdownUp] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   
   // Drag & Drop state
   const [draggedId, setDraggedId] = useState(null);
@@ -227,11 +229,34 @@ const DataManagement = () => {
     const rect = button.getBoundingClientRect();
     const dropdownHeight = 80; // Approximate height for 2 items
     
+    
     // Check if dropdown would go off-screen if placed below
     const spaceBelow = window.innerHeight - rect.bottom;
-    const shouldFlipUp = spaceBelow < dropdownHeight;
+    const shouldFlipUp = spaceBelow < dropdownHeight + 20; // Add extra margin for safety
+    
+    
+    // Calculate fixed positioning for portal
+    const dropdownWidth = 90;
+    let top, left;
+    
+    if (shouldFlipUp) {
+      top = rect.top - dropdownHeight - 4;
+      left = rect.right - dropdownWidth;
+    } else {
+      top = rect.bottom + 4;
+      left = rect.right - dropdownWidth;
+    }
+    
+    // Ensure dropdown stays within viewport
+    if (left < 0) {
+      left = rect.left;
+    }
+    if (left + dropdownWidth > window.innerWidth) {
+      left = window.innerWidth - dropdownWidth - 10;
+    }
     
     setDropdownUp(shouldFlipUp);
+    setDropdownPosition({ top, left });
     setOpenDropdownId(rowId);
   };
 
@@ -358,30 +383,6 @@ const DataManagement = () => {
                   >
                     ⋮
                   </button>
-                  {openDropdownId === row.id && (
-                    <div 
-                      className={`dropdown-menu ${dropdownUp ? 'dropdown-up' : ''}`}
-                    >
-                      <button 
-                        onClick={() => {
-                          handleEdit(row);
-                          setOpenDropdownId(null);
-                        }}
-                        className="dropdown-item"
-                      >
-                        ✏️ {t('edit')}
-                      </button>
-                      <button 
-                        onClick={() => {
-                          handleDelete(row);
-                          setOpenDropdownId(null);
-                        }}
-                        className="dropdown-item"
-                      >
-                        🗑️ {t('delete')}
-                      </button>
-                    </div>
-                  )}
                 </div>
               </td>
             </tr>
@@ -1604,6 +1605,7 @@ const DataManagement = () => {
         ))}
       </nav>
 
+
       {activeTab === 'accounts' && (
         <div className="account-types-explanation">
           <div className="account-types-header">
@@ -1721,6 +1723,46 @@ const DataManagement = () => {
           </>
         )}
       </div>
+
+      {/* Portal-rendered dropdown to escape container clipping */}
+      {openDropdownId && createPortal(
+        <div 
+          className="dropdown-menu portal-dropdown"
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: '120px',
+            zIndex: 9999
+          }}
+        >
+          <button 
+            onClick={() => {
+              const currentRow = data.find(row => row.id === openDropdownId);
+              if (currentRow) {
+                handleEdit(currentRow);
+                setOpenDropdownId(null);
+              }
+            }}
+            className="dropdown-item"
+          >
+            ✏️ {t('edit')}
+          </button>
+          <button 
+            onClick={() => {
+              const currentRow = data.find(row => row.id === openDropdownId);
+              if (currentRow) {
+                handleDelete(currentRow);
+                setOpenDropdownId(null);
+              }
+            }}
+            className="dropdown-item"
+          >
+            🗑️ {t('delete')}
+          </button>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
