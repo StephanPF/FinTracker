@@ -10,6 +10,7 @@ const DataManagement = () => {
     accounts, 
     transactions, 
     tags,
+    payees,
     addAccount,
     addProduct,
     addTransaction,
@@ -19,6 +20,11 @@ const DataManagement = () => {
     deleteAccount,
     deleteTransaction,
     deleteProduct,
+    addPayee,
+    updatePayee,
+    deletePayee,
+    getPayees,
+    getActivePayees,
     resetToSetup,
     getAccountsWithTypes,
     getAccountTypes,
@@ -149,6 +155,9 @@ const DataManagement = () => {
           case 'products':
             await updateProduct(editingId, formData);
             break;
+          case 'payees':
+            await updatePayee(editingId, formData);
+            break;
           case 'transaction_types':
             await updateCategory(editingId, formData);
             break;
@@ -175,6 +184,9 @@ const DataManagement = () => {
             break;
           case 'products':
             await addProduct(formData);
+            break;
+          case 'payees':
+            await addPayee(formData);
             break;
           case 'transaction_types':
             await addCategory(formData);
@@ -273,6 +285,9 @@ const DataManagement = () => {
       case 'products':
         confirmMessage = t('deleteProductConfirm');
         break;
+      case 'payees':
+        confirmMessage = 'Are you sure you want to delete this payee?';
+        break;
       case 'transaction_types':
         confirmMessage = t('deleteCategoryConfirm');
         break;
@@ -301,6 +316,9 @@ const DataManagement = () => {
             break;
           case 'products':
             await deleteProduct(record.id);
+            break;
+          case 'payees':
+            await deletePayee(record.id);
             break;
           case 'transaction_types':
             await deleteCategory(record.id);
@@ -619,6 +637,27 @@ const DataManagement = () => {
     </form>
   );
 
+  const renderPayeeForm = () => (
+    <form onSubmit={handleSubmit} className="data-form">
+      <div className="form-group">
+        <label>Payee Name</label>
+        <input
+          type="text"
+          value={formData.name || ''}
+          onChange={(e) => handleInputChange('name', e.target.value)}
+          required
+          placeholder="Enter payee name"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-actions">
+        <button type="submit" className="btn-primary">
+          {editingId ? 'Update Payee' : 'Add Payee'}
+        </button>
+      </div>
+    </form>
+  );
+
   const renderCategoryForm = () => (
     <form onSubmit={handleSubmit} className="data-form">
       <div className="form-group">
@@ -889,6 +928,8 @@ const DataManagement = () => {
         return t('addTransactionButton');
       case 'products':
         return `${t('add')} Tag`;
+      case 'payees':
+        return 'Add Payee';
       case 'transaction_types':
         return t('addCategory');
       case 'subcategories':
@@ -910,6 +951,8 @@ const DataManagement = () => {
         return t('updateTransaction');
       case 'products':
         return `${t('update')} Tag`;
+      case 'payees':
+        return 'Update Payee';
       case 'transaction_types':
         return t('updateCategory');
       case 'subcategories':
@@ -1054,6 +1097,14 @@ const DataManagement = () => {
             { key: 'id', label: t('id') },
             { key: 'name', label: t('name') },
             { key: 'description', label: t('description') }
+          ]
+        };
+      case 'payees':
+        return {
+          data: payees,
+          columns: [
+            { key: 'id', label: 'ID' },
+            { key: 'name', label: 'Name' }
           ]
         };
       case 'transaction_types':
@@ -1214,6 +1265,8 @@ const DataManagement = () => {
         return renderTransactionForm();
       case 'products':
         return renderProductForm();
+      case 'payees':
+        return renderPayeeForm();
       case 'transaction_types':
         return renderCategoryForm();
       case 'subcategories':
@@ -1591,7 +1644,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'transactions'].map(tab => (
+        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'transactions'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'nav-btn active' : 'nav-btn'}
@@ -1602,7 +1655,7 @@ const DataManagement = () => {
               setSearchTerm('');
             }}
           >
-            {t(tab)}
+            {tab === 'payees' ? 'Payees' : t(tab)}
           </button>
         ))}
       </nav>

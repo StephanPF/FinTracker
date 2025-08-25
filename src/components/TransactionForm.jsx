@@ -6,12 +6,14 @@ const TransactionForm = ({ onSuccess }) => {
   const { 
     accounts, 
     tags, 
+    payees,
     addTransaction, 
     resetToSetup, 
     getAccountsWithTypes,
     getActiveSubcategories,
     getSubcategoriesWithCategories,
     getActiveCategories,
+    getActivePayees,
     currencies,
     exchangeRateService,
     getActiveCurrencies 
@@ -31,13 +33,19 @@ const TransactionForm = ({ onSuccess }) => {
     productId: '',
     reference: '',
     notes: '',
-    subcategoryId: ''
+    subcategoryId: '',
+    payee: ''
   });
   const [isDescriptionUserModified, setIsDescriptionUserModified] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedTransactionType, setSelectedTransactionType] = useState(null);
+  
+  // Payee autocomplete state
+  const [payeeInput, setPayeeInput] = useState('');
+  const [showPayeeDropdown, setShowPayeeDropdown] = useState(false);
+  const [filteredPayees, setFilteredPayees] = useState([]);
 
   // Initialize with first transaction type on load
   useEffect(() => {
@@ -46,6 +54,21 @@ const TransactionForm = ({ onSuccess }) => {
       setSelectedTransactionType(activeCategories[0]);
     }
   }, [getActiveCategories, selectedTransactionType]);
+
+  // Filter payees based on input
+  useEffect(() => {
+    if (payeeInput.length > 0) {
+      const activePayees = getActivePayees();
+      const filtered = activePayees.filter(payee => 
+        payee.name.toLowerCase().includes(payeeInput.toLowerCase())
+      );
+      setFilteredPayees(filtered);
+      setShowPayeeDropdown(true);
+    } else {
+      setFilteredPayees([]);
+      setShowPayeeDropdown(false);
+    }
+  }, [payeeInput, getActivePayees]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -127,10 +150,13 @@ const TransactionForm = ({ onSuccess }) => {
         productId: '',
         reference: '',
         notes: '',
-        subcategoryId: ''
+        subcategoryId: '',
+        payee: ''
       });
       setSelectedCategory(null);
       setIsDescriptionUserModified(false);
+      setPayeeInput('');
+      setShowPayeeDropdown(false);
       
       if (onSuccess) {
         onSuccess();
@@ -182,6 +208,32 @@ const TransactionForm = ({ onSuccess }) => {
       description: isDescriptionUserModified ? prev.description : selectedSubcategory?.name || ''
     }));
     setSelectedCategory(selectedSubcategory?.category || null);
+  };
+
+  // Payee autocomplete handlers
+  const handlePayeeInputChange = (e) => {
+    const value = e.target.value;
+    setPayeeInput(value);
+    setFormData(prev => ({
+      ...prev,
+      payee: value
+    }));
+  };
+
+  const handlePayeeSelect = (payee) => {
+    setPayeeInput(payee.name);
+    setFormData(prev => ({
+      ...prev,
+      payee: payee.name
+    }));
+    setShowPayeeDropdown(false);
+  };
+
+  const handlePayeeInputBlur = () => {
+    // Delay hiding dropdown to allow for click events
+    setTimeout(() => {
+      setShowPayeeDropdown(false);
+    }, 200);
   };
 
   return (
@@ -302,6 +354,40 @@ const TransactionForm = ({ onSuccess }) => {
                   })()}
                 </span>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payee Autocomplete Section */}
+      {selectedTransactionType && (
+        <div className="transaction-quick-entry">
+          <div className="quick-entry-description">
+            <div className="payee-autocomplete-container">
+              <input
+                type="text"
+                id="payee"
+                name="payee"
+                value={payeeInput}
+                onChange={handlePayeeInputChange}
+                onBlur={handlePayeeInputBlur}
+                onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
+                placeholder="👤 Start typing payee name..."
+              />
+              
+              {showPayeeDropdown && filteredPayees.length > 0 && (
+                <div className="payee-dropdown">
+                  {filteredPayees.map(payee => (
+                    <div
+                      key={payee.id}
+                      className="payee-option"
+                      onClick={() => handlePayeeSelect(payee)}
+                    >
+                      {payee.name}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

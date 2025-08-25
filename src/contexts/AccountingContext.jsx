@@ -42,6 +42,7 @@ export const AccountingProvider = ({ children }) => {
   const [apiSettings, setApiSettings] = useState([]);
   const [apiUsage, setApiUsage] = useState([]);
   const [databaseInfo, setDatabaseInfo] = useState([]);
+  const [payees, setPayees] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,6 +68,7 @@ export const AccountingProvider = ({ children }) => {
     setTags(database.getTable('tags'));
     setProducts(database.getTable('tags'));
     setTodos(database.getTable('todos'));
+    setPayees(database.getTable('payees'));
     setCategories(database.getCategories());
     setTransactionGroups(database.getTransactionGroups());
     setSubcategories(database.getSubcategories());
@@ -290,6 +292,60 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
+  // Payees CRUD methods
+  const addPayee = async (payeeData) => {
+    try {
+      const newPayee = database.addPayee(payeeData);
+      setPayees(database.getTable('payees'));
+      
+      const buffer = database.exportTableToBuffer('payees');
+      await fileStorage.saveTable('payees', buffer);
+      
+      return newPayee;
+    } catch (error) {
+      console.error('Error adding payee:', error);
+      throw error;
+    }
+  };
+
+  const updatePayee = async (id, payeeData) => {
+    try {
+      const updatedPayee = database.updatePayee(id, payeeData);
+      setPayees(database.getTable('payees'));
+      
+      const buffer = database.exportTableToBuffer('payees');
+      await fileStorage.saveTable('payees', buffer);
+      
+      return updatedPayee;
+    } catch (error) {
+      console.error('Error updating payee:', error);
+      throw error;
+    }
+  };
+
+  const deletePayee = async (id) => {
+    try {
+      const deletedPayee = database.deletePayee(id);
+      setPayees([...database.getTable('payees')]); // Create new array to force re-render
+      
+      const buffer = database.exportTableToBuffer('payees');
+      await fileStorage.saveTable('payees', buffer);
+      
+      return deletedPayee;
+    } catch (error) {
+      console.error('Error deleting payee:', error);
+      throw error;
+    }
+  };
+
+  const getPayees = () => {
+    return database.getPayees();
+  };
+
+  const getActivePayees = () => {
+    return database.getActivePayees();
+  };
+
   const updateTransaction = async (id, transactionData) => {
     try {
       const processedData = {
@@ -350,6 +406,7 @@ export const AccountingProvider = ({ children }) => {
       setTags([]);
       setTodos([]);
       setCategories([]);
+      setPayees([]);
       setTransactionGroups([]);
       setSubcategories([]);
       
@@ -387,6 +444,7 @@ export const AccountingProvider = ({ children }) => {
     setTags([]);
     setTodos([]);
     setCategories([]);
+    setPayees([]);
     setSubcategories([]);
     setDatabaseInfo([]);
     setDatabase(new RelationalDatabase());
@@ -976,6 +1034,7 @@ export const AccountingProvider = ({ children }) => {
     userPreferences,
     exchangeRateService,
     databaseInfo,
+    payees,
     isLoaded,
     loading,
     createNewDatabase,
@@ -989,6 +1048,11 @@ export const AccountingProvider = ({ children }) => {
     deleteAccount,
     deleteTransaction,
     deleteProduct,
+    addPayee,
+    updatePayee,
+    deletePayee,
+    getPayees,
+    getActivePayees,
     addTodo,
     updateTodo,
     deleteTodo,

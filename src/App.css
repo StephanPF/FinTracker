@@ -2406,6 +2406,67 @@ body {
   text-align: left;
 }
 
+/* Payee autocomplete styles - matching description field */
+.payee-autocomplete-container {
+  position: relative;
+}
+
+.payee-autocomplete-container input {
+  width: calc(350px + 1.5rem + 200px);
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  color: #374151;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payee-autocomplete-container input:focus {
+  outline: none;
+  border-color: #4c6ef5;
+  box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+.payee-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-top: 4px;
+}
+
+.payee-option {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: background-color 0.2s ease;
+}
+
+.payee-option:last-child {
+  border-bottom: none;
+}
+
+.payee-option:hover {
+  background-color: #f3f4f6;
+}
+
+/* Responsive adjustments for payee field */
+@media (max-width: 768px) {
+  .payee-autocomplete-container input {
+    width: 100%;
+  }
+}
+
 /* Currency Manager Styles */
 .currency-manager {
   padding: 1rem;

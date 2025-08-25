@@ -16,7 +16,8 @@ class RelationalDatabase {
       user_preferences: [],
       api_usage: [],
       api_settings: [],
-      database_info: []
+      database_info: [],
+      payees: []
     };
     this.workbooks = {};
     this.relationships = {
@@ -92,6 +93,7 @@ class RelationalDatabase {
       user_preferences: this.generateUserPreferences(),
       api_usage: this.generateApiUsage(),
       api_settings: this.generateApiSettings(),
+      payees: [],
       
       database_info: [
         {
@@ -2961,6 +2963,76 @@ class RelationalDatabase {
         this.saveTableToWorkbook('transaction_groups');
       }
     }
+  }
+
+  // Payees CRUD methods
+  addPayee(payeeData) {
+    // Initialize payees table if it doesn't exist
+    if (!this.tables.payees) {
+      this.tables.payees = [];
+    }
+    
+    const id = this.generateId('PAY');
+    const newPayee = {
+      id,
+      name: payeeData.name,
+      isActive: payeeData.isActive !== undefined ? payeeData.isActive : true,
+      createdAt: new Date().toISOString()
+    };
+
+    this.tables.payees.push(newPayee);
+    this.saveTableToWorkbook('payees');
+    return newPayee;
+  }
+
+  updatePayee(id, payeeData) {
+    // Initialize payees table if it doesn't exist
+    if (!this.tables.payees) {
+      this.tables.payees = [];
+    }
+    
+    const payeeIndex = this.tables.payees.findIndex(payee => payee.id === id);
+    if (payeeIndex === -1) {
+      throw new Error(`Payee with id ${id} not found`);
+    }
+
+    const updatedPayee = {
+      ...this.tables.payees[payeeIndex],
+      ...payeeData,
+      id: id // Ensure ID doesn't change
+    };
+
+    this.tables.payees[payeeIndex] = updatedPayee;
+    this.saveTableToWorkbook('payees');
+    return updatedPayee;
+  }
+
+  deletePayee(id) {
+    // Initialize payees table if it doesn't exist
+    if (!this.tables.payees) {
+      this.tables.payees = [];
+    }
+    
+    const payeeIndex = this.tables.payees.findIndex(payee => payee.id === id);
+    if (payeeIndex === -1) {
+      throw new Error(`Payee with id ${id} not found`);
+    }
+
+    const deletedPayee = this.tables.payees.splice(payeeIndex, 1)[0];
+    this.saveTableToWorkbook('payees');
+    return deletedPayee;
+  }
+
+  getPayees() {
+    // Initialize payees table if it doesn't exist
+    if (!this.tables.payees) {
+      this.tables.payees = [];
+    }
+    return this.tables.payees;
+  }
+
+  getActivePayees() {
+    return this.getPayees().filter(payee => payee.isActive);
   }
 }
 
