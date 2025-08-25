@@ -245,7 +245,7 @@ const TransactionForm = ({ onSuccess }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                 {selectedTransactionType && selectedTransactionType.name === 'Transfer' && (
                   <span style={{ fontSize: '1.5rem' }}>
-                    ⬅️
+                    ⬇️
                   </span>
                 )}
                 <select

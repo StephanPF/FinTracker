@@ -439,6 +439,8 @@ const DataManagement = () => {
           step="0.01"
           value={formData.balance || ''}
           onChange={(e) => handleInputChange('balance', parseFloat(e.target.value) || 0)}
+          style={{ textAlign: 'left' }}
+          className="no-spinners"
         />
       </div>
       <div className="form-actions">

@@ -2394,6 +2394,18 @@ body {
   max-width: 120px !important;
 }
 
+/* Remove number input spinners and left align text */
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinners[type=number] {
+  -moz-appearance: textfield;
+  text-align: left;
+}
+
 /* Currency Manager Styles */
 .currency-manager {
   padding: 1rem;
