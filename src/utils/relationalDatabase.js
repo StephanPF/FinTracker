@@ -37,8 +37,10 @@ class RelationalDatabase {
         destinationAccountId: { table: 'accounts', field: 'id', optional: true }
       },
       subcategories: {
-        categoryId: { table: 'transaction_types', field: 'id' },
         groupId: { table: 'transaction_groups', field: 'id', optional: true }
+      },
+      transaction_groups: {
+        transactionTypeId: { table: 'transaction_types', field: 'id' }
       },
       exchange_rates: {
         fromCurrencyId: { table: 'currencies', field: 'id' },
@@ -1443,6 +1445,7 @@ class RelationalDatabase {
       color: groupData.color || '#6366f1',
       order: groupData.order !== undefined ? groupData.order : maxOrder + 1,
       isActive: groupData.isActive !== undefined ? groupData.isActive : true,
+      transactionTypeId: groupData.transactionTypeId,
       createdAt: new Date().toISOString()
     };
 
@@ -1496,16 +1499,15 @@ class RelationalDatabase {
     return this.tables.subcategories.filter(subcategory => subcategory.isActive).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
-  getSubcategoriesByCategory(categoryId) {
+  getSubcategoriesByGroup(groupId) {
     return this.tables.subcategories.filter(subcategory => 
-      subcategory.categoryId === categoryId && subcategory.isActive
+      subcategory.groupId === groupId && subcategory.isActive
     ).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
   getSubcategoriesWithCategories() {
     return this.tables.subcategories.map(subcategory => ({
       ...subcategory,
-      category: this.getRecord('transaction_types', subcategory.categoryId),
       group: subcategory.groupId ? this.getRecord('transaction_groups', subcategory.groupId) : null
     })).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
@@ -1520,7 +1522,6 @@ class RelationalDatabase {
 
     const newSubcategory = {
       id: 'SUBCAT_' + Date.now(),
-      categoryId: subcategoryData.categoryId,
       groupId: subcategoryData.groupId || null,
       name: subcategoryData.name,
       description: subcategoryData.description || '',
@@ -1535,7 +1536,7 @@ class RelationalDatabase {
   }
 
   updateSubcategory(id, subcategoryData) {
-    if (subcategoryData.categoryId && !this.validateForeignKeys('subcategories', subcategoryData)) {
+    if (subcategoryData.groupId && !this.validateForeignKeys('subcategories', subcategoryData)) {
       throw new Error('Invalid foreign key references in subcategory');
     }
 
@@ -1704,6 +1705,7 @@ class RelationalDatabase {
         description: 'Basic needs and necessities',
         color: '#ef4444',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       },
       {
@@ -1712,6 +1714,7 @@ class RelationalDatabase {
         description: 'Entertainment and personal enjoyment',
         color: '#f97316',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       },
       {
@@ -1720,6 +1723,7 @@ class RelationalDatabase {
         description: 'Work and business related expenses',
         color: '#eab308',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       },
       {
@@ -1728,6 +1732,7 @@ class RelationalDatabase {
         description: 'Financial growth and savings',
         color: '#22c55e',
         isActive: true,
+        transactionTypeId: 'CAT_001', // Income (could be investment income or savings related)
         createdAt: new Date().toISOString()
       },
       {
@@ -1736,6 +1741,7 @@ class RelationalDatabase {
         description: 'Medical and wellness expenses',
         color: '#06b6d4',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       }
     ];
@@ -1749,6 +1755,7 @@ class RelationalDatabase {
         description: 'Besoins de base et nécessités',
         color: '#ef4444',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       },
       {
@@ -1757,6 +1764,7 @@ class RelationalDatabase {
         description: 'Divertissement et plaisir personnel',
         color: '#f97316',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       },
       {
@@ -1765,6 +1773,7 @@ class RelationalDatabase {
         description: 'Dépenses liées au travail et aux affaires',
         color: '#eab308',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       },
       {
@@ -1773,6 +1782,7 @@ class RelationalDatabase {
         description: 'Croissance financière et épargne',
         color: '#22c55e',
         isActive: true,
+        transactionTypeId: 'CAT_001', // Income
         createdAt: new Date().toISOString()
       },
       {
@@ -1781,6 +1791,7 @@ class RelationalDatabase {
         description: 'Dépenses médicales et de bien-être',
         color: '#06b6d4',
         isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
         createdAt: new Date().toISOString()
       }
     ];
@@ -1791,7 +1802,6 @@ class RelationalDatabase {
       // Income Subcategories
       {
         id: 'SUBCAT_001',
-        categoryId: 'CAT_001',
         groupId: 'GRP_001', // Work Income
         name: 'Salary/Wages',
         description: 'Regular employment income',
@@ -1800,7 +1810,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_002',
-        categoryId: 'CAT_001',
         groupId: 'GRP_001', // Work Income
         name: 'Freelance/Consulting',
         description: 'Independent work income',
@@ -1809,7 +1818,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_003',
-        categoryId: 'CAT_001',
         groupId: 'GRP_002', // Investment Income
         name: 'Investment Returns',
         description: 'Dividends, interest, capital gains',
@@ -1818,7 +1826,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_004',
-        categoryId: 'CAT_001',
         groupId: 'GRP_001', // Work Income
         name: 'Side Business',
         description: 'Income from side business or gig work',
@@ -1827,7 +1834,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_005',
-        categoryId: 'CAT_001',
         groupId: 'GRP_003', // Other Income
         name: 'Gifts/Bonuses',
         description: 'Gifts, bonuses, and unexpected income',
@@ -1838,7 +1844,6 @@ class RelationalDatabase {
       // Expense Subcategories
       {
         id: 'SUBCAT_006',
-        categoryId: 'CAT_002',
         groupId: 'GRP_004', // Essential Expenses
         name: 'Housing',
         description: 'Rent, mortgage, utilities, maintenance',
@@ -1847,7 +1852,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_007',
-        categoryId: 'CAT_002',
         groupId: 'GRP_004', // Essential Expenses
         name: 'Transportation',
         description: 'Gas, car payments, public transit',
@@ -1856,7 +1860,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_008',
-        categoryId: 'CAT_002',
         groupId: 'GRP_004', // Essential Expenses
         name: 'Food & Dining',
         description: 'Groceries, restaurants, takeout',
@@ -1865,7 +1868,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_009',
-        categoryId: 'CAT_002',
         groupId: 'GRP_004', // Essential Expenses
         name: 'Healthcare',
         description: 'Medical expenses, insurance, medications',
@@ -1874,7 +1876,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_010',
-        categoryId: 'CAT_002',
         groupId: 'GRP_005', // Lifestyle Expenses
         name: 'Entertainment',
         description: 'Movies, subscriptions, hobbies, travel',
@@ -1883,7 +1884,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_011',
-        categoryId: 'CAT_002',
         groupId: 'GRP_005', // Lifestyle Expenses
         name: 'Shopping',
         description: 'Clothing, electronics, home goods',
@@ -1892,7 +1892,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_012',
-        categoryId: 'CAT_002',
         groupId: 'GRP_004', // Essential Expenses
         name: 'Bills & Utilities',
         description: 'Phone, internet, insurance, subscriptions',
@@ -1903,7 +1902,6 @@ class RelationalDatabase {
       // Transfer Subcategories
       {
         id: 'SUBCAT_013',
-        categoryId: 'CAT_003',
         groupId: null, // No group for transfers
         name: 'Account Transfer',
         description: 'Transfer between bank accounts',
@@ -1912,7 +1910,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_014',
-        categoryId: 'CAT_003',
         groupId: null, // No group for transfers
         name: 'Cash Withdrawal',
         description: 'ATM withdrawals and cash transactions',
@@ -1921,7 +1918,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_015',
-        categoryId: 'CAT_003',
         groupId: null, // No group for transfers
         name: 'Cash Deposit',
         description: 'Depositing cash into accounts',
@@ -1932,7 +1928,6 @@ class RelationalDatabase {
       // Investment Subcategories
       {
         id: 'SUBCAT_016',
-        categoryId: 'CAT_004',
         groupId: 'GRP_002', // Investment Income
         name: 'Stock Purchase',
         description: 'Buying individual stocks',
@@ -1941,7 +1936,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_017',
-        categoryId: 'CAT_004',
         groupId: 'GRP_002', // Investment Income
         name: 'Fund Investment',
         description: 'Mutual funds, ETFs, index funds',
@@ -1950,7 +1944,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_018',
-        categoryId: 'CAT_004',
         groupId: 'GRP_002', // Investment Income
         name: 'Bond Purchase',
         description: 'Government and corporate bonds',
@@ -1959,7 +1952,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_019',
-        categoryId: 'CAT_004',
         groupId: 'GRP_002', // Investment Income
         name: 'Cryptocurrency',
         description: 'Digital currency investments',
@@ -1968,7 +1960,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_020',
-        categoryId: 'CAT_004',
         groupId: 'GRP_002', // Investment Income
         name: 'Investment Fees',
         description: 'Brokerage fees, management fees',
@@ -1983,7 +1974,6 @@ class RelationalDatabase {
       // Subcategories Revenus
       {
         id: 'SUBCAT_001',
-        categoryId: 'CAT_001',
         groupId: 'GRP_001', // Work Income
         name: 'Salaire/Rémunération',
         description: 'Revenus d\'emploi régulier',
@@ -1992,7 +1982,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_002',
-        categoryId: 'CAT_001',
         groupId: 'GRP_001', // Work Income
         name: 'Freelance/Conseil',
         description: 'Revenus de travail indépendant',
@@ -2001,7 +1990,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_003',
-        categoryId: 'CAT_001',
         groupId: 'GRP_002', // Investment Income
         name: 'Revenus de Placement',
         description: 'Dividendes, intérêts, plus-values',
@@ -2010,7 +1998,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_004',
-        categoryId: 'CAT_001',
         groupId: 'GRP_001', // Work Income
         name: 'Activité Secondaire',
         description: 'Revenus d\'activité secondaire ou travail à la demande',
@@ -2019,7 +2006,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_005',
-        categoryId: 'CAT_001',
         groupId: 'GRP_003', // Other Income
         name: 'Cadeaux/Primes',
         description: 'Cadeaux, primes et revenus inattendus',
@@ -2030,7 +2016,6 @@ class RelationalDatabase {
       // Subcategories Dépenses
       {
         id: 'SUBCAT_006',
-        categoryId: 'CAT_002',
         groupId: 'GRP_004', // Essential Expenses
         name: 'Logement',
         description: 'Loyer, hypothèque, services publics, entretien',
@@ -2039,7 +2024,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_007',
-        categoryId: 'CAT_002',
         groupId: 'GRP_004', // Essential Expenses
         name: 'Transport',
         description: 'Essence, paiements auto, transport public',
@@ -2048,7 +2032,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_008',
-        categoryId: 'CAT_002',
         name: 'Alimentation',
         description: 'Épicerie, restaurants, plats à emporter',
         isActive: true,
@@ -2056,7 +2039,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_009',
-        categoryId: 'CAT_002',
         name: 'Santé',
         description: 'Dépenses médicales, assurance, médicaments',
         isActive: true,
@@ -2064,7 +2046,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_010',
-        categoryId: 'CAT_002',
         name: 'Divertissement',
         description: 'Cinéma, abonnements, loisirs, voyages',
         isActive: true,
@@ -2072,7 +2053,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_011',
-        categoryId: 'CAT_002',
         name: 'Achats',
         description: 'Vêtements, électronique, articles ménagers',
         isActive: true,
@@ -2080,7 +2060,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_012',
-        categoryId: 'CAT_002',
         name: 'Factures et Services',
         description: 'Téléphone, internet, assurance, abonnements',
         isActive: true,
@@ -2090,7 +2069,6 @@ class RelationalDatabase {
       // Subcategories Virement
       {
         id: 'SUBCAT_013',
-        categoryId: 'CAT_003',
         name: 'Virement de Compte',
         description: 'Virement entre comptes bancaires',
         isActive: true,
@@ -2098,7 +2076,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_014',
-        categoryId: 'CAT_003',
         name: 'Retrait Espèces',
         description: 'Retraits DAB et transactions en espèces',
         isActive: true,
@@ -2106,7 +2083,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_015',
-        categoryId: 'CAT_003',
         name: 'Dépôt Espèces',
         description: 'Dépôt d\'espèces dans les comptes',
         isActive: true,
@@ -2116,7 +2092,6 @@ class RelationalDatabase {
       // Subcategories Investissement
       {
         id: 'SUBCAT_016',
-        categoryId: 'CAT_004',
         name: 'Achat d\'Actions',
         description: 'Achat d\'actions individuelles',
         isActive: true,
@@ -2124,7 +2099,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_017',
-        categoryId: 'CAT_004',
         name: 'Investissement Fonds',
         description: 'Fonds communs, FNB, fonds indiciels',
         isActive: true,
@@ -2132,7 +2106,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_018',
-        categoryId: 'CAT_004',
         name: 'Achat d\'Obligations',
         description: 'Obligations gouvernementales et corporatives',
         isActive: true,
@@ -2140,7 +2113,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_019',
-        categoryId: 'CAT_004',
         name: 'Cryptomonnaie',
         description: 'Investissements en monnaie numérique',
         isActive: true,
@@ -2148,7 +2120,6 @@ class RelationalDatabase {
       },
       {
         id: 'SUBCAT_020',
-        categoryId: 'CAT_004',
         name: 'Frais d\'Investissement',
         description: 'Frais de courtage, frais de gestion',
         isActive: true,
@@ -2929,12 +2900,18 @@ class RelationalDatabase {
           migrationNeeded = true;
         }
         
+        // Remove categoryId field if it exists (no longer needed)
+        if (updated.categoryId !== undefined) {
+          delete updated.categoryId;
+          migrationNeeded = true;
+        }
+        
         return updated;
       });
       
       // Save if migration was needed
       if (migrationNeeded) {
-        console.log('Migrated subcategories to include order field');
+        console.log('Migrated subcategories to include order field and remove categoryId');
         this.saveTableToWorkbook('subcategories');
       }
     }
@@ -2954,12 +2931,27 @@ class RelationalDatabase {
           migrationNeeded = true;
         }
         
+        // Add missing transactionTypeId field - default to Expenses (CAT_002)
+        if (updated.transactionTypeId === undefined) {
+          // Assign based on group name patterns or default to Expenses
+          if (updated.name && (updated.name.toLowerCase().includes('income') || 
+                               updated.name.toLowerCase().includes('investment') || 
+                               updated.name.toLowerCase().includes('savings') ||
+                               updated.name.toLowerCase().includes('épargne') ||
+                               updated.name.toLowerCase().includes('investissement'))) {
+            updated.transactionTypeId = 'CAT_001'; // Income
+          } else {
+            updated.transactionTypeId = 'CAT_002'; // Expenses (default)
+          }
+          migrationNeeded = true;
+        }
+        
         return updated;
       });
       
       // Save if migration was needed
       if (migrationNeeded) {
-        console.log('Migrated transaction groups to include order field');
+        console.log('Migrated transaction groups to include order field and transactionTypeId');
         this.saveTableToWorkbook('transaction_groups');
       }
     }

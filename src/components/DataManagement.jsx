@@ -736,7 +736,6 @@ const DataManagement = () => {
   );
 
   const renderSubcategoryForm = () => {
-    const activeCategoriesData = getActiveCategories();
     const activeTransactionGroupsData = getActiveTransactionGroups();
     
     return (
@@ -749,21 +748,6 @@ const DataManagement = () => {
             onChange={(e) => handleInputChange('name', e.target.value)}
             required
           />
-        </div>
-        <div className="form-group">
-          <label>{t('category')}</label>
-          <select
-            value={formData.categoryId || ''}
-            onChange={(e) => handleInputChange('categoryId', e.target.value)}
-            required
-          >
-            <option value="">{t('selectCategory')}</option>
-            {activeCategoriesData.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.icon} {category.name}
-              </option>
-            ))}
-          </select>
         </div>
         <div className="form-group">
           <label>{t('transactionGroup')}</label>
@@ -823,6 +807,21 @@ const DataManagement = () => {
           onChange={(e) => handleInputChange('description', e.target.value)}
           placeholder="Optional description for this transaction group"
         />
+      </div>
+      <div className="form-group">
+        <label>Transaction Type</label>
+        <select
+          value={formData.transactionTypeId || ''}
+          onChange={(e) => handleInputChange('transactionTypeId', e.target.value)}
+          required
+        >
+          <option value="">Select Transaction Type</option>
+          {getActiveCategories().map(category => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="form-group">
         <label>{t('color')}</label>
@@ -1168,17 +1167,12 @@ const DataManagement = () => {
           columns: [
             { key: 'id', label: t('id') },
             { key: 'name', label: t('name') },
-            { 
-              key: 'category', 
-              label: t('category'), 
-              render: (category) => category ? `${category.icon} ${category.name}` : 'N/A'
-            },
+            { key: 'description', label: t('description') },
             { 
               key: 'group', 
               label: t('transactionGroup'), 
               render: (group) => group ? group.name : '-'
             },
-            { key: 'description', label: t('description') },
             { 
               key: 'color', 
               label: t('color'), 
@@ -1203,6 +1197,19 @@ const DataManagement = () => {
             { key: 'id', label: t('id') },
             { key: 'name', label: t('name') },
             { key: 'description', label: t('description') },
+            { 
+              key: 'transactionTypeId', 
+              label: 'Transaction Type',
+              render: (value) => {
+                const transactionType = categories.find(cat => cat.id === value);
+                return transactionType ? (
+                  <span>
+                    <span style={{ marginRight: '0.5rem' }}>{transactionType.icon}</span>
+                    {transactionType.name}
+                  </span>
+                ) : 'Unknown';
+              }
+            },
             { 
               key: 'color', 
               label: t('color'), 
