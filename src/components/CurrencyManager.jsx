@@ -121,6 +121,7 @@ const CurrencyManager = () => {
   };
 
   const handleDropdownClick = (e, currencyId) => {
+    console.log('🔍 CURRENCY DROPDOWN CLICK:', { currencyId, currentOpenId: openDropdownId });
     e.stopPropagation();
     
     if (openDropdownId === currencyId) {
@@ -355,15 +356,33 @@ const CurrencyManager = () => {
                         >
                           ✏️ {t('edit')}
                         </button>
-                        <button 
-                          onClick={() => {
-                            handleCurrencyDelete(currency);
-                            setOpenDropdownId(null);
-                          }}
-                          className="dropdown-item"
-                        >
-                          🗑️ {t('delete')}
-                        </button>
+                        {/* Only show delete button if not protected currency */}
+                        {(() => {
+                          const protectedCurrencies = ['CUR_001', 'CUR_002', 'CUR_003', 'CUR_004', 'CUR_005', 'CUR_006', 'CUR_007', 'CUR_008']; // EUR, USD, AED, GBP, AUD, BTC, ETH, CHF
+                          const isProtected = protectedCurrencies.includes(currency.id);
+                          
+                          console.log('🔍 CURRENCY PROTECTION DEBUG:', {
+                            currencyId: currency.id,
+                            currencyCode: currency.code,
+                            isProtected,
+                            protectedList: protectedCurrencies
+                          });
+                          
+                          if (!isProtected) {
+                            return (
+                              <button 
+                                onClick={() => {
+                                  handleCurrencyDelete(currency);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="dropdown-item"
+                              >
+                                🗑️ {t('delete')}
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     )}
                   </div>

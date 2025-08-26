@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDate } from '../hooks/useDate';
 
 const TransactionList = ({ limit }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService } = useAccounting();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups } = useAccounting();
   const { t } = useLanguage();
   const { formatDate } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
@@ -16,6 +17,9 @@ const TransactionList = ({ limit }) => {
   const [filterAmountMax, setFilterAmountMax] = useState('');
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
 
 
@@ -50,6 +54,46 @@ const TransactionList = ({ limit }) => {
       return `- ${subcategoryName}`;
     }
     return '-';
+  };
+
+  const getTransactionType = (transaction) => {
+    // First try to get from subcategory -> transaction group -> transaction type hierarchy
+    if (transaction.subcategoryId) {
+      const subcategoriesWithCategories = getSubcategoriesWithCategories();
+      const subcategory = subcategoriesWithCategories.find(sub => sub.id === transaction.subcategoryId);
+      
+      if (subcategory && subcategory.groupId) {
+        // Find transaction group and get its transaction type
+        const transactionGroups = getActiveTransactionGroups();
+        const group = transactionGroups.find(g => g.id === subcategory.groupId);
+        
+        if (group && group.transactionTypeId) {
+          const activeCategories = getActiveCategories();
+          const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
+          if (transactionType) {
+            return `${transactionType.icon} ${transactionType.name}`;
+          }
+        }
+      }
+    }
+    
+    // Fallback: try direct category lookup
+    if (transaction.categoryId) {
+      const category = categories.find(cat => cat.id === transaction.categoryId);
+      if (category) {
+        return `${category.icon} ${category.name}`;
+      }
+    }
+    
+    // Another fallback: if accounts are different, it might be a transfer
+    const account = accounts.find(acc => acc.id === transaction.accountId);
+    const destinationAccount = accounts.find(acc => acc.id === transaction.destinationAccountId);
+    
+    if (account && destinationAccount && transaction.accountId !== transaction.destinationAccountId) {
+      return '🔄 Transfer';
+    }
+    
+    return '❓ Unknown';
   };
 
   const formatAmountWithCurrency = (transaction) => {
@@ -160,6 +204,23 @@ const TransactionList = ({ limit }) => {
       setIsRendering(false);
     }
   }, [transactions, filteredTransactions]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.transaction-actions')) {
+        setActiveDropdown(null);
+      }
+    };
+
+    if (activeDropdown) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [activeDropdown]);
 
   if (transactions.length === 0) {
     return (
@@ -305,14 +366,10 @@ const TransactionList = ({ limit }) => {
             <tr>
               <th>{t('date')}</th>
               <th>{t('description')}</th>
-              <th>{t('debitAccount')}</th>
-              <th>{t('creditAccount')}</th>
-              <th>{t('category')}</th>
-              <th>{t('vendor')}</th>
-              <th>{t('productService')}</th>
-              <th>{t('reference')}</th>
-              <th>{t('notes')}</th>
+              <th>Transaction Type</th>
+              <th>Category</th>
               <th>{t('amount')}</th>
+              <th style={{ width: '50px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -327,20 +384,33 @@ const TransactionList = ({ limit }) => {
                     ID: {transaction.id}
                   </div>
                 </td>
-                <td>{getAccountName(transaction.debitAccountId)}</td>
-                <td>{getAccountName(transaction.creditAccountId)}</td>
-                <td>{getCategorySubcategoryName(transaction)}</td>
-                <td>
-                  {transaction.vendorId ? 
-                    vendors.find(v => v.id === transaction.vendorId)?.name || '-' : '-'}
-                </td>
-                <td>
-                  {transaction.productId ? 
-                    tags.find(t => t.id === transaction.productId)?.name || '-' : '-'}
-                </td>
-                <td>{transaction.reference || '-'}</td>
-                <td>{transaction.notes || '-'}</td>
+                <td>{getTransactionType(transaction)}</td>
+                <td>{getSubcategoryName(transaction.subcategoryId)}</td>
                 <td>{formatAmountWithCurrency(transaction)}</td>
+                <td>
+                  <div className="transaction-actions">
+                    <button 
+                      className="action-menu-btn"
+                      onClick={() => setActiveDropdown(activeDropdown === transaction.id ? null : transaction.id)}
+                    >
+                      ⋮
+                    </button>
+                    {activeDropdown === transaction.id && (
+                      <div className="action-dropdown">
+                        <button 
+                          className="dropdown-item"
+                          onClick={() => {
+                            setSelectedTransaction(transaction);
+                            setShowTransactionModal(true);
+                            setActiveDropdown(null);
+                          }}
+                        >
+                          👁️ View
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -351,6 +421,112 @@ const TransactionList = ({ limit }) => {
         <div className="view-all-notice">
           <p>{t('showingLastTransactions')} {limit} {t('totalTransactions')} {filteredTransactions.length}</p>
         </div>
+      )}
+
+      {/* Transaction Details Modal - Rendered as Portal */}
+      {showTransactionModal && selectedTransaction && createPortal(
+        <div className="modal-overlay" onClick={() => setShowTransactionModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Transaction Details</h3>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setShowTransactionModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="transaction-detail-grid">
+                <div className="detail-row">
+                  <span className="detail-label">ID:</span>
+                  <span className="detail-value">{selectedTransaction.id}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Date:</span>
+                  <span className="detail-value">{formatDate(selectedTransaction.date)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Description:</span>
+                  <span className="detail-value">{selectedTransaction.description}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Amount:</span>
+                  <span className="detail-value">{formatAmountWithCurrency(selectedTransaction)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Transaction Type:</span>
+                  <span className="detail-value">{getTransactionType(selectedTransaction)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Category:</span>
+                  <span className="detail-value">{getSubcategoryName(selectedTransaction.subcategoryId)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Account:</span>
+                  <span className="detail-value">{getAccountName(selectedTransaction.accountId)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Destination Account:</span>
+                  <span className="detail-value">{selectedTransaction.destinationAccountId ? getAccountName(selectedTransaction.destinationAccountId) : '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Currency ID:</span>
+                  <span className="detail-value">{selectedTransaction.currencyId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Exchange Rate:</span>
+                  <span className="detail-value">{selectedTransaction.exchangeRate || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Account ID:</span>
+                  <span className="detail-value">{selectedTransaction.accountId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Destination Account ID:</span>
+                  <span className="detail-value">{selectedTransaction.destinationAccountId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Subcategory ID:</span>
+                  <span className="detail-value">{selectedTransaction.subcategoryId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Category ID:</span>
+                  <span className="detail-value">{selectedTransaction.categoryId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Customer ID:</span>
+                  <span className="detail-value">{selectedTransaction.customerId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Vendor ID:</span>
+                  <span className="detail-value">{selectedTransaction.vendorId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Product ID:</span>
+                  <span className="detail-value">{selectedTransaction.productId || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Payer:</span>
+                  <span className="detail-value">{selectedTransaction.payer || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Payee:</span>
+                  <span className="detail-value">{selectedTransaction.payee || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Reference:</span>
+                  <span className="detail-value">{selectedTransaction.reference || '-'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Notes:</span>
+                  <span className="detail-value">{selectedTransaction.notes || '-'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -69,6 +69,11 @@ class RelationalDatabase {
       this.migrateTransactionTypes();
       this.migrateSubcategories();
       this.migrateTransactionGroups();
+      this.migrateDefaultAccount();
+      this.migrateTransactionTypeAccounts();
+      this.migrateToSingleAccount();
+      this.migrateRemoveAllSubcategories();
+      this.migrateRemoveSpecificTransactionGroups();
       
       this.validateRelationships();
       return true;
@@ -128,6 +133,22 @@ class RelationalDatabase {
     };
 
     this.initializeWorkbooks();
+    
+    // Run migration to ensure default account has correct name
+    this.migrateDefaultAccount();
+    
+    // Run migration to update transaction type accounts
+    this.migrateTransactionTypeAccounts();
+    
+    // Run migration to remove unwanted accounts
+    this.migrateToSingleAccount();
+    
+    // Run migration to remove all subcategories
+    this.migrateRemoveAllSubcategories();
+    
+    // Run migration to remove specific transaction groups
+    this.migrateRemoveSpecificTransactionGroups();
+    
     return true;
   }
 
@@ -1042,90 +1063,12 @@ class RelationalDatabase {
       accounts: [
         { 
           id: 'ACC001', 
-          name: 'Cash', 
+          name: 'Default Account', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 900,
+          balance: 0,
           currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 900,
+          baseCurrencyValue: 0,
           description: 'Cash on hand',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC002', 
-          name: 'Bank Account - Checking', 
-          accountTypeId: 'ACCT_TYPE_001',
-          balance: 4500,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 4500,
-          description: 'Main checking account',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC003', 
-          name: 'Savings Account', 
-          accountTypeId: 'ACCT_TYPE_001',
-          balance: 9000,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 9000,
-          description: 'Emergency savings',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC004', 
-          name: 'Investment Portfolio', 
-          accountTypeId: 'ACCT_TYPE_002',
-          balance: 22500,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 22500,
-          description: 'Retirement and investment accounts',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC005', 
-          name: 'House', 
-          accountTypeId: 'ACCT_TYPE_003',
-          balance: 227000,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 227000,
-          description: 'Primary residence',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC006', 
-          name: 'Credit Card', 
-          accountTypeId: 'ACCT_TYPE_004',
-          balance: 2250,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 2250,
-          description: 'Main credit card debt',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC007', 
-          name: 'Mortgage', 
-          accountTypeId: 'ACCT_TYPE_005',
-          balance: 163500,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 163500,
-          description: 'Home mortgage loan',
           includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
@@ -1208,90 +1151,12 @@ class RelationalDatabase {
       accounts: [
         { 
           id: 'ACC001', 
-          name: 'Espèces', 
+          name: 'Default Account', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 900,
+          balance: 0,
           currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 900,
+          baseCurrencyValue: 0,
           description: 'Argent liquide disponible',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC002', 
-          name: 'Compte Courant', 
-          accountTypeId: 'ACCT_TYPE_001',
-          balance: 4500,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 4500,
-          description: 'Compte bancaire principal',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC003', 
-          name: 'Compte Épargne', 
-          accountTypeId: 'ACCT_TYPE_001',
-          balance: 9000,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 9000,
-          description: 'Épargne de précaution',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC004', 
-          name: 'Portefeuille de Placement', 
-          accountTypeId: 'ACCT_TYPE_002',
-          balance: 22500,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 22500,
-          description: 'Comptes retraite et investissements',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC005', 
-          name: 'Maison', 
-          accountTypeId: 'ACCT_TYPE_003',
-          balance: 227000,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 227000,
-          description: 'Résidence principale',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC006', 
-          name: 'Carte de Crédit', 
-          accountTypeId: 'ACCT_TYPE_004',
-          balance: 2250,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 2250,
-          description: 'Dette carte de crédit principale',
-          includeInOverview: true,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString()
-        },
-        { 
-          id: 'ACC007', 
-          name: 'Hypothèque', 
-          accountTypeId: 'ACCT_TYPE_005',
-          balance: 163500,
-          currencyId: 'CUR_001', // EUR (base currency)
-          baseCurrencyValue: 163500,
-          description: 'Prêt hypothécaire résidentiel',
           includeInOverview: true,
           isActive: true,
           createdAt: new Date().toISOString(),
@@ -1629,7 +1494,7 @@ class RelationalDatabase {
         description: 'Money coming in',
         color: '#4CAF50',
         icon: '💰',
-        defaultAccountId: 'ACC002', // Bank Account - Checking - where income typically goes
+        defaultAccountId: 'ACC001', // Default Account - where income typically goes
         destinationAccountId: null, // Not relevant for income
         isActive: true,
         createdAt: new Date().toISOString()
@@ -1640,7 +1505,7 @@ class RelationalDatabase {
         description: 'Money going out',
         color: '#F44336',
         icon: '💸',
-        defaultAccountId: 'ACC002', // Bank Account - Checking - where expenses typically come from
+        defaultAccountId: 'ACC001', // Default Account - where expenses typically come from
         destinationAccountId: null, // Not relevant for expenses
         isActive: true,
         createdAt: new Date().toISOString()
@@ -1662,7 +1527,7 @@ class RelationalDatabase {
         description: 'Investment-related transactions',
         color: '#9C27B0',
         icon: '📈',
-        defaultAccountId: 'ACC002', // Bank Account - Checking - where investment money comes from
+        defaultAccountId: 'ACC001', // Default Account - where investment money comes from
         destinationAccountId: null, // Not relevant for investment
         isActive: true,
         createdAt: new Date().toISOString()
@@ -1678,7 +1543,7 @@ class RelationalDatabase {
         description: 'Argent qui rentre',
         color: '#4CAF50',
         icon: '💰',
-        defaultAccountId: 'ACC002', // Bank Account - Checking - où vont typiquement les revenus
+        defaultAccountId: 'ACC001', // Default Account - où vont typiquement les revenus
         destinationAccountId: null, // Non pertinent pour les revenus
         isActive: true,
         createdAt: new Date().toISOString()
@@ -1689,7 +1554,7 @@ class RelationalDatabase {
         description: 'Argent qui sort',
         color: '#F44336',
         icon: '💸',
-        defaultAccountId: 'ACC002', // Bank Account - Checking - d'où viennent typiquement les dépenses
+        defaultAccountId: 'ACC001', // Default Account - d'où viennent typiquement les dépenses
         destinationAccountId: null, // Non pertinent pour les dépenses
         isActive: true,
         createdAt: new Date().toISOString()
@@ -1711,7 +1576,7 @@ class RelationalDatabase {
         description: 'Transactions liées aux investissements',
         color: '#9C27B0',
         icon: '📈',
-        defaultAccountId: 'ACC002', // Bank Account - Checking - d'où vient l'argent pour les investissements
+        defaultAccountId: 'ACC001', // Default Account - d'où vient l'argent pour les investissements
         destinationAccountId: null, // Non pertinent pour les investissements
         isActive: true,
         createdAt: new Date().toISOString()
@@ -1742,10 +1607,10 @@ class RelationalDatabase {
       {
         id: 'GRP_003',
         name: 'Professional & Business',
-        description: 'Work and business related expenses',
+        description: 'Work and business related income',
         color: '#eab308',
         isActive: true,
-        transactionTypeId: 'CAT_002', // Expenses
+        transactionTypeId: 'CAT_001', // Income
         createdAt: new Date().toISOString()
       },
       {
@@ -1759,11 +1624,20 @@ class RelationalDatabase {
       },
       {
         id: 'GRP_005',
-        name: 'Health & Wellness',
-        description: 'Medical and wellness expenses',
-        color: '#06b6d4',
+        name: 'Bank Transfer',
+        description: 'Internal bank transfers',
+        color: '#2196F3',
         isActive: true,
-        transactionTypeId: 'CAT_002', // Expenses
+        transactionTypeId: 'CAT_003', // Transfer
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_006',
+        name: 'Digital Assets',
+        description: 'Crypto related investments',
+        color: '#9C27B0',
+        isActive: true,
+        transactionTypeId: 'CAT_004', // Investment
         createdAt: new Date().toISOString()
       }
     ];
@@ -1792,10 +1666,10 @@ class RelationalDatabase {
       {
         id: 'GRP_003',
         name: 'Professionnel et Affaires',
-        description: 'Dépenses liées au travail et aux affaires',
+        description: 'Revenus liés au travail et aux affaires',
         color: '#eab308',
         isActive: true,
-        transactionTypeId: 'CAT_002', // Expenses
+        transactionTypeId: 'CAT_001', // Income
         createdAt: new Date().toISOString()
       },
       {
@@ -1809,345 +1683,31 @@ class RelationalDatabase {
       },
       {
         id: 'GRP_005',
-        name: 'Santé et Bien-être',
-        description: 'Dépenses médicales et de bien-être',
-        color: '#06b6d4',
+        name: 'Virement Bancaire',
+        description: 'Virements bancaires internes',
+        color: '#2196F3',
         isActive: true,
-        transactionTypeId: 'CAT_002', // Expenses
+        transactionTypeId: 'CAT_003', // Transfer
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_006',
+        name: 'Actifs Numériques',
+        description: 'Investissements liés aux cryptomonnaies',
+        color: '#9C27B0',
+        isActive: true,
+        transactionTypeId: 'CAT_004', // Investment
         createdAt: new Date().toISOString()
       }
     ];
   }
 
   generateEnglishSubcategories() {
-    return [
-      // Income Subcategories
-      {
-        id: 'SUBCAT_001',
-        groupId: 'GRP_001', // Work Income
-        name: 'Salary/Wages',
-        description: 'Regular employment income',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_002',
-        groupId: 'GRP_001', // Work Income
-        name: 'Freelance/Consulting',
-        description: 'Independent work income',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_003',
-        groupId: 'GRP_002', // Investment Income
-        name: 'Investment Returns',
-        description: 'Dividends, interest, capital gains',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_004',
-        groupId: 'GRP_001', // Work Income
-        name: 'Side Business',
-        description: 'Income from side business or gig work',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_005',
-        groupId: 'GRP_003', // Other Income
-        name: 'Gifts/Bonuses',
-        description: 'Gifts, bonuses, and unexpected income',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      
-      // Expense Subcategories
-      {
-        id: 'SUBCAT_006',
-        groupId: 'GRP_004', // Essential Expenses
-        name: 'Housing',
-        description: 'Rent, mortgage, utilities, maintenance',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_007',
-        groupId: 'GRP_004', // Essential Expenses
-        name: 'Transportation',
-        description: 'Gas, car payments, public transit',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_008',
-        groupId: 'GRP_004', // Essential Expenses
-        name: 'Food & Dining',
-        description: 'Groceries, restaurants, takeout',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_009',
-        groupId: 'GRP_004', // Essential Expenses
-        name: 'Healthcare',
-        description: 'Medical expenses, insurance, medications',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_010',
-        groupId: 'GRP_005', // Lifestyle Expenses
-        name: 'Entertainment',
-        description: 'Movies, subscriptions, hobbies, travel',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_011',
-        groupId: 'GRP_005', // Lifestyle Expenses
-        name: 'Shopping',
-        description: 'Clothing, electronics, home goods',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_012',
-        groupId: 'GRP_004', // Essential Expenses
-        name: 'Bills & Utilities',
-        description: 'Phone, internet, insurance, subscriptions',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      
-      // Transfer Subcategories
-      {
-        id: 'SUBCAT_013',
-        groupId: null, // No group for transfers
-        name: 'Account Transfer',
-        description: 'Transfer between bank accounts',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_014',
-        groupId: null, // No group for transfers
-        name: 'Cash Withdrawal',
-        description: 'ATM withdrawals and cash transactions',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_015',
-        groupId: null, // No group for transfers
-        name: 'Cash Deposit',
-        description: 'Depositing cash into accounts',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      
-      // Investment Subcategories
-      {
-        id: 'SUBCAT_016',
-        groupId: 'GRP_002', // Investment Income
-        name: 'Stock Purchase',
-        description: 'Buying individual stocks',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_017',
-        groupId: 'GRP_002', // Investment Income
-        name: 'Fund Investment',
-        description: 'Mutual funds, ETFs, index funds',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_018',
-        groupId: 'GRP_002', // Investment Income
-        name: 'Bond Purchase',
-        description: 'Government and corporate bonds',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_019',
-        groupId: 'GRP_002', // Investment Income
-        name: 'Cryptocurrency',
-        description: 'Digital currency investments',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_020',
-        groupId: 'GRP_002', // Investment Income
-        name: 'Investment Fees',
-        description: 'Brokerage fees, management fees',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      }
-    ];
+    return [];
   }
 
   generateFrenchSubcategories() {
-    return [
-      // Subcategories Revenus
-      {
-        id: 'SUBCAT_001',
-        groupId: 'GRP_001', // Work Income
-        name: 'Salaire/Rémunération',
-        description: 'Revenus d\'emploi régulier',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_002',
-        groupId: 'GRP_001', // Work Income
-        name: 'Freelance/Conseil',
-        description: 'Revenus de travail indépendant',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_003',
-        groupId: 'GRP_002', // Investment Income
-        name: 'Revenus de Placement',
-        description: 'Dividendes, intérêts, plus-values',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_004',
-        groupId: 'GRP_001', // Work Income
-        name: 'Activité Secondaire',
-        description: 'Revenus d\'activité secondaire ou travail à la demande',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_005',
-        groupId: 'GRP_003', // Other Income
-        name: 'Cadeaux/Primes',
-        description: 'Cadeaux, primes et revenus inattendus',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      
-      // Subcategories Dépenses
-      {
-        id: 'SUBCAT_006',
-        groupId: 'GRP_004', // Essential Expenses
-        name: 'Logement',
-        description: 'Loyer, hypothèque, services publics, entretien',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_007',
-        groupId: 'GRP_004', // Essential Expenses
-        name: 'Transport',
-        description: 'Essence, paiements auto, transport public',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_008',
-        name: 'Alimentation',
-        description: 'Épicerie, restaurants, plats à emporter',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_009',
-        name: 'Santé',
-        description: 'Dépenses médicales, assurance, médicaments',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_010',
-        name: 'Divertissement',
-        description: 'Cinéma, abonnements, loisirs, voyages',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_011',
-        name: 'Achats',
-        description: 'Vêtements, électronique, articles ménagers',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_012',
-        name: 'Factures et Services',
-        description: 'Téléphone, internet, assurance, abonnements',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      
-      // Subcategories Virement
-      {
-        id: 'SUBCAT_013',
-        name: 'Virement de Compte',
-        description: 'Virement entre comptes bancaires',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_014',
-        name: 'Retrait Espèces',
-        description: 'Retraits DAB et transactions en espèces',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_015',
-        name: 'Dépôt Espèces',
-        description: 'Dépôt d\'espèces dans les comptes',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      
-      // Subcategories Investissement
-      {
-        id: 'SUBCAT_016',
-        name: 'Achat d\'Actions',
-        description: 'Achat d\'actions individuelles',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_017',
-        name: 'Investissement Fonds',
-        description: 'Fonds communs, FNB, fonds indiciels',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_018',
-        name: 'Achat d\'Obligations',
-        description: 'Obligations gouvernementales et corporatives',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_019',
-        name: 'Cryptomonnaie',
-        description: 'Investissements en monnaie numérique',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'SUBCAT_020',
-        name: 'Frais d\'Investissement',
-        description: 'Frais de courtage, frais de gestion',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      }
-    ];
+    return [];
   }
 
   // Stress test method to generate bulk transactions
@@ -2975,6 +2535,230 @@ class RelationalDatabase {
       if (migrationNeeded) {
         console.log('Migrated transaction groups to include order field and transactionTypeId');
         this.saveTableToWorkbook('transaction_groups');
+      }
+    }
+  }
+
+  // Migration method to update default account (ACC001) name and balance
+  migrateDefaultAccount() {
+    if (this.tables.accounts && Array.isArray(this.tables.accounts)) {
+      const defaultAccount = this.tables.accounts.find(account => account.id === 'ACC001');
+      if (defaultAccount) {
+        let migrationNeeded = false;
+        
+        // Update name if needed
+        if (defaultAccount.name === 'Cash' || defaultAccount.name === 'Espèces') {
+          console.log('Migrating default account (ACC001) name from "' + defaultAccount.name + '" to "Default Account"');
+          defaultAccount.name = 'Default Account';
+          migrationNeeded = true;
+        }
+        
+        // Reset balance to 0
+        if (defaultAccount.balance !== 0) {
+          console.log('Migrating default account (ACC001) balance from ' + defaultAccount.balance + ' to 0');
+          defaultAccount.balance = 0;
+          migrationNeeded = true;
+        }
+        
+        // Reset base currency value to 0
+        if (defaultAccount.baseCurrencyValue !== 0) {
+          console.log('Migrating default account (ACC001) base currency value from ' + defaultAccount.baseCurrencyValue + ' to 0');
+          defaultAccount.baseCurrencyValue = 0;
+          migrationNeeded = true;
+        }
+        
+        if (migrationNeeded) {
+          this.saveTableToWorkbook('accounts');
+        }
+      }
+    }
+  }
+
+  // Migration method to update transaction type default accounts to ACC001
+  migrateTransactionTypeAccounts() {
+    if (this.tables.transaction_types && Array.isArray(this.tables.transaction_types)) {
+      let migrationNeeded = false;
+      
+      // Update CAT_001, CAT_002, and CAT_004 to use ACC001 as defaultAccountId
+      const categoriesToUpdate = ['CAT_001', 'CAT_002', 'CAT_004'];
+      
+      categoriesToUpdate.forEach(categoryId => {
+        const category = this.tables.transaction_types.find(cat => cat.id === categoryId);
+        if (category && category.defaultAccountId !== 'ACC001') {
+          console.log(`Migrating transaction type ${categoryId} default account from ${category.defaultAccountId} to ACC001`);
+          category.defaultAccountId = 'ACC001';
+          migrationNeeded = true;
+        }
+      });
+      
+      // For CAT_003 (Transfer), we need to also update destinationAccountId if it's pointing to a removed account
+      const transferCategory = this.tables.transaction_types.find(cat => cat.id === 'CAT_003');
+      if (transferCategory) {
+        // Only update if pointing to removed accounts (ACC002, ACC003, etc.)
+        if (transferCategory.defaultAccountId && transferCategory.defaultAccountId !== 'ACC001') {
+          console.log(`Migrating CAT_003 default account from ${transferCategory.defaultAccountId} to ACC001`);
+          transferCategory.defaultAccountId = 'ACC001';
+          migrationNeeded = true;
+        }
+        if (transferCategory.destinationAccountId && transferCategory.destinationAccountId !== 'ACC001') {
+          console.log(`Migrating CAT_003 destination account from ${transferCategory.destinationAccountId} to ACC001`);
+          transferCategory.destinationAccountId = 'ACC001';
+          migrationNeeded = true;
+        }
+      }
+      
+      if (migrationNeeded) {
+        this.saveTableToWorkbook('transaction_types');
+        console.log('Migration completed: transaction type accounts updated to ACC001');
+      }
+    }
+  }
+
+  // Migration method to remove all accounts except ACC001
+  migrateToSingleAccount() {
+    if (this.tables.accounts && Array.isArray(this.tables.accounts)) {
+      const initialCount = this.tables.accounts.length;
+      
+      // Check if we have more than just ACC001
+      if (initialCount > 1) {
+        // Check if any non-ACC001 accounts are used in transactions
+        const nonDefaultAccounts = this.tables.accounts.filter(account => account.id !== 'ACC001');
+        let hasTransactions = false;
+        
+        if (this.tables.transactions && Array.isArray(this.tables.transactions)) {
+          hasTransactions = this.tables.transactions.some(transaction => 
+            nonDefaultAccounts.some(acc => 
+              transaction.debitAccountId === acc.id || 
+              transaction.creditAccountId === acc.id ||
+              transaction.accountId === acc.id ||
+              transaction.destinationAccountId === acc.id
+            )
+          );
+        }
+        
+        if (!hasTransactions) {
+          console.log(`Migrating database to single account: removing ${initialCount - 1} accounts, keeping only ACC001`);
+          
+          // Keep only ACC001
+          this.tables.accounts = this.tables.accounts.filter(account => account.id === 'ACC001');
+          
+          // Ensure ACC001 exists and has correct properties
+          if (this.tables.accounts.length === 0) {
+            this.tables.accounts.push({
+              id: 'ACC001',
+              name: 'Default Account',
+              accountTypeId: 'ACCT_TYPE_001',
+              balance: 0,
+              currencyId: 'CUR_001',
+              baseCurrencyValue: 0,
+              description: 'Default account for transactions',
+              includeInOverview: true,
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              lastUpdated: new Date().toISOString()
+            });
+          }
+          
+          this.saveTableToWorkbook('accounts');
+          console.log('Migration completed: database now has only ACC001');
+        } else {
+          console.log('Migration skipped: other accounts are referenced in transactions');
+        }
+      }
+    }
+  }
+
+  // Migration method to remove all subcategories
+  migrateRemoveAllSubcategories() {
+    if (this.tables.subcategories && Array.isArray(this.tables.subcategories)) {
+      const initialCount = this.tables.subcategories.length;
+      
+      if (initialCount > 0) {
+        console.log(`Migrating database: removing all ${initialCount} subcategories`);
+        this.tables.subcategories = [];
+        this.saveTableToWorkbook('subcategories');
+        console.log('Migration completed: all subcategories removed');
+      }
+    }
+  }
+
+  // Migration method to update transaction groups (GRP_003 and GRP_005)
+  migrateRemoveSpecificTransactionGroups() {
+    if (this.tables.transaction_groups && Array.isArray(this.tables.transaction_groups)) {
+      let migrationNeeded = false;
+      
+      // Update existing GRP_003 to new Income-focused version if it exists
+      const grp003 = this.tables.transaction_groups.find(group => group.id === 'GRP_003');
+      if (grp003) {
+        // Check if it's the old expenses-focused version
+        if (grp003.transactionTypeId === 'CAT_002' || grp003.description.includes('expenses')) {
+          console.log('Migrating GRP_003 from expenses to income focus');
+          grp003.name = 'Professional & Business';
+          grp003.description = 'Work and business related income';
+          grp003.transactionTypeId = 'CAT_001'; // Income
+          migrationNeeded = true;
+        }
+      } else {
+        // Add the new GRP_003 if it doesn't exist
+        console.log('Adding new GRP_003 Professional & Business income group');
+        this.tables.transaction_groups.push({
+          id: 'GRP_003',
+          name: 'Professional & Business',
+          description: 'Work and business related income',
+          color: '#eab308',
+          isActive: true,
+          transactionTypeId: 'CAT_001', // Income
+          createdAt: new Date().toISOString()
+        });
+        migrationNeeded = true;
+      }
+      
+      // Update existing GRP_005 to new Transfer-focused version if it exists and is old version
+      const grp005 = this.tables.transaction_groups.find(group => group.id === 'GRP_005');
+      if (grp005) {
+        // Check if it's the old health/wellness version
+        if (grp005.name === 'Health & Wellness' || grp005.transactionTypeId === 'CAT_002') {
+          console.log('Migrating GRP_005 from Health & Wellness to Bank Transfer');
+          grp005.name = 'Bank Transfer';
+          grp005.description = 'Internal bank transfers';
+          grp005.color = '#2196F3';
+          grp005.transactionTypeId = 'CAT_003'; // Transfer
+          migrationNeeded = true;
+        }
+      } else {
+        // Add the new GRP_005 if it doesn't exist
+        console.log('Adding new GRP_005 Bank Transfer group');
+        this.tables.transaction_groups.push({
+          id: 'GRP_005',
+          name: 'Bank Transfer',
+          description: 'Internal bank transfers',
+          color: '#2196F3',
+          isActive: true,
+          transactionTypeId: 'CAT_003', // Transfer
+          createdAt: new Date().toISOString()
+        });
+        migrationNeeded = true;
+      }
+      
+      // Add GRP_006 if it doesn't exist
+      const grp006 = this.tables.transaction_groups.find(group => group.id === 'GRP_006');
+      if (!grp006) {
+        console.log('Adding new GRP_006 Digital Assets group');
+        this.tables.transaction_groups.push({
+          id: 'GRP_006',
+          name: 'Digital Assets',
+          description: 'Crypto related investments',
+          color: '#9C27B0',
+          isActive: true,
+          transactionTypeId: 'CAT_004', // Investment
+          createdAt: new Date().toISOString()
+        });
+        migrationNeeded = true;
+      }
+      
+      if (migrationNeeded) {
+        this.saveTableToWorkbook('transaction_groups');
+        console.log('Migration completed: transaction groups updated');
       }
     }
   }

@@ -29,11 +29,9 @@ const TransactionForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
-    debitAccount: '',
-    creditAccount: '',
     amount: '',
-    accountId: '', // New field for the default account
-    destinationAccountId: '', // New field for destination account (transfers)
+    accountId: '', // Account field
+    destinationAccountId: '', // Destination account (for transfers)
     currencyId: 'CUR_001', // Default to EUR (base currency)
     exchangeRate: 1.0,
     productId: '',
@@ -48,6 +46,8 @@ const TransactionForm = ({ onSuccess }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [missingFields, setMissingFields] = useState([]);
+  
   const [selectedTransactionType, setSelectedTransactionType] = useState(null);
   const [selectedTransactionGroup, setSelectedTransactionGroup] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -173,6 +173,11 @@ const TransactionForm = ({ onSuccess }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
+    // Clear field from missing fields list when user starts typing
+    if (missingFields.includes(name)) {
+      setMissingFields(prev => prev.filter(field => field !== name));
+    }
+    
     // Track if user modifies description
     if (name === 'description') {
       setIsDescriptionUserModified(true);
@@ -208,12 +213,35 @@ const TransactionForm = ({ onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.description || !formData.debitAccount || !formData.creditAccount || !formData.amount) {
+    // Check for missing required fields
+    const missing = [];
+    if (!formData.description) missing.push('description');
+    if (!formData.accountId) missing.push('accountId');
+    if (!formData.amount) missing.push('amount');
+    if (!formData.subcategoryId) missing.push('subcategoryId');
+    // For transfers, also check destination account
+    if (selectedTransactionType && selectedTransactionType.name === 'Transfer' && !formData.destinationAccountId) {
+      missing.push('destinationAccountId');
+    }
+    // For Income transactions, require payer
+    if (selectedTransactionType && selectedTransactionType.name === 'Income' && !formData.payer) {
+      missing.push('payer');
+    }
+    // For Expenses transactions, require payee
+    if (selectedTransactionType && selectedTransactionType.name === 'Expenses' && !formData.payee) {
+      missing.push('payee');
+    }
+    
+    if (missing.length > 0) {
+      setMissingFields(missing);
       setError(t('fillAllFields'));
       return;
     }
 
-    if (formData.debitAccount === formData.creditAccount) {
+    // Clear missing fields if validation passes
+    setMissingFields([]);
+
+    if (formData.accountId === formData.destinationAccountId && selectedTransactionType && selectedTransactionType.name === 'Transfer') {
       setError(t('differentAccounts'));
       return;
     }
@@ -227,10 +255,34 @@ const TransactionForm = ({ onSuccess }) => {
       setLoading(true);
       setError('');
       
-      // Ensure date is always set to today if empty
+      // Handle payer/payee - convert names to IDs or create new ones
+      let payerId = null;
+      let payeeId = null;
+      
+      if (formData.payer) {
+        const existingPayer = getActivePayers().find(p => p.name === formData.payer);
+        payerId = existingPayer ? existingPayer.id : null;
+        // If payer doesn't exist, the database should handle creating a new one
+      }
+      
+      if (formData.payee) {
+        const existingPayee = getActivePayees().find(p => p.name === formData.payee);
+        payeeId = existingPayee ? existingPayee.id : null;
+        // If payee doesn't exist, the database should handle creating a new one
+      }
+      
+      // Prepare transaction data with accountId and destinationAccountId (no debit/credit mapping)
       const transactionData = {
         ...formData,
-        date: formData.date || new Date().toISOString().split('T')[0]
+        date: formData.date || new Date().toISOString().split('T')[0],
+        // Use the form's account fields directly
+        accountId: formData.accountId,
+        destinationAccountId: formData.destinationAccountId,
+        payerId,
+        payeeId,
+        // Keep the original names for the database to handle
+        payer: formData.payer,
+        payee: formData.payee
       };
       
       await addTransaction(transactionData);
@@ -238,8 +290,6 @@ const TransactionForm = ({ onSuccess }) => {
       setFormData({
         date: new Date().toISOString().split('T')[0],
         description: '',
-        debitAccount: '',
-        creditAccount: '',
         amount: '',
         accountId: '',
         destinationAccountId: '',
@@ -257,6 +307,7 @@ const TransactionForm = ({ onSuccess }) => {
       });
       setSelectedCategory(null);
       setIsDescriptionUserModified(false);
+      setMissingFields([]);
       setPayeeInput('');
       setShowPayeeDropdown(false);
       setPayerInput('');
@@ -276,6 +327,10 @@ const TransactionForm = ({ onSuccess }) => {
 
   const handleTransactionTypeChange = (transactionType) => {
     setSelectedTransactionType(transactionType);
+    
+    // Clear validation errors and missing fields when switching transaction types
+    setMissingFields([]);
+    setError('');
     
     // Auto-select the first transaction group for this transaction type
     const availableGroups = getActiveTransactionGroups().filter(group => 
@@ -324,6 +379,11 @@ const TransactionForm = ({ onSuccess }) => {
     const subcategoriesWithCategories = getSubcategoriesWithCategories();
     const selectedSubcategory = subcategoriesWithCategories.find(sub => sub.id === subcategoryId);
     
+    // Clear field from missing fields list when user selects subcategory
+    if (missingFields.includes('subcategoryId')) {
+      setMissingFields(prev => prev.filter(field => field !== 'subcategoryId'));
+    }
+    
     setFormData(prev => ({
       ...prev,
       subcategoryId: subcategoryId,
@@ -370,6 +430,12 @@ const TransactionForm = ({ onSuccess }) => {
   // Payee autocomplete handlers
   const handlePayeeInputChange = (e) => {
     const value = e.target.value;
+    
+    // Clear field from missing fields list when user starts typing
+    if (missingFields.includes('payee')) {
+      setMissingFields(prev => prev.filter(field => field !== 'payee'));
+    }
+    
     setPayeeInput(value);
     setFormData(prev => ({
       ...prev,
@@ -396,6 +462,12 @@ const TransactionForm = ({ onSuccess }) => {
   // Payer autocomplete handlers
   const handlePayerInputChange = (e) => {
     const value = e.target.value;
+    
+    // Clear field from missing fields list when user starts typing
+    if (missingFields.includes('payer')) {
+      setMissingFields(prev => prev.filter(field => field !== 'payer'));
+    }
+    
     setPayerInput(value);
     setFormData(prev => ({
       ...prev,
@@ -509,7 +581,7 @@ const TransactionForm = ({ onSuccess }) => {
         {getSubcategoriesByTransactionGroup().map(subcategory => (
           <div
             key={subcategory.id}
-            className={`subcategory-card ${formData.subcategoryId === subcategory.id ? 'selected' : ''}`}
+            className={`subcategory-card ${formData.subcategoryId === subcategory.id ? 'selected' : ''} ${missingFields.includes('subcategoryId') ? 'field-error' : ''}`}
             onClick={() => handleSubcategorySelect(subcategory.id)}
             style={{
               background: formData.subcategoryId === subcategory.id && selectedTransactionType
@@ -517,6 +589,8 @@ const TransactionForm = ({ onSuccess }) => {
                 : undefined,
               borderColor: formData.subcategoryId === subcategory.id && selectedTransactionType
                 ? selectedTransactionType.color
+                : missingFields.includes('subcategoryId') 
+                ? '#ef4444' 
                 : undefined
             }}
           >
@@ -536,7 +610,7 @@ const TransactionForm = ({ onSuccess }) => {
                 value={formData.description}
                 onChange={handleChange}
                 placeholder={`${t('enterDescription')} *`}
-                className={!isDescriptionUserModified && formData.description ? 'default-description' : ''}
+                className={`${!isDescriptionUserModified && formData.description ? 'default-description' : ''} ${missingFields.includes('description') ? 'field-error' : ''}`.trim()}
               />
             </div>
             {selectedTransactionType.name === 'Expenses' && (
@@ -551,6 +625,7 @@ const TransactionForm = ({ onSuccess }) => {
                     onBlur={handlePayeeInputBlur}
                     onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
                     placeholder="👤 Start typing payee name... *"
+                    className={missingFields.includes('payee') ? 'field-error' : ''}
                   />
                   
                   {showPayeeDropdown && filteredPayees.length > 0 && (
@@ -581,6 +656,7 @@ const TransactionForm = ({ onSuccess }) => {
                     onBlur={handlePayerInputBlur}
                     onFocus={() => payerInput.length > 0 && setShowPayerDropdown(true)}
                     placeholder="💼 Start typing payer name... *"
+                    className={missingFields.includes('payer') ? 'field-error' : ''}
                   />
                   
                   {showPayerDropdown && filteredPayers.length > 0 && (
@@ -612,6 +688,7 @@ const TransactionForm = ({ onSuccess }) => {
                   name="accountId" 
                   value={formData.accountId || selectedTransactionType.defaultAccountId || ''}
                   onChange={handleChange}
+                  className={missingFields.includes('accountId') ? 'field-error' : ''}
                   style={{ flex: 1 }}
                 >
                   <option value="">Select Account</option>
@@ -631,6 +708,7 @@ const TransactionForm = ({ onSuccess }) => {
                     name="destinationAccountId"
                     value={formData.destinationAccountId || selectedTransactionType.destinationAccountId || ''}
                     onChange={handleChange}
+                    className={missingFields.includes('destinationAccountId') ? 'field-error' : ''}
                     style={{ flex: 1 }}
                   >
                     <option value="">Select Destination Account</option>
@@ -652,6 +730,7 @@ const TransactionForm = ({ onSuccess }) => {
                   value={formData.amount}
                   onChange={handleChange}
                   placeholder="0.00"
+                  className={missingFields.includes('amount') ? 'field-error' : ''}
                 />
                 <span className="currency-symbol">
                   {(() => {
@@ -728,6 +807,20 @@ const TransactionForm = ({ onSuccess }) => {
               rows="3"
             />
           </div>
+        </div>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="error-message" style={{ 
+          color: 'red', 
+          backgroundColor: '#ffebee', 
+          border: '1px solid #ffcdd2', 
+          padding: '10px', 
+          borderRadius: '4px', 
+          margin: '10px 0' 
+        }}>
+          {error}
         </div>
       )}
 

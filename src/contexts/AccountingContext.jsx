@@ -179,13 +179,8 @@ export const AccountingProvider = ({ children }) => {
 
   const addTransaction = async (transactionData) => {
     try {
-      const processedData = {
-        ...transactionData,
-        debitAccountId: transactionData.debitAccount,
-        creditAccountId: transactionData.creditAccount
-      };
-      
-      const newTransaction = database.addTransaction(processedData);
+      // Pass transaction data directly without debit/credit mapping
+      const newTransaction = database.addTransaction(transactionData);
       updateStateFromDatabase();
       
       const buffers = {
