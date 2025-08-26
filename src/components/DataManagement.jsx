@@ -398,8 +398,8 @@ const DataManagement = () => {
                     draggable="true"
                     onDragStart={(e) => handleDragStart(e, row.id)}
                     onDragEnd={handleDragEnd}
-                    onMouseDown={(e) => console.log('Mouse down on handle')}
-                    onMouseUp={(e) => console.log('Mouse up on handle')}
+                    onMouseDown={(e) => {}}
+                    onMouseUp={(e) => {}}
                   >
                     ⋮⋮
                   </div>
@@ -1365,8 +1365,6 @@ const DataManagement = () => {
 
   // Drag & Drop handlers
   const handleDragStart = (e, accountId) => {
-    console.log('Drag started for account:', accountId);
-    console.log('Drag event:', e);
     setDraggedId(accountId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', accountId);
@@ -1377,7 +1375,6 @@ const DataManagement = () => {
 
   const handleDragEnter = (e, accountId) => {
     e.preventDefault();
-    console.log('Drag entered account:', accountId);
     
     // Clear any pending leave timeout
     if (dragLeaveTimeout) {
@@ -1406,7 +1403,6 @@ const DataManagement = () => {
   const handleDragLeave = (e, accountId) => {
     // Use a timeout to prevent flickering when moving between child elements
     const timeout = setTimeout(() => {
-      console.log('Drag leave timeout for account:', accountId);
       if (dragOverId === accountId) {
         setDragOverId(null);
       }
@@ -1419,7 +1415,6 @@ const DataManagement = () => {
   const handleDrop = (e, targetId) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Dropped on:', activeTab, targetId, 'dragged:', draggedId);
     
     setDragOverId(null);
     
@@ -1438,7 +1433,6 @@ const DataManagement = () => {
   };
 
   const handleDragEnd = () => {
-    console.log('Drag ended');
     setDraggedId(null);
     setDragOverId(null);
     
@@ -1451,7 +1445,6 @@ const DataManagement = () => {
 
   const reorderAccounts = async (draggedId, targetId) => {
     try {
-      console.log('Reordering accounts:', draggedId, 'to', targetId);
       setReorderingAccounts(true);
       
       const accountsList = [...accountsWithTypes];
@@ -1480,7 +1473,6 @@ const DataManagement = () => {
       }
       
       // Only update accounts that actually changed order
-      console.log(`Updating order for ${accountsToUpdate.length} accounts`);
       
       // Batch update in parallel instead of sequential
       for (const accountData of accountsToUpdate) {
@@ -1489,7 +1481,6 @@ const DataManagement = () => {
       
       // Wait for all updates to complete in parallel
       await Promise.all(updatePromises);
-      console.log('All account orders updated successfully');
       
       // Refresh UI after database operations complete
       setRefreshKey(prev => prev + 1);
@@ -1505,18 +1496,14 @@ const DataManagement = () => {
 
   const reorderCategories = async (draggedId, targetId) => {
     try {
-      console.log('Reordering categories:', draggedId, 'to', targetId);
-      console.log('Current categories before reorder:', categories.map(c => ({id: c.id, name: c.name, order: c.order})));
       setReorderingCategories(true);
       
       const categoriesList = [...categories];
       const draggedIndex = categoriesList.findIndex(cat => cat.id === draggedId);
       const targetIndex = categoriesList.findIndex(cat => cat.id === targetId);
       
-      console.log('Dragged index:', draggedIndex, 'Target index:', targetIndex);
       
       if (draggedIndex === -1 || targetIndex === -1) {
-        console.log('Invalid indices found');
         setReorderingCategories(false);
         return;
       }
@@ -1525,7 +1512,6 @@ const DataManagement = () => {
       const [draggedItem] = categoriesList.splice(draggedIndex, 1);
       categoriesList.splice(targetIndex, 0, draggedItem);
       
-      console.log('Categories after array reorder:', categoriesList.map(c => ({id: c.id, name: c.name, order: c.order})));
       
       // Batch update all categories that need reordering (async in background)
       const updatePromises = [];
@@ -1540,7 +1526,6 @@ const DataManagement = () => {
       }
       
       // Only update categories that actually changed order
-      console.log(`Updating order for ${categoriesToUpdate.length} categories`);
       
       // Batch update in parallel instead of sequential
       for (const categoryData of categoriesToUpdate) {
@@ -1549,7 +1534,6 @@ const DataManagement = () => {
       
       // Wait for all updates to complete in parallel
       await Promise.all(updatePromises);
-      console.log('All category orders updated successfully');
       
       // Force immediate UI refresh
       setReorderingCategories(false);
@@ -1557,7 +1541,6 @@ const DataManagement = () => {
       
       // Add a small delay to ensure database state is fully updated before next operation
       setTimeout(() => {
-        console.log('Categories after reorder:', getCategories());
       }, 100);
       
     } catch (error) {
@@ -1570,18 +1553,14 @@ const DataManagement = () => {
 
   const reorderSubcategories = async (draggedId, targetId) => {
     try {
-      console.log('Reordering subcategories:', draggedId, 'to', targetId);
-      console.log('Current subcategories before reorder:', subcategories.map(s => ({id: s.id, name: s.name, order: s.order})));
       setReorderingSubcategories(true);
       
       const subcategoriesList = [...subcategories];
       const draggedIndex = subcategoriesList.findIndex(sub => sub.id === draggedId);
       const targetIndex = subcategoriesList.findIndex(sub => sub.id === targetId);
       
-      console.log('Dragged index:', draggedIndex, 'Target index:', targetIndex);
       
       if (draggedIndex === -1 || targetIndex === -1) {
-        console.log('Invalid indices found');
         setReorderingSubcategories(false);
         return;
       }
@@ -1590,7 +1569,6 @@ const DataManagement = () => {
       const [draggedItem] = subcategoriesList.splice(draggedIndex, 1);
       subcategoriesList.splice(targetIndex, 0, draggedItem);
       
-      console.log('Subcategories after array reorder:', subcategoriesList.map(s => ({id: s.id, name: s.name, order: s.order})));
       
       // Batch update all subcategories that need reordering (async in background)
       const updatePromises = [];
@@ -1605,7 +1583,6 @@ const DataManagement = () => {
       }
       
       // Only update subcategories that actually changed order
-      console.log(`Updating order for ${subcategoriesToUpdate.length} subcategories`);
       
       // Batch update in parallel instead of sequential
       for (const subcategoryData of subcategoriesToUpdate) {
@@ -1614,7 +1591,6 @@ const DataManagement = () => {
       
       // Wait for all updates to complete in parallel
       await Promise.all(updatePromises);
-      console.log('All subcategory orders updated successfully');
       
       // Force immediate UI refresh
       setReorderingSubcategories(false);
@@ -1622,7 +1598,6 @@ const DataManagement = () => {
       
       // Add a small delay to ensure database state is fully updated before next operation
       setTimeout(() => {
-        console.log('Subcategories after reorder:', getSubcategories());
       }, 100);
       
     } catch (error) {
@@ -1635,18 +1610,14 @@ const DataManagement = () => {
 
   const reorderTransactionGroups = async (draggedId, targetId) => {
     try {
-      console.log('Reordering transaction groups:', draggedId, 'to', targetId);
-      console.log('Current transaction groups before reorder:', transactionGroups.map(g => ({id: g.id, name: g.name, order: g.order})));
       setReorderingTransactionGroups(true);
       
       const groupsList = [...transactionGroups];
       const draggedIndex = groupsList.findIndex(grp => grp.id === draggedId);
       const targetIndex = groupsList.findIndex(grp => grp.id === targetId);
       
-      console.log('Dragged index:', draggedIndex, 'Target index:', targetIndex);
       
       if (draggedIndex === -1 || targetIndex === -1) {
-        console.log('Invalid indices found');
         setReorderingTransactionGroups(false);
         return;
       }
@@ -1655,7 +1626,6 @@ const DataManagement = () => {
       const [draggedItem] = groupsList.splice(draggedIndex, 1);
       groupsList.splice(targetIndex, 0, draggedItem);
       
-      console.log('Transaction groups after array reorder:', groupsList.map(g => ({id: g.id, name: g.name, order: g.order})));
       
       // Batch update all transaction groups that need reordering (async in background)
       const updatePromises = [];
@@ -1670,7 +1640,6 @@ const DataManagement = () => {
       }
       
       // Only update transaction groups that actually changed order
-      console.log(`Updating order for ${groupsToUpdate.length} transaction groups`);
       
       // Batch update in parallel instead of sequential
       for (const groupData of groupsToUpdate) {
@@ -1679,7 +1648,6 @@ const DataManagement = () => {
       
       // Wait for all updates to complete in parallel
       await Promise.all(updatePromises);
-      console.log('All transaction group orders updated successfully');
       
       // Force immediate UI refresh
       setReorderingTransactionGroups(false);
@@ -1687,7 +1655,6 @@ const DataManagement = () => {
       
       // Add a small delay to ensure database state is fully updated before next operation
       setTimeout(() => {
-        console.log('Transaction groups after reorder:', getTransactionGroups());
       }, 100);
       
     } catch (error) {
@@ -1701,13 +1668,14 @@ const DataManagement = () => {
   const { data: rawData, columns } = getTableData();
   const data = filterData(rawData, searchTerm);
 
+
   return (
     <div className="data-management">
       <nav className="data-nav">
         {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'payers', 'transactions'].map(tab => (
           <button
             key={tab}
-            className={activeTab === tab ? 'nav-btn active' : 'nav-btn'}
+            className={activeTab === tab ? 'data-nav-btn active' : 'data-nav-btn'}
             onClick={() => {
               setActiveTab(tab);
               resetForm();
