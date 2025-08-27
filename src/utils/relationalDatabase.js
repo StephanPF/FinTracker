@@ -516,6 +516,19 @@ class RelationalDatabase {
     console.log('All data cleared and reset to defaults (currencies preserved)');
   }
 
+  // Complete database reset - recreate as if creating new database for first time
+  resetToInitialState(language = 'en') {
+    console.log('Resetting database to initial state...');
+    
+    // Completely recreate the database with fresh data
+    this.createNewDatabase(language);
+    
+    // Save all tables to workbook
+    this.saveAllTablesToWorkbook();
+    
+    console.log('Database reset to initial state completed');
+  }
+
   // Helper methods to get default data
   getDefaultCurrencies() {
     return [

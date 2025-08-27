@@ -472,30 +472,26 @@ export const AccountingProvider = ({ children }) => {
 
   const resetDatabase = async () => {
     try {
-      // Clear all data from database
-      database.clearAllData();
+      // Determine language based on current user preferences or default to 'en'
+      let language = 'en';
+      const userPrefs = database.tables.user_preferences;
+      if (userPrefs && userPrefs.length > 0) {
+        const langPref = userPrefs.find(pref => pref.key === 'language');
+        if (langPref && langPref.value) {
+          language = langPref.value;
+        }
+      }
       
-      // Reset state to empty values (preserve currency data)
-      setAccounts([]);
-      setTransactions([]);
-      setTags([]);
-      setTodos([]);
-      setCategories([]);
-      setPayees([]);
-      setPayers([]);
-      setTransactionGroups([]);
-      setSubcategories([]);
+      // Complete database reset to initial state (like creating new database)
+      database.resetToInitialState(language);
       
-      // Currency state will be preserved - do not reset:
-      // setCurrencies([]);     // KEEP existing currencies
-      // setExchangeRates([]);  // KEEP existing exchange rates
-      
-      // Save all cleared tables to files
+      // Save all tables to files
       const tablesToSave = [
         'accounts', 'transactions', 'tags', 'todos',
         'transaction_types', 'transaction_groups', 'subcategories',
         'currencies', 'exchange_rates', 'currency_settings',
-        'user_preferences', 'api_usage', 'api_settings', 'database_info'
+        'user_preferences', 'api_usage', 'api_settings', 'database_info',
+        'payees', 'payers'
       ];
       
       for (const tableName of tablesToSave) {
@@ -503,7 +499,7 @@ export const AccountingProvider = ({ children }) => {
         await fileStorage.saveTable(tableName, buffer);
       }
       
-      // Reinitialize with default data
+      // Completely reinitialize all state with fresh data
       await initializeDatabase();
       
       return true;
