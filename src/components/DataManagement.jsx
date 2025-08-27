@@ -242,7 +242,6 @@ const DataManagement = () => {
   };
 
   const handleDropdownClick = (e, rowId) => {
-    console.log('🔍 DROPDOWN CLICK DEBUG:', { activeTab, rowId, currentOpenId: openDropdownId });
     e.stopPropagation();
     
     if (openDropdownId === rowId) {
@@ -1842,26 +1841,12 @@ const DataManagement = () => {
           </button>
           {/* Only show delete button if not protected records */}
           {(() => {
-            console.log('🔍 BASIC DEBUG - Dropdown rendering:', { activeTab, openDropdownId });
             // Check if this is a protected record
             const isProtectedAccount = activeTab === 'accounts' && openDropdownId === 'ACC001';
             const isProtectedTransactionType = activeTab === 'transaction_types' && ['CAT_001', 'CAT_002', 'CAT_003', 'CAT_004'].includes(openDropdownId);
             const isProtectedTransactionGroup = activeTab === 'transaction_groups' && ['GRP_001', 'GRP_002', 'GRP_003', 'GRP_004', 'GRP_005', 'GRP_006'].includes(openDropdownId);
             const isProtectedCurrency = activeTab === 'currencies' && ['CUR_001', 'CUR_002', 'CUR_003', 'CUR_004', 'CUR_005', 'CUR_006', 'CUR_007', 'CUR_008'].includes(openDropdownId); // Protect EUR, USD, AED, GBP, AUD, BTC, ETH, CHF
             
-            // Comprehensive debugging for currencies
-            if (activeTab === 'currencies') {
-              const protectedList = ['CUR_001', 'CUR_002', 'CUR_003', 'CUR_004', 'CUR_005', 'CUR_006', 'CUR_007', 'CUR_008'];
-              console.log('🔍 CURRENCY DEBUG:', {
-                activeTab,
-                openDropdownId,
-                openDropdownIdType: typeof openDropdownId,
-                isProtectedCurrency,
-                protectedList,
-                includesCheck: protectedList.includes(openDropdownId),
-                shouldShowDelete: !isProtectedAccount && !isProtectedTransactionType && !isProtectedTransactionGroup && !isProtectedCurrency
-              });
-            }
             
             // Show delete button only if not protected
             return !isProtectedAccount && !isProtectedTransactionType && !isProtectedTransactionGroup && !isProtectedCurrency;
@@ -1882,12 +1867,8 @@ const DataManagement = () => {
               }}
               className="dropdown-item"
               type="button"
-              style={{
-                backgroundColor: activeTab === 'currencies' ? 'red' : 'transparent',
-                color: activeTab === 'currencies' ? 'white' : 'inherit'
-              }}
             >
-              🗑️ {t('delete')} {activeTab === 'currencies' ? `[ID: ${openDropdownId}]` : ''}
+              🗑️ {t('delete')}
             </button>
           )}
         </div>,

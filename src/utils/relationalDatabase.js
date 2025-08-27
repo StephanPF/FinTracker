@@ -72,7 +72,9 @@ class RelationalDatabase {
       this.migrateDefaultAccount();
       this.migrateTransactionTypeAccounts();
       this.migrateToSingleAccount();
-      this.migrateRemoveAllSubcategories();
+      // Removed: this.migrateRemoveAllSubcategories(); - Now initializing subcategories instead
+      this.migrateInitializeSubcategories();
+      this.migrateReorderTransactionTypes();
       this.migrateRemoveSpecificTransactionGroups();
       
       this.validateRelationships();
@@ -84,14 +86,14 @@ class RelationalDatabase {
   }
 
   createNewDatabase(language = 'en') {
-    // Generate language-specific sample data
-    const sampleData = this.generateSampleData(language);
+    // Generate language-specific default data
+    const defaultData = this.generateDefaultData(language);
     
     this.tables = {
-      accounts: sampleData.accounts,
+      accounts: defaultData.accounts,
       transactions: [],
-      tags: sampleData.tags,
-      todos: sampleData.todos,
+      tags: defaultData.tags,
+      todos: defaultData.todos,
       transaction_types: this.generateCategories(language),
       transaction_groups: this.generateTransactionGroups(language),
       subcategories: this.generateSubcategories(language),
@@ -143,8 +145,14 @@ class RelationalDatabase {
     // Run migration to remove unwanted accounts
     this.migrateToSingleAccount();
     
-    // Run migration to remove all subcategories
-    this.migrateRemoveAllSubcategories();
+    // Removed: Run migration to remove all subcategories - Now initializing subcategories instead
+    // this.migrateRemoveAllSubcategories();
+    
+    // Run migration to initialize subcategories if they're empty
+    this.migrateInitializeSubcategories();
+    
+    // Run migration to reorder transaction types (put Expenses first)
+    this.migrateReorderTransactionTypes();
     
     // Run migration to remove specific transaction groups
     this.migrateRemoveSpecificTransactionGroups();
@@ -892,11 +900,11 @@ class RelationalDatabase {
     this.setDatabaseInfo('language', language);
   }
 
-  generateSampleData(language) {
+  generateDefaultData(language) {
     if (language === 'fr') {
-      return this.generateFrenchSampleData();
+      return this.generateFrenchDefaultData();
     } else {
-      return this.generateEnglishSampleData();
+      return this.generateEnglishDefaultData();
     }
   }
 
@@ -1058,7 +1066,7 @@ class RelationalDatabase {
     ];
   }
 
-  generateEnglishSampleData() {
+  generateEnglishDefaultData() {
     return {
       accounts: [
         { 
@@ -1075,32 +1083,7 @@ class RelationalDatabase {
           lastUpdated: new Date().toISOString()
         }
       ],
-      tags: [
-        {
-          id: 'TAG001',
-          name: 'Groceries',
-          description: 'Food and household items',
-          category: 'Essential',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TAG002',
-          name: 'Entertainment',
-          description: 'Movies, games, leisure activities',
-          category: 'Lifestyle',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TAG003',
-          name: 'Transportation',
-          description: 'Gas, public transit, car maintenance',
-          category: 'Essential',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        }
-      ],
+      tags: [],
       todos: [
         {
           id: 'TODO001',
@@ -1146,7 +1129,7 @@ class RelationalDatabase {
     };
   }
 
-  generateFrenchSampleData() {
+  generateFrenchDefaultData() {
     return {
       accounts: [
         { 
@@ -1163,32 +1146,7 @@ class RelationalDatabase {
           lastUpdated: new Date().toISOString()
         }
       ],
-      tags: [
-        {
-          id: 'TAG001',
-          name: 'Alimentation',
-          description: 'Nourriture et produits ménagers',
-          category: 'Essentiel',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TAG002',
-          name: 'Divertissement',
-          description: 'Cinéma, jeux, activités de loisirs',
-          category: 'Lifestyle',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TAG003',
-          name: 'Transport',
-          description: 'Essence, transports publics, entretien véhicule',
-          category: 'Essentiel',
-          isActive: true,
-          createdAt: new Date().toISOString()
-        }
-      ],
+      tags: [],
       todos: [
         {
           id: 'TODO001',
@@ -1489,17 +1447,6 @@ class RelationalDatabase {
   generateEnglishCategories() {
     return [
       {
-        id: 'CAT_001',
-        name: 'Income',
-        description: 'Money coming in',
-        color: '#4CAF50',
-        icon: '💰',
-        defaultAccountId: 'ACC001', // Default Account - where income typically goes
-        destinationAccountId: null, // Not relevant for income
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
         id: 'CAT_002',
         name: 'Expenses',
         description: 'Money going out',
@@ -1507,6 +1454,17 @@ class RelationalDatabase {
         icon: '💸',
         defaultAccountId: 'ACC001', // Default Account - where expenses typically come from
         destinationAccountId: null, // Not relevant for expenses
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CAT_001',
+        name: 'Income',
+        description: 'Money coming in',
+        color: '#4CAF50',
+        icon: '💰',
+        defaultAccountId: 'ACC001', // Default Account - where income typically goes
+        destinationAccountId: null, // Not relevant for income
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1538,17 +1496,6 @@ class RelationalDatabase {
   generateFrenchCategories() {
     return [
       {
-        id: 'CAT_001',
-        name: 'Revenus',
-        description: 'Argent qui rentre',
-        color: '#4CAF50',
-        icon: '💰',
-        defaultAccountId: 'ACC001', // Default Account - où vont typiquement les revenus
-        destinationAccountId: null, // Non pertinent pour les revenus
-        isActive: true,
-        createdAt: new Date().toISOString()
-      },
-      {
         id: 'CAT_002',
         name: 'Dépenses',
         description: 'Argent qui sort',
@@ -1556,6 +1503,17 @@ class RelationalDatabase {
         icon: '💸',
         defaultAccountId: 'ACC001', // Default Account - d'où viennent typiquement les dépenses
         destinationAccountId: null, // Non pertinent pour les dépenses
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CAT_001',
+        name: 'Revenus',
+        description: 'Argent qui rentre',
+        color: '#4CAF50',
+        icon: '💰',
+        defaultAccountId: 'ACC001', // Default Account - où vont typiquement les revenus
+        destinationAccountId: null, // Non pertinent pour les revenus
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1703,11 +1661,99 @@ class RelationalDatabase {
   }
 
   generateEnglishSubcategories() {
-    return [];
+    return [
+      // GRP_001 - Essential Expenses (Expenses)
+      { id: 'SUB_001', name: 'Groceries & Food', description: 'Food, beverages and grocery shopping', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_002', name: 'Housing & Utilities', description: 'Rent, mortgage, electricity, water, gas', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_003', name: 'Transportation & Fuel', description: 'Gas, public transport, car maintenance', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_004', name: 'Healthcare & Medical', description: 'Doctor visits, medications, health services', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_005', name: 'Insurance Premiums', description: 'Health, auto, home insurance payments', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_006', name: 'Debt Payments', description: 'Credit card, loan, mortgage payments', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_002 - Lifestyle & Recreation (Expenses)
+      { id: 'SUB_007', name: 'Dining Out & Restaurants', description: 'Restaurant meals, takeout, food delivery', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_008', name: 'Entertainment & Movies', description: 'Cinema, concerts, shows, events', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_009', name: 'Travel & Vacation', description: 'Hotels, flights, vacation expenses', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_010', name: 'Hobbies & Sports', description: 'Sports equipment, hobby supplies, activities', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_011', name: 'Shopping & Personal Items', description: 'Clothing, personal care, non-essential items', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_012', name: 'Subscriptions & Memberships', description: 'Netflix, gym, apps, magazine subscriptions', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_003 - Professional & Business (Income)
+      { id: 'SUB_013', name: 'Salary & Wages', description: 'Regular employment income, wages', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_014', name: 'Freelance & Consulting', description: 'Independent contractor, consulting income', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_015', name: 'Business Revenue', description: 'Business sales, revenue, profits', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_016', name: 'Bonuses & Commissions', description: 'Performance bonuses, sales commissions', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_017', name: 'Professional Services Income', description: 'Professional services, expertise income', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_004 - Investment & Savings (Investment)
+      { id: 'SUB_018', name: 'Stock Investments', description: 'Individual stocks, equity investments', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_019', name: 'Bond Investments', description: 'Government, corporate bonds, fixed income', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_020', name: 'Real Estate Investment', description: 'Property investment, REITs', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_021', name: 'Retirement Savings', description: '401k, IRA, pension contributions', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_022', name: 'Emergency Fund', description: 'Emergency savings, rainy day fund', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_023', name: 'Investment Returns', description: 'Dividends, interest, capital gains', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_005 - Bank Transfer (Transfer)
+      { id: 'SUB_024', name: 'Account to Account Transfer', description: 'Internal transfers between own accounts', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_025', name: 'External Bank Transfer', description: 'Transfers to/from other banks', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_026', name: 'Wire Transfers', description: 'Domestic and international wire transfers', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_027', name: 'ATM Transfers', description: 'ATM cash deposits and transfers', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_006 - Digital Assets (Investment)
+      { id: 'SUB_028', name: 'Bitcoin Investment', description: 'Bitcoin purchases and investments', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_029', name: 'Ethereum Investment', description: 'Ethereum purchases and investments', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_030', name: 'Altcoin Investment', description: 'Alternative cryptocurrency investments', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_031', name: 'Crypto Trading', description: 'Cryptocurrency trading activities', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_032', name: 'DeFi & Staking', description: 'DeFi protocols, staking rewards', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() }
+    ];
   }
 
   generateFrenchSubcategories() {
-    return [];
+    return [
+      // GRP_001 - Dépenses Essentielles (Expenses)
+      { id: 'SUB_001', name: 'Alimentation & Courses', description: 'Nourriture, boissons et courses alimentaires', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_002', name: 'Logement & Services Publics', description: 'Loyer, hypothèque, électricité, eau, gaz', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_003', name: 'Transport & Carburant', description: 'Essence, transports publics, entretien auto', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_004', name: 'Santé & Médical', description: 'Visites médicales, médicaments, services santé', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_005', name: 'Primes d\'Assurance', description: 'Assurance santé, auto, habitation', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_006', name: 'Remboursement de Dettes', description: 'Carte crédit, prêt, remboursement hypothèque', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_002 - Style de Vie et Loisirs (Expenses)
+      { id: 'SUB_007', name: 'Restaurants & Sortie', description: 'Repas restaurant, commandes, livraison', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_008', name: 'Divertissement & Cinéma', description: 'Cinéma, concerts, spectacles, événements', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_009', name: 'Voyage & Vacances', description: 'Hôtels, vols, dépenses vacances', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_010', name: 'Loisirs & Sports', description: 'Équipement sport, fournitures loisirs', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_011', name: 'Achats & Articles Personnels', description: 'Vêtements, soins personnels, articles non-essentiels', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_012', name: 'Abonnements & Adhésions', description: 'Netflix, salle sport, apps, abonnements magazine', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_003 - Professionnel et Affaires (Income)
+      { id: 'SUB_013', name: 'Salaire & Rémunération', description: 'Revenus emploi régulier, salaires', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_014', name: 'Freelance & Conseil', description: 'Travailleur indépendant, revenus conseil', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_015', name: 'Revenus d\'Entreprise', description: 'Ventes entreprise, chiffre affaires, profits', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_016', name: 'Bonus & Commissions', description: 'Bonus performance, commissions ventes', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_017', name: 'Revenus de Services Professionnels', description: 'Services professionnels, revenus expertise', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_004 - Investissement et Épargne (Investment)
+      { id: 'SUB_018', name: 'Investissements Actions', description: 'Actions individuelles, investissements actions', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_019', name: 'Investissements Obligations', description: 'Obligations gouvernementales, entreprises', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_020', name: 'Investissement Immobilier', description: 'Investissement propriété, REITs', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_021', name: 'Épargne Retraite', description: 'Contributions retraite, pension', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_022', name: 'Fonds d\'Urgence', description: 'Épargne urgence, fonds précaution', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_023', name: 'Rendements d\'Investissement', description: 'Dividendes, intérêts, gains capital', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_005 - Virement Bancaire (Transfer)
+      { id: 'SUB_024', name: 'Virement Compte à Compte', description: 'Virements internes entre comptes', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_025', name: 'Virement Bancaire Externe', description: 'Virements vers/depuis autres banques', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_026', name: 'Virements Télégraphiques', description: 'Virements nationaux et internationaux', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_027', name: 'Virements DAB', description: 'Dépôts et virements DAB', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_006 - Actifs Numériques (Investment)
+      { id: 'SUB_028', name: 'Investissement Bitcoin', description: 'Achats et investissements Bitcoin', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_029', name: 'Investissement Ethereum', description: 'Achats et investissements Ethereum', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_030', name: 'Investissement Altcoin', description: 'Investissements cryptomonnaies alternatives', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_031', name: 'Trading Crypto', description: 'Activités trading cryptomonnaies', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_032', name: 'DeFi & Staking', description: 'Protocoles DeFi, récompenses staking', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() }
+    ];
   }
 
   // Stress test method to generate bulk transactions
@@ -2679,6 +2725,60 @@ class RelationalDatabase {
         this.saveTableToWorkbook('subcategories');
         console.log('Migration completed: all subcategories removed');
       }
+    }
+  }
+
+  // Migration method to initialize subcategories if they don't exist
+  migrateInitializeSubcategories() {
+    if (!this.tables.subcategories || !Array.isArray(this.tables.subcategories)) {
+      this.tables.subcategories = [];
+    }
+    
+    if (this.tables.subcategories.length === 0) {
+      console.log('Migrating database: initializing subcategories');
+      
+      // Determine language based on existing data
+      let language = 'en';
+      if (this.tables.transaction_groups && this.tables.transaction_groups.length > 0) {
+        const firstGroup = this.tables.transaction_groups[0];
+        // Check if French name pattern exists
+        if (firstGroup.name && (firstGroup.name.includes('Dépenses') || firstGroup.name.includes('Essentielles'))) {
+          language = 'fr';
+        }
+      }
+      
+      // Initialize subcategories with appropriate language
+      this.tables.subcategories = this.generateSubcategories(language);
+      this.saveTableToWorkbook('subcategories');
+      console.log(`Migration completed: initialized ${this.tables.subcategories.length} subcategories in ${language}`);
+    }
+  }
+
+  // Migration method to reorder transaction types (put CAT_002 Expenses first)
+  migrateReorderTransactionTypes() {
+    if (!this.tables.transaction_types || !Array.isArray(this.tables.transaction_types)) {
+      return;
+    }
+    
+    // Check if CAT_002 is already first
+    if (this.tables.transaction_types.length > 0 && this.tables.transaction_types[0].id === 'CAT_002') {
+      return; // Already in correct order
+    }
+    
+    // Find CAT_002 (Expenses)
+    const expensesIndex = this.tables.transaction_types.findIndex(type => type.id === 'CAT_002');
+    
+    if (expensesIndex > 0) { // Found and not already first
+      console.log('Migrating database: reordering transaction types to put Expenses (CAT_002) first');
+      
+      // Remove CAT_002 from current position
+      const expensesType = this.tables.transaction_types.splice(expensesIndex, 1)[0];
+      
+      // Insert CAT_002 at the beginning
+      this.tables.transaction_types.unshift(expensesType);
+      
+      this.saveTableToWorkbook('transaction_types');
+      console.log('Migration completed: CAT_002 (Expenses) moved to first position');
     }
   }
 
