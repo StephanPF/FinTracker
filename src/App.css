@@ -2724,12 +2724,19 @@ body {
   border-collapse: collapse;
 }
 
-.data-table th,
-.data-table td {
+.data-table th {
   padding: 0.75rem;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
   font-size: 0.8rem;
+}
+
+.data-table td {
+  padding: 0.125rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.8rem;
+  line-height: 1.2;
 }
 
 .data-table th {

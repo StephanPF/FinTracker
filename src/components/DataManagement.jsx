@@ -1770,12 +1770,14 @@ const DataManagement = () => {
           </div>
           
           <div className="data-actions">
-            <button 
-              onClick={() => setShowForm(!showForm)}
-              className="btn-primary"
-            >
-              {showForm ? t('cancel') : (editingId ? getEditButtonText() : getAddButtonText())}
-            </button>
+            {activeTab !== 'transaction_types' && (
+              <button 
+                onClick={() => setShowForm(!showForm)}
+                className="btn-primary"
+              >
+                {showForm ? t('cancel') : (editingId ? getEditButtonText() : getAddButtonText())}
+              </button>
+            )}
           </div>
         </div>
 

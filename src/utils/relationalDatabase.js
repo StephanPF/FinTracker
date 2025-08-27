@@ -1587,12 +1587,23 @@ class RelationalDatabase {
       },
       {
         id: 'CAT_004',
-        name: 'Investment',
-        description: 'Investment-related transactions',
+        name: 'Investment - SELL',
+        description: 'Investment selling',
         color: '#9C27B0',
         icon: '📈',
         defaultAccountId: 'ACC001', // Default Account - where investment money comes from
         destinationAccountId: null, // Not relevant for investment
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CAT_005',
+        name: 'Investment - BUY',
+        description: 'Investment purchase',
+        color: '#9C27B0',
+        icon: '📈',
+        defaultAccountId: 'ACC001', // Default Account
+        destinationAccountId: null,
         isActive: true,
         createdAt: new Date().toISOString()
       }
@@ -1636,12 +1647,23 @@ class RelationalDatabase {
       },
       {
         id: 'CAT_004',
-        name: 'Investissement',
-        description: 'Transactions liées aux investissements',
+        name: 'Investissement - VENTE',
+        description: 'Vente d\'investissement',
         color: '#9C27B0',
         icon: '📈',
         defaultAccountId: 'ACC001', // Default Account - d'où vient l'argent pour les investissements
         destinationAccountId: null, // Non pertinent pour les investissements
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'CAT_005',
+        name: 'Investissement - ACHAT',
+        description: 'Achat d\'investissement',
+        color: '#9C27B0',
+        icon: '📈',
+        defaultAccountId: 'ACC001', // Default Account
+        destinationAccountId: null,
         isActive: true,
         createdAt: new Date().toISOString()
       }
