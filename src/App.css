@@ -1221,6 +1221,29 @@ body {
   min-width: 120px;
 }
 
+/* Portal dropdown for transaction actions - prevents clipping */
+.portal-dropdown {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 120px;
+}
+
+/* Transaction amount color styling */
+.transaction-amount {
+  font-weight: 600 !important;
+}
+
+/* Ensure transaction amount color overrides default table styling */
+.data-table td.transaction-amount {
+  color: var(--transaction-color, inherit) !important;
+}
+
+.data-table tbody tr td.transaction-amount {
+  color: var(--transaction-color, inherit) !important;
+}
+
 .dropdown-item {
   display: block;
   width: 100%;
@@ -1713,7 +1736,7 @@ body {
 }
 
 .transaction-description {
-  font-weight: 600;
+  font-weight: normal;
   margin-bottom: 0.25rem;
 }
 

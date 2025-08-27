@@ -77,6 +77,14 @@ const TransactionForm = ({ onSuccess }) => {
       const firstTransactionType = activeCategories[0];
       setSelectedTransactionType(firstTransactionType);
       
+      // Set default account and destination account for the initial transaction type
+      setFormData(prev => ({
+        ...prev,
+        accountId: firstTransactionType.defaultAccountId || '',
+        destinationAccountId: firstTransactionType.destinationAccountId || '',
+        description: firstTransactionType.name
+      }));
+      
       // Auto-select the first transaction group for the first transaction type
       const availableGroups = getActiveTransactionGroups().filter(group => 
         group.transactionTypeId === firstTransactionType.id
@@ -278,6 +286,8 @@ const TransactionForm = ({ onSuccess }) => {
         // Use the form's account fields directly
         accountId: formData.accountId,
         destinationAccountId: formData.destinationAccountId,
+        // Include the selected transaction type as categoryId
+        categoryId: selectedTransactionType?.id || null,
         payerId,
         payeeId,
         // Keep the original names for the database to handle

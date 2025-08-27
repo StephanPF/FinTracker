@@ -23,8 +23,8 @@ class RelationalDatabase {
     this.workbooks = {};
     this.relationships = {
       transactions: {
-        debitAccountId: { table: 'accounts', field: 'id' },
-        creditAccountId: { table: 'accounts', field: 'id' },
+        accountId: { table: 'accounts', field: 'id' },
+        destinationAccountId: { table: 'accounts', field: 'id', optional: true },
         productId: { table: 'tags', field: 'id', optional: true },
         categoryId: { table: 'transaction_types', field: 'id', optional: true },
         subcategoryId: { table: 'subcategories', field: 'id', optional: true },
@@ -76,6 +76,7 @@ class RelationalDatabase {
       this.migrateInitializeSubcategories();
       this.migrateReorderTransactionTypes();
       this.migrateRemoveSpecificTransactionGroups();
+      this.migrateTransactionFields();
       
       this.validateRelationships();
       return true;
@@ -156,6 +157,7 @@ class RelationalDatabase {
     
     // Run migration to remove specific transaction groups
     this.migrateRemoveSpecificTransactionGroups();
+    this.migrateTransactionFields();
     
     return true;
   }
@@ -240,14 +242,20 @@ class RelationalDatabase {
       id: 'TXN' + Date.now(),
       date: transactionData.date || new Date().toISOString().split('T')[0],
       description: transactionData.description,
-      debitAccountId: transactionData.debitAccountId,
-      creditAccountId: transactionData.creditAccountId,
+      accountId: transactionData.accountId,
+      destinationAccountId: transactionData.destinationAccountId || null,
       amount: parseFloat(transactionData.amount),
+      currencyId: transactionData.currencyId || null,
+      exchangeRate: transactionData.exchangeRate || 1.0,
       productId: transactionData.productId || null,
       categoryId: transactionData.categoryId || null,
       subcategoryId: transactionData.subcategoryId || null,
       reference: transactionData.reference || '',
       notes: transactionData.notes || '',
+      payer: transactionData.payer || null,
+      payee: transactionData.payee || null,
+      payerId: transactionData.payerId || null,
+      payeeId: transactionData.payeeId || null,
       createdAt: new Date().toISOString()
     };
     
@@ -284,15 +292,42 @@ class RelationalDatabase {
   }
 
   updateAccountBalances(transaction) {
-    const debitAccount = this.tables.accounts.find(acc => acc.id === transaction.debitAccountId);
-    const creditAccount = this.tables.accounts.find(acc => acc.id === transaction.creditAccountId);
+    const account = this.tables.accounts.find(acc => acc.id === transaction.accountId);
+    const destinationAccount = transaction.destinationAccountId ? 
+      this.tables.accounts.find(acc => acc.id === transaction.destinationAccountId) : null;
 
-    if (debitAccount) {
-      debitAccount.balance = (parseFloat(debitAccount.balance) || 0) + transaction.amount;
-    }
-
-    if (creditAccount) {
-      creditAccount.balance = (parseFloat(creditAccount.balance) || 0) - transaction.amount;
+    // Determine transaction type to handle balance updates correctly
+    const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
+    
+    if (transactionType && account) {
+      switch (transactionType.name) {
+        case 'Income':
+          // Money comes into the account - increase balance
+          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
+          break;
+          
+        case 'Expenses':
+          // Money goes out of the account - decrease balance
+          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+          break;
+          
+        case 'Transfer':
+          // Money moves from source to destination account
+          account.balance = (parseFloat(account.balance) || 0) - transaction.amount; // Source account decreases
+          if (destinationAccount) {
+            destinationAccount.balance = (parseFloat(destinationAccount.balance) || 0) + transaction.amount; // Destination account increases
+          }
+          break;
+          
+        case 'Investment':
+          // Money goes out for investment - decrease balance
+          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+          break;
+          
+        default:
+          // Fallback - treat as expense (money going out)
+          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+      }
     }
   }
 
@@ -398,8 +433,14 @@ class RelationalDatabase {
     const processedData = {
       ...transactionData,
       id: id,
-      debitAccountId: transactionData.debitAccountId || transactionData.debitAccount,
-      creditAccountId: transactionData.creditAccountId || transactionData.creditAccount
+      accountId: transactionData.accountId,
+      destinationAccountId: transactionData.destinationAccountId,
+      currencyId: transactionData.currencyId || null,
+      exchangeRate: transactionData.exchangeRate || 1.0,
+      payer: transactionData.payer || null,
+      payee: transactionData.payee || null,
+      payerId: transactionData.payerId || null,
+      payeeId: transactionData.payeeId || null
     };
 
     const updatedTransaction = {
@@ -419,16 +460,42 @@ class RelationalDatabase {
   }
 
   reverseAccountBalances(transaction) {
-    const debitAccount = this.tables.accounts.find(acc => acc.id === transaction.debitAccountId);
-    const creditAccount = this.tables.accounts.find(acc => acc.id === transaction.creditAccountId);
+    const account = this.tables.accounts.find(acc => acc.id === transaction.accountId);
+    const destinationAccount = transaction.destinationAccountId ? 
+      this.tables.accounts.find(acc => acc.id === transaction.destinationAccountId) : null;
 
-    // Reverse the effects of the original transaction
-    if (debitAccount) {
-      debitAccount.balance = (parseFloat(debitAccount.balance) || 0) - transaction.amount;
-    }
-
-    if (creditAccount) {
-      creditAccount.balance = (parseFloat(creditAccount.balance) || 0) + transaction.amount;
+    // Determine transaction type to reverse balance updates correctly
+    const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
+    
+    if (transactionType && account) {
+      switch (transactionType.name) {
+        case 'Income':
+          // Reverse income: subtract the amount that was added
+          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+          break;
+          
+        case 'Expenses':
+          // Reverse expense: add back the amount that was subtracted
+          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
+          break;
+          
+        case 'Transfer':
+          // Reverse transfer: source account gets money back, destination loses it
+          account.balance = (parseFloat(account.balance) || 0) + transaction.amount; // Source account increases
+          if (destinationAccount) {
+            destinationAccount.balance = (parseFloat(destinationAccount.balance) || 0) - transaction.amount; // Destination account decreases
+          }
+          break;
+          
+        case 'Investment':
+          // Reverse investment: add back the money that went out for investment
+          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
+          break;
+          
+        default:
+          // Fallback - reverse expense (add money back)
+          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
+      }
     }
   }
 
@@ -620,8 +687,8 @@ class RelationalDatabase {
   getTransactionsWithDetails() {
     return this.tables.transactions.map(transaction => ({
       ...transaction,
-      debitAccount: this.getRecord('accounts', transaction.debitAccountId),
-      creditAccount: this.getRecord('accounts', transaction.creditAccountId),
+      account: this.getRecord('accounts', transaction.accountId),
+      destinationAccount: transaction.destinationAccountId ? this.getRecord('accounts', transaction.destinationAccountId) : null,
       product: transaction.productId ? this.getRecord('tags', transaction.productId) : null
     }));
   }
@@ -638,15 +705,28 @@ class RelationalDatabase {
     // Process all transactions to update account balances
     this.tables.transactions.forEach(transaction => {
       const amount = parseFloat(transaction.amount) || 0;
+      const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
       
-      // Debit account - increase the balance
-      if (transaction.debitAccountId && accountBalances.hasOwnProperty(transaction.debitAccountId)) {
-        accountBalances[transaction.debitAccountId] += amount;
-      }
-      
-      // Credit account - decrease the balance  
-      if (transaction.creditAccountId && accountBalances.hasOwnProperty(transaction.creditAccountId)) {
-        accountBalances[transaction.creditAccountId] -= amount;
+      if (transactionType && transaction.accountId && accountBalances.hasOwnProperty(transaction.accountId)) {
+        switch (transactionType.name) {
+          case 'Income':
+            accountBalances[transaction.accountId] += amount;
+            break;
+          case 'Expenses':
+            accountBalances[transaction.accountId] -= amount;
+            break;
+          case 'Transfer':
+            accountBalances[transaction.accountId] -= amount;
+            if (transaction.destinationAccountId && accountBalances.hasOwnProperty(transaction.destinationAccountId)) {
+              accountBalances[transaction.destinationAccountId] += amount;
+            }
+            break;
+          case 'Investment':
+            accountBalances[transaction.accountId] -= amount;
+            break;
+          default:
+            accountBalances[transaction.accountId] -= amount; // Fallback as expense
+        }
       }
     });
     
@@ -686,15 +766,28 @@ class RelationalDatabase {
     // Process all transactions to update account balances
     this.tables.transactions.forEach(transaction => {
       const amount = parseFloat(transaction.amount) || 0;
+      const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
       
-      // Debit account - increase the balance
-      if (transaction.debitAccountId && accountBalances.hasOwnProperty(transaction.debitAccountId)) {
-        accountBalances[transaction.debitAccountId] += amount;
-      }
-      
-      // Credit account - decrease the balance  
-      if (transaction.creditAccountId && accountBalances.hasOwnProperty(transaction.creditAccountId)) {
-        accountBalances[transaction.creditAccountId] -= amount;
+      if (transactionType && transaction.accountId && accountBalances.hasOwnProperty(transaction.accountId)) {
+        switch (transactionType.name) {
+          case 'Income':
+            accountBalances[transaction.accountId] += amount;
+            break;
+          case 'Expenses':
+            accountBalances[transaction.accountId] -= amount;
+            break;
+          case 'Transfer':
+            accountBalances[transaction.accountId] -= amount;
+            if (transaction.destinationAccountId && accountBalances.hasOwnProperty(transaction.destinationAccountId)) {
+              accountBalances[transaction.destinationAccountId] += amount;
+            }
+            break;
+          case 'Investment':
+            accountBalances[transaction.accountId] -= amount;
+            break;
+          default:
+            accountBalances[transaction.accountId] -= amount; // Fallback as expense
+        }
       }
     });
     
@@ -755,7 +848,7 @@ class RelationalDatabase {
 
     // Check if account is used in transactions
     const usedInTransactions = this.tables.transactions.some(
-      transaction => transaction.debitAccountId === id || transaction.creditAccountId === id
+      transaction => transaction.accountId === id || transaction.destinationAccountId === id
     );
 
     if (usedInTransactions) {
@@ -1830,8 +1923,8 @@ class RelationalDatabase {
         id: `STRESS_TXN_${i}_${Date.now()}`,
         date: randomDate.toISOString().split('T')[0],
         description: descriptions[Math.floor(Math.random() * descriptions.length)] + ` #${i + 1}`,
-        debitAccountId: debitAccount.id,
-        creditAccountId: creditAccount.id,
+        accountId: debitAccount.id,
+        destinationAccountId: creditAccount.id,
         amount: parseFloat(amount),
         productId: Math.random() > 0.8 && tags.length > 0 ? 
           tags[Math.floor(Math.random() * tags.length)].id : null,
@@ -2687,8 +2780,6 @@ class RelationalDatabase {
         if (this.tables.transactions && Array.isArray(this.tables.transactions)) {
           hasTransactions = this.tables.transactions.some(transaction => 
             nonDefaultAccounts.some(acc => 
-              transaction.debitAccountId === acc.id || 
-              transaction.creditAccountId === acc.id ||
               transaction.accountId === acc.id ||
               transaction.destinationAccountId === acc.id
             )
@@ -2872,6 +2963,90 @@ class RelationalDatabase {
       if (migrationNeeded) {
         this.saveTableToWorkbook('transaction_groups');
         console.log('Migration completed: transaction groups updated');
+      }
+    }
+  }
+
+  migrateTransactionFields() {
+    if (this.tables.transactions && Array.isArray(this.tables.transactions)) {
+      let migrationNeeded = false;
+      
+      console.log(`Checking ${this.tables.transactions.length} transactions for missing fields...`);
+      
+      this.tables.transactions = this.tables.transactions.map(transaction => {
+        let updated = { ...transaction };
+        let transactionUpdated = false;
+        
+        // Add missing currencyId field (default to base currency)
+        if (updated.currencyId === undefined || updated.currencyId === null) {
+          updated.currencyId = 'CUR_001'; // Default to EUR (base currency)
+          transactionUpdated = true;
+        }
+        
+        // Add missing exchangeRate field
+        if (updated.exchangeRate === undefined || updated.exchangeRate === null) {
+          updated.exchangeRate = 1.0; // Default to 1.0 for base currency
+          transactionUpdated = true;
+        }
+        
+        // Add missing categoryId field (try to derive from subcategory if possible)
+        if (updated.categoryId === undefined || updated.categoryId === null) {
+          if (updated.subcategoryId) {
+            // Try to find the category through subcategory -> transaction group -> transaction type
+            const subcategory = this.tables.subcategories?.find(sub => sub.id === updated.subcategoryId);
+            if (subcategory && subcategory.groupId) {
+              const group = this.tables.transaction_groups?.find(grp => grp.id === subcategory.groupId);
+              if (group && group.transactionTypeId) {
+                updated.categoryId = group.transactionTypeId;
+                transactionUpdated = true;
+              }
+            }
+          }
+          
+          // If we still don't have categoryId, default based on account type or amount
+          if (!updated.categoryId) {
+            // Default to Expenses (CAT_002) - most common transaction type
+            updated.categoryId = 'CAT_002';
+            transactionUpdated = true;
+          }
+        }
+        
+        // Add missing payer field
+        if (updated.payer === undefined) {
+          updated.payer = null;
+          transactionUpdated = true;
+        }
+        
+        // Add missing payee field  
+        if (updated.payee === undefined) {
+          updated.payee = null;
+          transactionUpdated = true;
+        }
+        
+        // Add missing payerId field
+        if (updated.payerId === undefined) {
+          updated.payerId = null;
+          transactionUpdated = true;
+        }
+        
+        // Add missing payeeId field
+        if (updated.payeeId === undefined) {
+          updated.payeeId = null;
+          transactionUpdated = true;
+        }
+        
+        if (transactionUpdated) {
+          migrationNeeded = true;
+        }
+        
+        return updated;
+      });
+      
+      if (migrationNeeded) {
+        this.saveTableToWorkbook('transactions');
+        console.log('Migration completed: transaction fields updated with missing currencyId, categoryId, payer/payee fields');
+      } else {
+        console.log('No transaction field migration needed');
       }
     }
   }

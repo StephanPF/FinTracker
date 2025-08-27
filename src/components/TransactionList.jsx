@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useDate } from '../hooks/useDate';
 
 const TransactionList = ({ limit }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups } = useAccounting();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database } = useAccounting();
   const { t } = useLanguage();
   const { formatDate } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
@@ -20,7 +20,7 @@ const TransactionList = ({ limit }) => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
 
   const getAccountName = (accountId) => {
@@ -38,6 +38,27 @@ const TransactionList = ({ limit }) => {
     if (!subcategoryId) return '-';
     const subcategory = subcategories.find(sub => sub.id === subcategoryId);
     return subcategory ? subcategory.name : '-';
+  };
+
+  const getPayeePayerDisplay = (transaction) => {
+    const transactionType = getTransactionType(transaction);
+    
+    // Check if transaction type contains "Expenses" or "Income" (handles formatted strings like "💸 Expenses")
+    if (transactionType.includes('Expenses') && transaction.payee) {
+      return transaction.payee;
+    } else if (transactionType.includes('Income') && transaction.payer) {
+      return transaction.payer;
+    }
+    return '-';
+  };
+
+  const getTransactionTypeColor = (transaction) => {
+    if (!transaction.categoryId) {
+      return '#374151'; // Default gray color
+    }
+    
+    const category = categories.find(cat => cat.id === transaction.categoryId);
+    return category ? category.color : '#374151';
   };
 
   const getCategorySubcategoryName = (transaction) => {
@@ -110,18 +131,19 @@ const TransactionList = ({ limit }) => {
           baseCurrency?.id
         );
         return (
-          <div className="amount-with-conversion">
-            <div className="primary-amount">{primaryAmount}</div>
-            <div className="converted-amount">≈ {convertedAmount}</div>
+          <div className="amount-with-conversion" style={{ color: 'inherit' }}>
+            <div className="primary-amount" style={{ color: 'inherit' }}>{primaryAmount}</div>
+            <div className="converted-amount" style={{ color: 'inherit' }}>≈ {convertedAmount}</div>
           </div>
         );
       }
-      return <div className="primary-amount">{primaryAmount}</div>;
+      return <div className="primary-amount" style={{ color: 'inherit' }}>{primaryAmount}</div>;
     }
     
     // Use numberFormatService with the transaction's currency if available
     if (numberFormatService && transaction.currencyId) {
-      return numberFormatService.formatCurrency(transaction.amount || 0, transaction.currencyId);
+      const formatted = numberFormatService.formatCurrency(transaction.amount || 0, transaction.currencyId);
+      return formatted;
     }
     
     // Fallback: basic formatting without currency symbol
@@ -205,10 +227,56 @@ const TransactionList = ({ limit }) => {
     }
   }, [transactions, filteredTransactions]);
 
+  // Handle dropdown positioning
+  const handleDropdownClick = (e, transactionId) => {
+    e.stopPropagation();
+    
+    if (activeDropdown === transactionId) {
+      setActiveDropdown(null);
+      return;
+    }
+
+    const button = e.currentTarget;
+    const rect = button.getBoundingClientRect();
+    
+    // Calculate dropdown dimensions
+    const dropdownHeight = 60; // Approximate height for the dropdown
+    const dropdownWidth = 120;
+    
+    // Check if dropdown would go off-screen if placed below
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const shouldFlipUp = spaceBelow < dropdownHeight + 20; // Add extra margin for safety
+    
+    // Calculate fixed positioning for portal
+    let top, left;
+    
+    if (shouldFlipUp) {
+      top = rect.top - dropdownHeight - 4;
+    } else {
+      top = rect.bottom + 4;
+    }
+    
+    // Position to the right of the button, but check for screen edges
+    left = rect.left - dropdownWidth + rect.width;
+    
+    // Ensure it doesn't go off the left edge of screen
+    if (left < 10) {
+      left = rect.right - dropdownWidth;
+    }
+    
+    // Ensure it doesn't go off the right edge of screen  
+    if (left + dropdownWidth > window.innerWidth - 10) {
+      left = window.innerWidth - dropdownWidth - 10;
+    }
+    
+    setDropdownPosition({ top, left });
+    setActiveDropdown(transactionId);
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.transaction-actions')) {
+      if (!event.target.closest('.transaction-actions') && !event.target.closest('.portal-dropdown')) {
         setActiveDropdown(null);
       }
     };
@@ -368,6 +436,7 @@ const TransactionList = ({ limit }) => {
               <th>{t('description')}</th>
               <th>Transaction Type</th>
               <th>Category</th>
+              <th>Payee/Payer</th>
               <th>{t('amount')}</th>
               <th style={{ width: '50px' }}>Actions</th>
             </tr>
@@ -380,35 +449,30 @@ const TransactionList = ({ limit }) => {
                   <div className="transaction-description">
                     {transaction.description}
                   </div>
-                  <div className="transaction-id">
-                    ID: {transaction.id}
-                  </div>
                 </td>
                 <td>{getTransactionType(transaction)}</td>
                 <td>{getSubcategoryName(transaction.subcategoryId)}</td>
-                <td>{formatAmountWithCurrency(transaction)}</td>
+                <td>{getPayeePayerDisplay(transaction)}</td>
+                <td 
+                  className="transaction-amount" 
+                  style={{ 
+                    '--transaction-color': getTransactionTypeColor(transaction),
+                    color: getTransactionTypeColor(transaction),
+                    fontWeight: '600'
+                  }}
+                >
+                  <div style={{ color: 'inherit' }}>
+                    {formatAmountWithCurrency(transaction)}
+                  </div>
+                </td>
                 <td>
                   <div className="transaction-actions">
                     <button 
                       className="action-menu-btn"
-                      onClick={() => setActiveDropdown(activeDropdown === transaction.id ? null : transaction.id)}
+                      onClick={(e) => handleDropdownClick(e, transaction.id)}
                     >
                       ⋮
                     </button>
-                    {activeDropdown === transaction.id && (
-                      <div className="action-dropdown">
-                        <button 
-                          className="dropdown-item"
-                          onClick={() => {
-                            setSelectedTransaction(transaction);
-                            setShowTransactionModal(true);
-                            setActiveDropdown(null);
-                          }}
-                        >
-                          👁️ View
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -525,6 +589,35 @@ const TransactionList = ({ limit }) => {
               </div>
             </div>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Portal-rendered dropdown for transaction actions */}
+      {activeDropdown && createPortal(
+        <div 
+          className="dropdown-menu portal-dropdown"
+          style={{
+            position: 'fixed',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: '120px',
+            zIndex: 9999
+          }}
+        >
+          <button 
+            className="dropdown-item"
+            onClick={() => {
+              const transaction = transactions.find(t => t.id === activeDropdown);
+              if (transaction) {
+                setSelectedTransaction(transaction);
+                setShowTransactionModal(true);
+                setActiveDropdown(null);
+              }
+            }}
+          >
+            👁️ View
+          </button>
         </div>,
         document.body
       )}
