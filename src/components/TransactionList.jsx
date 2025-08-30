@@ -29,8 +29,8 @@ const TransactionList = ({ limit }) => {
   };
 
   const getToAccountDisplay = (transaction) => {
-    // For new linked transactions (transfers), check if there's a linked transaction
-    if (transaction.linkedTransactionId && transaction.categoryId === 'CAT_003') {
+    // For new linked transactions (transfers and investments), check if there's a linked transaction
+    if (transaction.linkedTransactionId && (transaction.categoryId === 'CAT_003' || transaction.categoryId === 'CAT_004' || transaction.categoryId === 'CAT_005')) {
       const linkedTransaction = transactions.find(t => t.id === transaction.linkedTransactionId);
       if (linkedTransaction) {
         return getAccountName(linkedTransaction.accountId);
@@ -59,6 +59,11 @@ const TransactionList = ({ limit }) => {
 
   const getPayeePayerDisplay = (transaction) => {
     const transactionType = getTransactionType(transaction);
+    
+    // For investment transactions, use broker field for both payee and payer
+    if ((transaction.categoryId === 'CAT_004' || transaction.categoryId === 'CAT_005') && transaction.broker) {
+      return transaction.broker;
+    }
     
     // Check if transaction type contains "Expenses" or "Income" (handles formatted strings like "💸 Expenses")
     if (transactionType.includes('Expenses') && transaction.payee) {
@@ -137,11 +142,8 @@ const TransactionList = ({ limit }) => {
   const formatAmountWithCurrency = (transaction) => {
     const currency = currencies.find(c => c.id === transaction.currencyId);
     
-    // Check if this should show as negative (expenses or transfer debits)
-    const isExpense = transaction.categoryId === 'CAT_002';
-    const isTransferDebit = transaction.categoryId === 'CAT_003' && transaction.linkedTransactionId && 
-      transaction.description && transaction.description.includes(' to ');
-    const shouldShowNegative = isExpense || isTransferDebit;
+    // Use the transactionType field to determine if amount should show as negative
+    const shouldShowNegative = transaction.transactionType === 'DEBIT';
     
     if (currency && exchangeRateService) {
       let primaryAmount = exchangeRateService.formatAmount(transaction.amount || 0, currency.id);
@@ -481,7 +483,7 @@ const TransactionList = ({ limit }) => {
               <th>Type</th>
               <th>{t('description')}</th>
               <th>Account</th>
-              <th>To Account</th>
+              <th>From/To Account</th>
               <th>Payee/Payer</th>
               <th>Reference</th>
               <th style={{ width: '100px', textAlign: 'right' }}>{t('amount')}</th>

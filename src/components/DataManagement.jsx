@@ -488,22 +488,6 @@ const DataManagement = () => {
           This is the starting balance you set for this account
         </small>
       </div>
-      {editingId && (
-        <div className="form-group">
-          <label>Current Balance</label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.balance || ''}
-            disabled
-            style={{ textAlign: 'left', backgroundColor: '#f9fafb', cursor: 'not-allowed' }}
-            className="no-spinners"
-          />
-          <small style={{ color: '#6b7280', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
-            This balance is calculated automatically based on transactions
-          </small>
-        </div>
-      )}
       <div className="form-actions">
         <button type="submit" className="btn-primary">
           {editingId ? t('updateAccount') : t('addAccount')}

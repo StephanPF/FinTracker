@@ -642,12 +642,16 @@ export const AccountingProvider = ({ children }) => {
   };
 
   const getAccountsWithTypes = () => {
-    // Use reactive Context state instead of direct database call
-    const accountTypes = database.getAccountTypes();
-    return accounts.map(account => ({
-      ...account,
-      accountType: accountTypes.find(type => type.id === account.accountTypeId)
-    }));
+    // Use database method to get properly sorted accounts with types
+    if (!database || typeof database.getAccountsWithTypes !== 'function') {
+      // Fallback to context state if database is not available
+      const accountTypes = database ? database.getAccountTypes() : [];
+      return accounts.map(account => ({
+        ...account,
+        accountType: accountTypes.find(type => type.id === account.accountTypeId)
+      }));
+    }
+    return database.getAccountsWithTypes();
   };
 
   const getActiveAccountsWithTypes = () => {

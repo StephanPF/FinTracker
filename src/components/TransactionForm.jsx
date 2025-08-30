@@ -26,10 +26,30 @@ const TransactionForm = ({ onSuccess }) => {
   } = useAccounting();
   const { t } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
+
+  // Helper function to determine if destination account should be shown
+  const shouldShowDestinationAccount = (transactionType) => {
+    if (!transactionType) return false;
+    return transactionType.name === 'Transfer' || 
+           transactionType.name === 'Investment - SELL' || 
+           transactionType.name === 'Investment - BUY' ||
+           transactionType.name === 'Investissement - VENTE' || 
+           transactionType.name === 'Investissement - ACHAT';
+  };
+
+  // Helper function to determine if this is an investment transaction
+  const isInvestmentTransaction = (transactionType) => {
+    if (!transactionType) return false;
+    return transactionType.name === 'Investment - SELL' || 
+           transactionType.name === 'Investment - BUY' ||
+           transactionType.name === 'Investissement - VENTE' || 
+           transactionType.name === 'Investissement - ACHAT';
+  };
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
     amount: '',
+    destinationAmount: '', // Amount for destination account (for investments)
     accountId: '', // Account field
     destinationAccountId: '', // Destination account (for transfers)
     currencyId: 'CUR_001', // Default to EUR (base currency)
@@ -39,6 +59,7 @@ const TransactionForm = ({ onSuccess }) => {
     subcategoryId: '',
     payee: '',
     payer: '',
+    broker: '',
     tag: ''
   });
   const [isDescriptionUserModified, setIsDescriptionUserModified] = useState(false);
@@ -284,9 +305,13 @@ const TransactionForm = ({ onSuccess }) => {
     if (!formData.accountId) missing.push('accountId');
     if (!formData.amount) missing.push('amount');
     if (!formData.subcategoryId) missing.push('subcategoryId');
-    // For transfers, also check destination account
-    if (selectedTransactionType && selectedTransactionType.name === 'Transfer' && !formData.destinationAccountId) {
+    // For transfers and investments, also check destination account
+    if (selectedTransactionType && shouldShowDestinationAccount(selectedTransactionType) && !formData.destinationAccountId) {
       missing.push('destinationAccountId');
+    }
+    // For investment transactions, also check destination amount
+    if (selectedTransactionType && isInvestmentTransaction(selectedTransactionType) && !formData.destinationAmount) {
+      missing.push('destinationAmount');
     }
     // For Income transactions, require payer
     if (selectedTransactionType && selectedTransactionType.name === 'Income' && !formData.payer) {
@@ -296,13 +321,14 @@ const TransactionForm = ({ onSuccess }) => {
     if (selectedTransactionType && selectedTransactionType.name === 'Expenses' && !formData.payee) {
       missing.push('payee');
     }
-    // For Investment - SELL transactions, require payer
-    if (selectedTransactionType && selectedTransactionType.name === 'Investment - SELL' && !formData.payer) {
-      missing.push('payer');
-    }
-    // For Investment - BUY transactions, require payee
-    if (selectedTransactionType && selectedTransactionType.name === 'Investment - BUY' && !formData.payee) {
-      missing.push('payee');
+    // For Investment transactions, require broker via payee/payer fields
+    if (selectedTransactionType && isInvestmentTransaction(selectedTransactionType) && 
+        !formData.payee && !formData.payer) {
+      if (selectedTransactionType.name === 'Investment - SELL') {
+        missing.push('payer');
+      } else if (selectedTransactionType.name === 'Investment - BUY') {
+        missing.push('payee');
+      }
     }
     
     if (missing.length > 0) {
@@ -314,25 +340,44 @@ const TransactionForm = ({ onSuccess }) => {
     // Clear missing fields if validation passes
     setMissingFields([]);
 
-    if (formData.accountId === formData.destinationAccountId && selectedTransactionType && selectedTransactionType.name === 'Transfer') {
+    if (formData.accountId === formData.destinationAccountId && selectedTransactionType && shouldShowDestinationAccount(selectedTransactionType)) {
       setError(t('differentAccounts'));
       return;
     }
 
-    // For Transfer transactions, validate that both accounts have the same currency
-    if (selectedTransactionType && selectedTransactionType.name === 'Transfer') {
+    // Currency validation based on transaction type
+    if (selectedTransactionType && shouldShowDestinationAccount(selectedTransactionType)) {
       const sourceAccount = accountsWithTypes.find(acc => acc.id === formData.accountId);
       const destAccount = accountsWithTypes.find(acc => acc.id === formData.destinationAccountId);
       
-      if (sourceAccount && destAccount && sourceAccount.currencyId !== destAccount.currencyId) {
-        setError('Transfer accounts must have the same currency');
-        return;
+      if (sourceAccount && destAccount) {
+        if (selectedTransactionType.name === 'Transfer') {
+          // For transfers: accounts must have the same currency
+          if (sourceAccount.currencyId !== destAccount.currencyId) {
+            setError('Transfer accounts must have the same currency');
+            return;
+          }
+        } else if (isInvestmentTransaction(selectedTransactionType)) {
+          // For investments: accounts must have different currencies
+          if (sourceAccount.currencyId === destAccount.currencyId) {
+            setError('Make sure from and to accounts have different currencies');
+            return;
+          }
+        }
       }
     }
 
     if (parseFloat(formData.amount) <= 0) {
       setError(t('amountGreaterZero'));
       return;
+    }
+
+    // For investment transactions, also validate destination amount
+    if (selectedTransactionType && isInvestmentTransaction(selectedTransactionType)) {
+      if (parseFloat(formData.destinationAmount) <= 0) {
+        setError('Destination amount must be greater than zero');
+        return;
+      }
     }
 
     try {
@@ -366,13 +411,16 @@ const TransactionForm = ({ onSuccess }) => {
         // Use the form's account fields directly
         accountId: formData.accountId,
         destinationAccountId: formData.destinationAccountId,
+        destinationAmount: formData.destinationAmount, // Include destination amount for investments
         // Ensure currency is properly set
         currencyId: finalCurrencyId,
         // Include the selected transaction type as categoryId
         categoryId: selectedTransactionType?.id || null,
         payerId,
         payeeId,
-        // Keep the original names for the database to handle
+        // For investment transactions, use broker field; otherwise use payee/payer
+        broker: isInvestmentTransaction(selectedTransactionType) ? 
+          (formData.payee || formData.payer) : formData.broker,
         payer: formData.payer,
         payee: formData.payee
       };
@@ -424,6 +472,7 @@ const TransactionForm = ({ onSuccess }) => {
         date: new Date().toISOString().split('T')[0],
         description: '',
         amount: '',
+        destinationAmount: '',
         accountId: '',
         destinationAccountId: '',
         currencyId: resetCurrencyId,
@@ -828,7 +877,7 @@ const TransactionForm = ({ onSuccess }) => {
           <div className="quick-entry-row">
             <div className="quick-entry-account">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                {selectedTransactionType && selectedTransactionType.name === 'Transfer' && (
+                {selectedTransactionType && shouldShowDestinationAccount(selectedTransactionType) && (
                   <span style={{ fontSize: '1.5rem' }}>
                     ⬇️
                   </span>
@@ -848,7 +897,7 @@ const TransactionForm = ({ onSuccess }) => {
                   ))}
                 </select>
               </div>
-              {selectedTransactionType && selectedTransactionType.name === 'Transfer' && (
+              {selectedTransactionType && shouldShowDestinationAccount(selectedTransactionType) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '1.5rem' }}>
                     ➡️
@@ -875,6 +924,7 @@ const TransactionForm = ({ onSuccess }) => {
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   name="amount"
                   value={formData.amount}
                   onChange={handleChange}
@@ -890,6 +940,28 @@ const TransactionForm = ({ onSuccess }) => {
                   })()}
                 </span>
               </div>
+              {/* Destination Amount for Investment Transactions - under default amount */}
+              {selectedTransactionType && isInvestmentTransaction(selectedTransactionType) && (
+                <div className="amount-input-container" style={{ marginTop: '0.5rem' }}>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="destinationAmount"
+                    value={formData.destinationAmount}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    className={missingFields.includes('destinationAmount') ? 'field-error' : ''}
+                  />
+                  <span className="currency-symbol">
+                    {(() => {
+                      const destAccount = accountsWithTypes.find(acc => acc.id === formData.destinationAccountId);
+                      const currency = destAccount ? getActiveCurrencies().find(c => c.id === destAccount.currencyId) : null;
+                      return currency ? currency.symbol : '';
+                    })()}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

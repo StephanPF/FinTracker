@@ -20,6 +20,27 @@ class RelationalDatabase {
       payees: [],
       payers: []
     };
+    
+    // Define table schemas with headers for empty tables
+    this.tableSchemas = {
+      accounts: ['id', 'name', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'order', 'isActive', 'createdAt'],
+      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'createdAt'],
+      transaction_types: ['id', 'name', 'description', 'color', 'icon', 'defaultAccountId', 'destinationAccountId', 'isActive', 'createdAt'],
+      currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
+      exchange_rates: ['id', 'fromCurrencyId', 'toCurrencyId', 'rate', 'date', 'source', 'createdAt'],
+      currency_settings: ['id', 'baseCurrencyId', 'autoUpdateRates', 'createdAt', 'updatedAt'],
+      user_preferences: ['id', 'userId', 'category', 'key', 'value', 'createdAt', 'updatedAt'],
+      database_info: ['id', 'key', 'value', 'createdAt', 'updatedAt'],
+      tags: ['id', 'name', 'description', 'isActive', 'createdAt'],
+      todos: ['id', 'title', 'description', 'category', 'status', 'priority', 'estimatedHours', 'completedAt', 'createdAt'],
+      transaction_groups: ['id', 'name', 'description', 'color', 'order', 'isActive', 'transactionTypeId', 'createdAt'],
+      subcategories: ['id', 'name', 'description', 'groupId', 'isActive', 'createdAt'],
+      payees: ['id', 'name', 'description', 'isActive', 'createdAt'],
+      payers: ['id', 'name', 'description', 'isActive', 'createdAt'],
+      api_usage: ['id', 'provider', 'endpoint', 'requestCount', 'date', 'createdAt'],
+      api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt']
+    };
+    
     this.workbooks = {};
     this.relationships = {
       transactions: {
@@ -151,7 +172,20 @@ class RelationalDatabase {
   initializeWorkbooks() {
     for (const tableName of Object.keys(this.tables)) {
       this.workbooks[tableName] = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(this.tables[tableName]);
+      
+      let worksheet;
+      const tableData = this.tables[tableName];
+      
+      // If table is empty but we have a schema, create headers
+      if (tableData.length === 0 && this.tableSchemas[tableName]) {
+        // Create a worksheet with just headers
+        const headers = this.tableSchemas[tableName];
+        worksheet = XLSX.utils.aoa_to_sheet([headers]);
+      } else {
+        // Use standard json_to_sheet for tables with data
+        worksheet = XLSX.utils.json_to_sheet(tableData);
+      }
+      
       XLSX.utils.book_append_sheet(this.workbooks[tableName], worksheet, tableName);
     }
   }
@@ -203,6 +237,24 @@ class RelationalDatabase {
     return errors;
   }
 
+  // Helper method to determine transaction type based on category
+  getTransactionType(categoryId) {
+    switch(categoryId) {
+      case 'CAT_001': // Income
+        return 'CREDIT';
+      case 'CAT_002': // Expenses  
+        return 'DEBIT';
+      case 'CAT_003': // Transfer - will be handled separately in createTransferTransactions
+        return null;
+      case 'CAT_004': // Investment Sell - will be handled separately
+        return null;
+      case 'CAT_005': // Investment Buy - will be handled separately
+        return null;
+      default:
+        return 'DEBIT'; // Default to debit for unknown categories
+    }
+  }
+
   addTransaction(transactionData) {
     if (!this.validateForeignKeys('transactions', transactionData)) {
       throw new Error('Invalid foreign key references in transaction');
@@ -218,8 +270,9 @@ class RelationalDatabase {
       }
     }
     
-    // Check if this is a transfer (CAT_003) - create two linked transactions
-    if (transactionData.categoryId === 'CAT_003' && transactionData.destinationAccountId) {
+    // Check if this is a transfer (CAT_003) or investment (CAT_004, CAT_005) - create two linked transactions
+    if ((transactionData.categoryId === 'CAT_003' || transactionData.categoryId === 'CAT_004' || transactionData.categoryId === 'CAT_005') 
+        && transactionData.destinationAccountId) {
       return this.createTransferTransactions(transactionData, exchangeRate);
     }
     
@@ -241,7 +294,9 @@ class RelationalDatabase {
       payee: transactionData.payee || null,
       payerId: transactionData.payerId || null,
       payeeId: transactionData.payeeId || null,
+      broker: transactionData.broker || null,
       linkedTransactionId: null,
+      transactionType: this.getTransactionType(transactionData.categoryId),
       createdAt: new Date().toISOString()
     };
     
@@ -259,9 +314,23 @@ class RelationalDatabase {
     const sourceAccount = this.tables.accounts.find(acc => acc.id === transactionData.accountId);
     const destAccount = this.tables.accounts.find(acc => acc.id === transactionData.destinationAccountId);
     
+    // Determine if this is an investment transaction
+    const isInvestment = transactionData.categoryId === 'CAT_004' || transactionData.categoryId === 'CAT_005';
+    
     // Generate unique IDs for both transactions
     const debitTxnId = 'TXN' + timestamp + '_D';
     const creditTxnId = 'TXN' + timestamp + '_C';
+    
+    // For investments, use different amounts and currencies for each transaction
+    const debitAmount = parseFloat(transactionData.amount);
+    const creditAmount = isInvestment && transactionData.destinationAmount 
+      ? parseFloat(transactionData.destinationAmount) 
+      : debitAmount;
+    
+    const debitCurrencyId = sourceAccount?.currencyId || transactionData.currencyId;
+    const creditCurrencyId = isInvestment && destAccount?.currencyId 
+      ? destAccount.currencyId 
+      : (transactionData.currencyId || debitCurrencyId);
     
     // Transaction A: Debit from source account
     const debitTransaction = {
@@ -270,8 +339,8 @@ class RelationalDatabase {
       description: transactionData.description + (destAccount ? ` to ${destAccount.name}` : ''),
       accountId: transactionData.accountId,
       destinationAccountId: null,
-      amount: parseFloat(transactionData.amount),
-      currencyId: transactionData.currencyId || null,
+      amount: debitAmount,
+      currencyId: debitCurrencyId,
       exchangeRate: exchangeRate,
       categoryId: transactionData.categoryId,
       subcategoryId: transactionData.subcategoryId || null,
@@ -281,7 +350,9 @@ class RelationalDatabase {
       payee: transactionData.payee || null,
       payerId: transactionData.payerId || null,
       payeeId: transactionData.payeeId || null,
+      broker: transactionData.broker || null,
       linkedTransactionId: creditTxnId,
+      transactionType: 'DEBIT', // Money/asset going out
       createdAt: new Date().toISOString()
     };
     
@@ -292,9 +363,9 @@ class RelationalDatabase {
       description: transactionData.description + (sourceAccount ? ` from ${sourceAccount.name}` : ''),
       accountId: transactionData.destinationAccountId,
       destinationAccountId: null,
-      amount: parseFloat(transactionData.amount),
-      currencyId: transactionData.currencyId || null,
-      exchangeRate: exchangeRate,
+      amount: creditAmount,
+      currencyId: creditCurrencyId,
+      exchangeRate: exchangeRate, // For now, use same exchange rate - could be enhanced later
       categoryId: transactionData.categoryId,
       subcategoryId: transactionData.subcategoryId || null,
       reference: transactionData.reference || '',
@@ -303,7 +374,9 @@ class RelationalDatabase {
       payee: transactionData.payee || null,
       payerId: transactionData.payerId || null,
       payeeId: transactionData.payeeId || null,
+      broker: transactionData.broker || null,
       linkedTransactionId: debitTxnId,
+      transactionType: 'CREDIT', // Money/asset coming in
       createdAt: new Date().toISOString()
     };
     
@@ -352,59 +425,22 @@ class RelationalDatabase {
 
     if (!account || accountIndex < 0) return;
 
-    // Determine transaction type to handle balance updates correctly
-    const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
+    // Use the new transactionType field for simplified balance calculation
+    let newBalance = parseFloat(account.balance) || 0;
     
-    if (transactionType) {
-      let newBalance = parseFloat(account.balance) || 0;
-      
-      switch (transactionType.name) {
-        case 'Income':
-          // Money comes into the account - increase balance
-          newBalance += transaction.amount;
-          break;
-          
-        case 'Expenses':
-          // Money goes out of the account - decrease balance
-          newBalance -= transaction.amount;
-          break;
-          
-        case 'Transfer':
-          // For transfers, we now have individual debit/credit transactions
-          // Determine if this is a debit or credit by checking if it has a linked transaction
-          if (transaction.linkedTransactionId) {
-            const linkedTransaction = this.tables.transactions.find(t => t.id === transaction.linkedTransactionId);
-            if (linkedTransaction) {
-              // If the linked transaction has the same account as destination, this is a debit (money out)
-              // If this account is the destination of the linked transaction, this is a credit (money in)
-              const isCredit = linkedTransaction.accountId === transaction.accountId;
-              newBalance += isCredit ? transaction.amount : -transaction.amount;
-            } else {
-              // Fallback: if no linked transaction found, treat as debit
-              newBalance -= transaction.amount;
-            }
-          } else {
-            // Old-style transfer logic (should not happen with new implementation)
-            newBalance -= transaction.amount;
-          }
-          break;
-          
-        case 'Investment':
-          // Money goes out for investment - decrease balance
-          newBalance -= transaction.amount;
-          break;
-          
-        default:
-          // Fallback - treat as expense (money going out)
-          newBalance -= transaction.amount;
-      }
-      
-      // Create new account object to ensure React detects the change
-      this.tables.accounts[accountIndex] = {
-        ...account,
-        balance: newBalance
-      };
+    if (transaction.transactionType === 'DEBIT') {
+      // Money/asset going out - decrease balance
+      newBalance -= transaction.amount;
+    } else if (transaction.transactionType === 'CREDIT') {
+      // Money/asset coming in - increase balance
+      newBalance += transaction.amount;
     }
+    
+    // Create new account object to ensure React detects the change
+    this.tables.accounts[accountIndex] = {
+      ...account,
+      balance: newBalance
+    };
   }
 
   recalculateAllAccountBalances() {
@@ -617,43 +653,27 @@ class RelationalDatabase {
   }
 
   reverseAccountBalances(transaction) {
-    const account = this.tables.accounts.find(acc => acc.id === transaction.accountId);
-    const destinationAccount = transaction.destinationAccountId ? 
-      this.tables.accounts.find(acc => acc.id === transaction.destinationAccountId) : null;
+    const accountIndex = this.tables.accounts.findIndex(acc => acc.id === transaction.accountId);
+    const account = accountIndex >= 0 ? this.tables.accounts[accountIndex] : null;
 
-    // Determine transaction type to reverse balance updates correctly
-    const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
+    if (!account || accountIndex < 0) return;
+
+    // Use the new transactionType field for simplified reverse calculation
+    let newBalance = parseFloat(account.balance) || 0;
     
-    if (transactionType && account) {
-      switch (transactionType.name) {
-        case 'Income':
-          // Reverse income: subtract the amount that was added
-          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
-          break;
-          
-        case 'Expenses':
-          // Reverse expense: add back the amount that was subtracted
-          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
-          break;
-          
-        case 'Transfer':
-          // Reverse transfer: source account gets money back, destination loses it
-          account.balance = (parseFloat(account.balance) || 0) + transaction.amount; // Source account increases
-          if (destinationAccount) {
-            destinationAccount.balance = (parseFloat(destinationAccount.balance) || 0) - transaction.amount; // Destination account decreases
-          }
-          break;
-          
-        case 'Investment':
-          // Reverse investment: add back the money that went out for investment
-          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
-          break;
-          
-        default:
-          // Fallback - reverse expense (add money back)
-          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
-      }
+    if (transaction.transactionType === 'DEBIT') {
+      // Reverse debit: add back the amount that was subtracted
+      newBalance += transaction.amount;
+    } else if (transaction.transactionType === 'CREDIT') {
+      // Reverse credit: subtract the amount that was added
+      newBalance -= transaction.amount;
     }
+    
+    // Create new account object to ensure React detects the change
+    this.tables.accounts[accountIndex] = {
+      ...account,
+      balance: newBalance
+    };
   }
 
   saveTableToWorkbook(tableName) {
@@ -662,7 +682,19 @@ class RelationalDatabase {
         this.workbooks[tableName] = XLSX.utils.book_new();
       }
 
-      const worksheet = XLSX.utils.json_to_sheet(this.tables[tableName]);
+      let worksheet;
+      const tableData = this.tables[tableName];
+      
+      // If table is empty but we have a schema, create headers
+      if (tableData.length === 0 && this.tableSchemas[tableName]) {
+        // Create a worksheet with just headers
+        const headers = this.tableSchemas[tableName];
+        worksheet = XLSX.utils.aoa_to_sheet([headers]);
+      } else {
+        // Use standard json_to_sheet for tables with data
+        worksheet = XLSX.utils.json_to_sheet(tableData);
+      }
+      
       this.workbooks[tableName].Sheets[tableName] = worksheet;
       
       if (!this.workbooks[tableName].SheetNames.includes(tableName)) {
@@ -672,7 +704,18 @@ class RelationalDatabase {
       console.warn(`Error saving ${tableName} table:`, error);
       // Reinitialize workbook on error
       this.workbooks[tableName] = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(this.tables[tableName]);
+      
+      let worksheet;
+      const tableData = this.tables[tableName];
+      
+      // Handle error case with headers for empty tables
+      if (tableData.length === 0 && this.tableSchemas[tableName]) {
+        const headers = this.tableSchemas[tableName];
+        worksheet = XLSX.utils.aoa_to_sheet([headers]);
+      } else {
+        worksheet = XLSX.utils.json_to_sheet(tableData);
+      }
+      
       this.workbooks[tableName].Sheets[tableName] = worksheet;
       this.workbooks[tableName].SheetNames.push(tableName);
     }
