@@ -78,7 +78,7 @@ body {
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 12px;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   box-shadow: 
     0 10px 15px -3px rgba(0, 0, 0, 0.1), 
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -246,7 +246,7 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0 1rem 1rem 1rem;
   box-shadow: 
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -1293,8 +1293,8 @@ input[type="number"] {
   background: white;
   border-radius: 12px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  max-width: 600px;
-  width: 90%;
+  max-width: 800px;
+  width: 95%;
   max-height: calc(100vh - 100px);
   overflow: hidden;
   display: flex;
@@ -1347,11 +1347,25 @@ input[type="number"] {
   gap: 12px;
 }
 
+.transaction-detail-grid-two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.detail-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .detail-row {
   display: grid;
-  grid-template-columns: 150px 1fr;
+  grid-template-columns: 140px 1fr;
   gap: 16px;
-  padding: 8px 0;
+  padding: 6px 0;
   border-bottom: 1px solid #f3f4f6;
 }
 
@@ -1362,13 +1376,31 @@ input[type="number"] {
 .detail-label {
   font-weight: 600;
   color: #374151;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .detail-value {
   color: #6b7280;
-  font-size: 14px;
+  font-size: 13px;
   word-break: break-word;
+}
+
+.badge-debit {
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-credit {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .tag-reference-field input:focus,
@@ -1774,10 +1806,10 @@ input[type="number"] {
 /* Transaction Filters */
 .transaction-filters {
   background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   border: 1px solid #e2e8f0;
 }
 
@@ -1833,11 +1865,16 @@ input[type="number"] {
   background: #e53e3e;
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: 0.25rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .clear-filters-btn:hover {
@@ -1847,9 +1884,16 @@ input[type="number"] {
 
 .filter-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-row-single {
+  display: grid;
+  grid-template-columns: 1.5fr 1.2fr 0.8fr 0.8fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .filter-group {
@@ -1858,19 +1902,43 @@ input[type="number"] {
 }
 
 .filter-group label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #4a5568;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transaction-count-display {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+  margin: 0.25rem 0;
+  padding-right: 0.5rem;
+}
+
+.date-picker-filter {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  width: 100%;
+  height: 30px;
 }
 
 .search-input,
 .filter-input,
 .filter-select {
-  padding: 0.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  height: 30px;
   transition: all 0.2s;
   background: white;
   color: #2d3748;
@@ -2404,7 +2472,7 @@ input[type="number"] {
   }
 
   .dashboard-content {
-    padding: 1.5rem;
+    padding: 0 1.5rem 1.5rem 1.5rem;
     border-radius: 16px;
   }
 
@@ -6771,7 +6839,7 @@ body {
 .amount-with-conversion {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
 }
 
 .primary-amount {
@@ -6780,7 +6848,7 @@ body {
 }
 
 .converted-amount {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #6b7280;
   font-style: italic;
 }

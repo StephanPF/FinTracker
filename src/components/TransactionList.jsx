@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDate } from '../hooks/useDate';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const TransactionList = ({ limit }) => {
   const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database } = useAccounting();
@@ -11,8 +13,8 @@ const TransactionList = ({ limit }) => {
   const accountsWithTypes = getAccountsWithTypes();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAccount, setFilterAccount] = useState('');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState(null);
+  const [filterDateTo, setFilterDateTo] = useState(null);
   const [filterAmountMin, setFilterAmountMin] = useState('');
   const [filterAmountMax, setFilterAmountMax] = useState('');
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
@@ -139,6 +141,55 @@ const TransactionList = ({ limit }) => {
     return '❓ Unknown';
   };
 
+  const formatAmountSingleLine = (transaction) => {
+    const currency = currencies.find(c => c.id === transaction.currencyId);
+    
+    // Use the transactionType field to determine if amount should show as negative
+    const shouldShowNegative = transaction.transactionType === 'DEBIT';
+    
+    if (currency && exchangeRateService) {
+      let primaryAmount = exchangeRateService.formatAmount(transaction.amount || 0, currency.id);
+      
+      // Add minus sign for expenses and transfer debits
+      if (shouldShowNegative) {
+        primaryAmount = primaryAmount.startsWith('-') ? primaryAmount : '-' + primaryAmount;
+      }
+      
+      // If not in base currency, also show converted amount in brackets
+      if (transaction.currencyId !== exchangeRateService.getBaseCurrencyId()) {
+        const baseCurrency = currencies.find(c => c.id === exchangeRateService.getBaseCurrencyId());
+        
+        // Calculate base currency amount using the transaction's stored exchange rate
+        let baseCurrencyAmount = transaction.amount || 0;
+        if (transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
+          // Handle exchange rate as object or number
+          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
+            ? transaction.exchangeRate.rate 
+            : transaction.exchangeRate;
+          baseCurrencyAmount = (transaction.amount || 0) * rate;
+        }
+        
+        let convertedAmount = exchangeRateService.formatAmount(
+          baseCurrencyAmount, 
+          baseCurrency?.id
+        );
+        
+        // Add minus sign for expenses and transfer debits in converted amount too
+        if (shouldShowNegative) {
+          convertedAmount = convertedAmount.startsWith('-') ? convertedAmount : '-' + convertedAmount;
+        }
+        
+        return `${primaryAmount} (≈ ${convertedAmount})`;
+      }
+      return primaryAmount;
+    }
+    
+    // Fallback formatting
+    const amount = transaction.amount || 0;
+    const displayAmount = shouldShowNegative && amount > 0 ? -amount : amount;
+    return displayAmount.toFixed(2);
+  };
+
   const formatAmountWithCurrency = (transaction) => {
     const currency = currencies.find(c => c.id === transaction.currencyId);
     
@@ -221,35 +272,61 @@ const TransactionList = ({ limit }) => {
       });
     }
 
-    // Apply account filter
+    // Apply account filter - show transactions where the selected account is the primary account
     if (filterAccount) {
       filtered = filtered.filter(transaction => 
-        transaction.debitAccountId === filterAccount || transaction.creditAccountId === filterAccount
+        transaction.accountId === filterAccount
       );
     }
 
     // Apply date range filter
     if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
       filtered = filtered.filter(transaction => 
-        new Date(transaction.date) >= new Date(filterDateFrom)
+        new Date(transaction.date) >= fromDate
       );
     }
     if (filterDateTo) {
+      const toDate = new Date(filterDateTo);
+      toDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter(transaction => 
-        new Date(transaction.date) <= new Date(filterDateTo)
+        new Date(transaction.date) <= toDate
       );
     }
 
-    // Apply amount range filter
+    // Apply amount range filter (convert to base currency for consistent comparison)
     if (filterAmountMin) {
-      filtered = filtered.filter(transaction => 
-        parseFloat(transaction.amount) >= parseFloat(filterAmountMin)
-      );
+      filtered = filtered.filter(transaction => {
+        let baseAmount = parseFloat(transaction.amount) || 0;
+        
+        // Convert to base currency if needed
+        if (transaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && 
+            transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
+          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
+            ? transaction.exchangeRate.rate 
+            : transaction.exchangeRate;
+          baseAmount = baseAmount * rate;
+        }
+        
+        return baseAmount >= parseFloat(filterAmountMin);
+      });
     }
     if (filterAmountMax) {
-      filtered = filtered.filter(transaction => 
-        parseFloat(transaction.amount) <= parseFloat(filterAmountMax)
-      );
+      filtered = filtered.filter(transaction => {
+        let baseAmount = parseFloat(transaction.amount) || 0;
+        
+        // Convert to base currency if needed
+        if (transaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && 
+            transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
+          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
+            ? transaction.exchangeRate.rate 
+            : transaction.exchangeRate;
+          baseAmount = baseAmount * rate;
+        }
+        
+        return baseAmount <= parseFloat(filterAmountMax);
+      });
     }
 
     return filtered;
@@ -364,8 +441,8 @@ const TransactionList = ({ limit }) => {
   const clearFilters = () => {
     setSearchTerm('');
     setFilterAccount('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
+    setFilterDateFrom(null);
+    setFilterDateTo(null);
     setFilterAmountMin('');
     setFilterAmountMax('');
   };
@@ -374,106 +451,100 @@ const TransactionList = ({ limit }) => {
     <div className="transaction-list">
       {!limit && (
         <div className="transaction-filters">
-          <div className="filters-toggle">
-            <button 
-              className="toggle-filters-btn"
-              onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-            >
-              {isFiltersExpanded ? '▼' : '▶'} Search & Filter Transactions
-            </button>
-            <div className="transaction-count-summary">
-              Showing {displayTransactions.length} of {transactions.length} transactions
+          <div className="filters-content">
+            <div className="filter-row-single">
+              <div className="filter-group">
+                <input
+                  type="text"
+                  placeholder="🔍 Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="search-input"
+                />
+              </div>
+              
+              <div className="filter-group">
+                <select
+                  value={filterAccount}
+                  onChange={(e) => setFilterAccount(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">📋 All Accounts</option>
+                  {accountsWithTypes.map(account => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="filter-group">
+                <DatePicker
+                  selected={filterDateFrom}
+                  onChange={(date) => setFilterDateFrom(date)}
+                  placeholderText="📅 From"
+                  className="filter-input date-picker-filter"
+                  dateFormat="dd/MM/yyyy"
+                  isClearable
+                />
+              </div>
+              
+              <div className="filter-group">
+                <DatePicker
+                  selected={filterDateTo}
+                  onChange={(date) => setFilterDateTo(date)}
+                  placeholderText="📅 To"
+                  className="filter-input date-picker-filter"
+                  dateFormat="dd/MM/yyyy"
+                  isClearable
+                />
+              </div>
+              
+              <div className="filter-group">
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder={`💰 Min (${(() => {
+                    const baseCurrencyId = exchangeRateService?.getBaseCurrencyId();
+                    const baseCurrency = currencies.find(c => c.id === baseCurrencyId);
+                    return baseCurrency ? baseCurrency.code : 'EUR';
+                  })()})`}
+                  value={filterAmountMin}
+                  onChange={(e) => setFilterAmountMin(e.target.value)}
+                  className="filter-input"
+                />
+              </div>
+              
+              <div className="filter-group">
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder={`💰 Max (${(() => {
+                    const baseCurrencyId = exchangeRateService?.getBaseCurrencyId();
+                    const baseCurrency = currencies.find(c => c.id === baseCurrencyId);
+                    return baseCurrency ? baseCurrency.code : 'EUR';
+                  })()})`}
+                  value={filterAmountMax}
+                  onChange={(e) => setFilterAmountMax(e.target.value)}
+                  className="filter-input"
+                />
+              </div>
+              
+              <div className="filter-actions">
+                <button className="clear-filters-btn" onClick={clearFilters} title="Clear all filters">
+                  🗑️
+                </button>
+              </div>
             </div>
           </div>
-          
-          {isFiltersExpanded && (
-            <div className="filters-content">
-              <div className="filter-row">
-            <div className="filter-group">
-              <label>🔍 Search</label>
-              <input
-                type="text"
-                placeholder="Search description, accounts, categories, customers, vendors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
-            
-            <div className="filter-group">
-              <label>📋 Account</label>
-              <select
-                value={filterAccount}
-                onChange={(e) => setFilterAccount(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">All Accounts</option>
-                {accountsWithTypes.map(account => (
-                  <option key={account.id} value={account.id}>
-                    {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          <div className="filter-row">
-            <div className="filter-group">
-              <label>📅 Date From</label>
-              <input
-                type="date"
-                value={filterDateFrom}
-                onChange={(e) => setFilterDateFrom(e.target.value)}
-                className="filter-input"
-              />
-            </div>
-            
-            <div className="filter-group">
-              <label>📅 Date To</label>
-              <input
-                type="date"
-                value={filterDateTo}
-                onChange={(e) => setFilterDateTo(e.target.value)}
-                className="filter-input"
-              />
-            </div>
-            
-            <div className="filter-group">
-              <label>💰 Amount Min</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={filterAmountMin}
-                onChange={(e) => setFilterAmountMin(e.target.value)}
-                className="filter-input"
-              />
-            </div>
-            
-            <div className="filter-group">
-              <label>💰 Amount Max</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={filterAmountMax}
-                onChange={(e) => setFilterAmountMax(e.target.value)}
-                className="filter-input"
-              />
-            </div>
-          </div>
-          
-          <div className="filter-summary">
-            <span>Showing {displayTransactions.length} of {transactions.length} transactions</span>
-            <button className="clear-filters-btn" onClick={clearFilters}>
-              🗑️ Clear Filters
-            </button>
-          </div>
-            </div>
-          )}
         </div>
       )}
       
+      {!limit && (
+        <div className="transaction-count-display">
+          Showing {displayTransactions.length} of {transactions.length} transactions
+        </div>
+      )}
       
       <div className="data-table">
         <table>
@@ -552,109 +623,137 @@ const TransactionList = ({ limit }) => {
               </button>
             </div>
             <div className="modal-body">
-              <div className="transaction-detail-grid">
-                <div className="detail-row">
-                  <span className="detail-label">ID:</span>
-                  <span className="detail-value">{selectedTransaction.id}</span>
+              <div className="transaction-detail-grid-two-column">
+                {/* Left Column */}
+                <div className="detail-column">
+                  <div className="detail-row">
+                    <span className="detail-label">Date:</span>
+                    <span className="detail-value">{formatDate(selectedTransaction.date)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Description:</span>
+                    <span className="detail-value">{selectedTransaction.description}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Amount:</span>
+                    <span className="detail-value">{formatAmountSingleLine(selectedTransaction)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Transaction Type:</span>
+                    <span className="detail-value">{getTransactionType(selectedTransaction)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Category:</span>
+                    <span className="detail-value">{getSubcategoryName(selectedTransaction.subcategoryId)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Account:</span>
+                    <span className="detail-value">{getAccountName(selectedTransaction.accountId)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">From/To Account:</span>
+                    <span className="detail-value">
+                      {selectedTransaction.destinationAccountId ? 
+                        getAccountName(selectedTransaction.destinationAccountId) : 
+                        '-'
+                      }
+                    </span>
+                  </div>
+                  {(selectedTransaction.payer || selectedTransaction.payee || selectedTransaction.broker) && (
+                    <div className="detail-row">
+                      <span className="detail-label">{selectedTransaction.broker ? 'Broker:' : selectedTransaction.payer ? 'Payer:' : 'Payee:'}</span>
+                      <span className="detail-value">{selectedTransaction.broker || selectedTransaction.payer || selectedTransaction.payee}</span>
+                    </div>
+                  )}
+                  {selectedTransaction.productId && (
+                    <div className="detail-row">
+                      <span className="detail-label">Tag:</span>
+                      <span className="detail-value">
+                        {(() => {
+                          const tag = tags.find(t => t.id === selectedTransaction.productId);
+                          return tag ? tag.name : selectedTransaction.productId;
+                        })()}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">Date:</span>
-                  <span className="detail-value">{formatDate(selectedTransaction.date)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Description:</span>
-                  <span className="detail-value">{selectedTransaction.description}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Amount:</span>
-                  <span className="detail-value">{formatAmountWithCurrency(selectedTransaction)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Transaction Type:</span>
-                  <span className="detail-value">{getTransactionType(selectedTransaction)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Category:</span>
-                  <span className="detail-value">{getSubcategoryName(selectedTransaction.subcategoryId)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Account:</span>
-                  <span className="detail-value">{getAccountName(selectedTransaction.accountId)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Destination Account:</span>
-                  <span className="detail-value">{selectedTransaction.destinationAccountId ? getAccountName(selectedTransaction.destinationAccountId) : '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Currency ID:</span>
-                  <span className="detail-value">{selectedTransaction.currencyId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Exchange Rate:</span>
-                  <span className="detail-value">
-                    {(() => {
-                      // Try multiple possible exchange rate fields
-                      const rate = selectedTransaction.exchangeRate || 
-                                   selectedTransaction.exchange_rate ||
-                                   (selectedTransaction.currencyId === exchangeRateService?.getBaseCurrencyId() ? 1.0 : null);
-                      
-                      if (rate === null || rate === undefined) {
-                        // Try to get current exchange rate for the currency
-                        if (selectedTransaction.currencyId && exchangeRateService) {
-                          const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
-                          if (selectedTransaction.currencyId === baseCurrencyId) {
-                            return '1.0000';
-                          } else {
-                            try {
-                              const currentRate = exchangeRateService.getExchangeRate(selectedTransaction.currencyId, baseCurrencyId);
-                              return currentRate ? Number(currentRate).toFixed(4) : 'N/A';
-                            } catch (error) {
-                              return 'N/A';
+                
+                {/* Right Column */}
+                <div className="detail-column">
+                  <div className="detail-row">
+                    <span className="detail-label">Transaction ID:</span>
+                    <span className="detail-value">{selectedTransaction.id}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Currency:</span>
+                    <span className="detail-value">
+                      {(() => {
+                        const currency = currencies.find(c => c.id === selectedTransaction.currencyId);
+                        return currency ? `${currency.symbol} ${currency.name} (${currency.code})` : selectedTransaction.currencyId || '-';
+                      })()}
+                    </span>
+                  </div>
+                  {selectedTransaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && (
+                    <div className="detail-row">
+                      <span className="detail-label">Exchange Rate:</span>
+                      <span className="detail-value">
+                        {(() => {
+                          const rate = selectedTransaction.exchangeRate || 
+                                       selectedTransaction.exchange_rate ||
+                                       (selectedTransaction.currencyId === exchangeRateService?.getBaseCurrencyId() ? 1.0 : null);
+                          
+                          if (rate === null || rate === undefined) {
+                            if (selectedTransaction.currencyId && exchangeRateService) {
+                              const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+                              if (selectedTransaction.currencyId === baseCurrencyId) {
+                                return '1.0000';
+                              } else {
+                                try {
+                                  const currentRate = exchangeRateService.getExchangeRate(selectedTransaction.currencyId, baseCurrencyId);
+                                  return currentRate ? Number(currentRate).toFixed(4) : 'N/A';
+                                } catch (error) {
+                                  return 'N/A';
+                                }
+                              }
                             }
+                            return '-';
                           }
-                        }
-                        return '-';
-                      }
-                      
-                      if (typeof rate === 'object' && rate.rate !== undefined) {
-                        return Number(rate.rate).toFixed(4);
-                      }
-                      
-                      return Number(rate).toFixed(4);
-                    })()}
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Account ID:</span>
-                  <span className="detail-value">{selectedTransaction.accountId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Destination Account ID:</span>
-                  <span className="detail-value">{selectedTransaction.destinationAccountId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Subcategory ID:</span>
-                  <span className="detail-value">{selectedTransaction.subcategoryId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Category ID:</span>
-                  <span className="detail-value">{selectedTransaction.categoryId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Payer:</span>
-                  <span className="detail-value">{selectedTransaction.payer || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Payee:</span>
-                  <span className="detail-value">{selectedTransaction.payee || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Reference:</span>
-                  <span className="detail-value">{selectedTransaction.reference || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Notes:</span>
-                  <span className="detail-value">{selectedTransaction.notes || '-'}</span>
+                          
+                          if (typeof rate === 'object' && rate.rate !== undefined) {
+                            return Number(rate.rate).toFixed(4);
+                          }
+                          
+                          return Number(rate).toFixed(4);
+                        })()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <span className="detail-label">Transaction Type:</span>
+                    <span className="detail-value">
+                      <span className={`badge ${selectedTransaction.transactionType === 'DEBIT' ? 'badge-debit' : 'badge-credit'}`}>
+                        {selectedTransaction.transactionType === 'DEBIT' ? '⬇️ DEBIT' : '⬆️ CREDIT'}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Reference:</span>
+                    <span className="detail-value">{selectedTransaction.reference || '-'}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Notes:</span>
+                    <span className="detail-value">{selectedTransaction.notes || '-'}</span>
+                  </div>
+                  {selectedTransaction.linkedTransactionId && (
+                    <div className="detail-row">
+                      <span className="detail-label">Linked Transaction:</span>
+                      <span className="detail-value">{selectedTransaction.linkedTransactionId}</span>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <span className="detail-label">Created:</span>
+                    <span className="detail-value">{selectedTransaction.createdAt ? formatDate(selectedTransaction.createdAt) : '-'}</span>
+                  </div>
                 </div>
               </div>
             </div>

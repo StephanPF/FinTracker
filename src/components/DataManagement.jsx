@@ -1066,8 +1066,8 @@ const DataManagement = () => {
                 const currentBalance = value || 0;
                 const initialBalance = row.initialBalance || 0;
                 
-                // Style based on whether current balance is higher or lower than initial
-                const isPositive = currentBalance >= initialBalance;
+                // Style based on whether current balance is positive or negative
+                const isPositive = currentBalance >= 0;
                 const style = {
                   color: isPositive ? '#059669' : '#dc2626',
                   fontWeight: '600'
