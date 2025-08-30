@@ -28,7 +28,8 @@ class RelationalDatabase {
         productId: { table: 'tags', field: 'id', optional: true },
         categoryId: { table: 'transaction_types', field: 'id', optional: true },
         subcategoryId: { table: 'subcategories', field: 'id', optional: true },
-        currencyId: { table: 'currencies', field: 'id', optional: true }
+        currencyId: { table: 'currencies', field: 'id', optional: true },
+        linkedTransactionId: { table: 'transactions', field: 'id', optional: true }
       },
       accounts: {
         currencyId: { table: 'currencies', field: 'id', optional: true }
@@ -65,20 +66,11 @@ class RelationalDatabase {
         }
       }
       
-      // Run migration for transaction types to add missing fields
-      this.migrateTransactionTypes();
-      this.migrateSubcategories();
-      this.migrateTransactionGroups();
-      this.migrateDefaultAccount();
-      this.migrateTransactionTypeAccounts();
-      this.migrateToSingleAccount();
-      // Removed: this.migrateRemoveAllSubcategories(); - Now initializing subcategories instead
-      this.migrateInitializeSubcategories();
-      this.migrateReorderTransactionTypes();
-      this.migrateRemoveSpecificTransactionGroups();
-      this.migrateTransactionFields();
-      
       this.validateRelationships();
+      
+      // After loading all data, recalculate account balances to ensure accuracy
+      this.recalculateAllAccountBalances();
+      
       return true;
     } catch (error) {
       console.error('Error loading files into relational database:', error);
@@ -136,28 +128,6 @@ class RelationalDatabase {
     };
 
     this.initializeWorkbooks();
-    
-    // Run migration to ensure default account has correct name
-    this.migrateDefaultAccount();
-    
-    // Run migration to update transaction type accounts
-    this.migrateTransactionTypeAccounts();
-    
-    // Run migration to remove unwanted accounts
-    this.migrateToSingleAccount();
-    
-    // Removed: Run migration to remove all subcategories - Now initializing subcategories instead
-    // this.migrateRemoveAllSubcategories();
-    
-    // Run migration to initialize subcategories if they're empty
-    this.migrateInitializeSubcategories();
-    
-    // Run migration to reorder transaction types (put Expenses first)
-    this.migrateReorderTransactionTypes();
-    
-    // Run migration to remove specific transaction groups
-    this.migrateRemoveSpecificTransactionGroups();
-    this.migrateTransactionFields();
     
     return true;
   }
@@ -238,6 +208,22 @@ class RelationalDatabase {
       throw new Error('Invalid foreign key references in transaction');
     }
 
+    // Handle exchange rate - extract rate value if it's an object
+    let exchangeRate = 1.0;
+    if (transactionData.exchangeRate !== undefined && transactionData.exchangeRate !== null) {
+      if (typeof transactionData.exchangeRate === 'object' && transactionData.exchangeRate.rate !== undefined) {
+        exchangeRate = parseFloat(transactionData.exchangeRate.rate) || 1.0;
+      } else {
+        exchangeRate = parseFloat(transactionData.exchangeRate) || 1.0;
+      }
+    }
+    
+    // Check if this is a transfer (CAT_003) - create two linked transactions
+    if (transactionData.categoryId === 'CAT_003' && transactionData.destinationAccountId) {
+      return this.createTransferTransactions(transactionData, exchangeRate);
+    }
+    
+    // Standard transaction creation
     const newTransaction = {
       id: 'TXN' + Date.now(),
       date: transactionData.date || new Date().toISOString().split('T')[0],
@@ -246,8 +232,7 @@ class RelationalDatabase {
       destinationAccountId: transactionData.destinationAccountId || null,
       amount: parseFloat(transactionData.amount),
       currencyId: transactionData.currencyId || null,
-      exchangeRate: transactionData.exchangeRate || 1.0,
-      productId: transactionData.productId || null,
+      exchangeRate: exchangeRate,
       categoryId: transactionData.categoryId || null,
       subcategoryId: transactionData.subcategoryId || null,
       reference: transactionData.reference || '',
@@ -256,15 +241,85 @@ class RelationalDatabase {
       payee: transactionData.payee || null,
       payerId: transactionData.payerId || null,
       payeeId: transactionData.payeeId || null,
+      linkedTransactionId: null,
       createdAt: new Date().toISOString()
     };
     
     this.tables.transactions.push(newTransaction);
     this.updateAccountBalances(newTransaction);
+    
     this.saveTableToWorkbook('transactions');
     this.saveTableToWorkbook('accounts');
 
     return newTransaction;
+  }
+
+  createTransferTransactions(transactionData, exchangeRate) {
+    const timestamp = Date.now();
+    const sourceAccount = this.tables.accounts.find(acc => acc.id === transactionData.accountId);
+    const destAccount = this.tables.accounts.find(acc => acc.id === transactionData.destinationAccountId);
+    
+    // Generate unique IDs for both transactions
+    const debitTxnId = 'TXN' + timestamp + '_D';
+    const creditTxnId = 'TXN' + timestamp + '_C';
+    
+    // Transaction A: Debit from source account
+    const debitTransaction = {
+      id: debitTxnId,
+      date: transactionData.date || new Date().toISOString().split('T')[0],
+      description: transactionData.description + (destAccount ? ` to ${destAccount.name}` : ''),
+      accountId: transactionData.accountId,
+      destinationAccountId: null,
+      amount: parseFloat(transactionData.amount),
+      currencyId: transactionData.currencyId || null,
+      exchangeRate: exchangeRate,
+      categoryId: transactionData.categoryId,
+      subcategoryId: transactionData.subcategoryId || null,
+      reference: transactionData.reference || '',
+      notes: transactionData.notes || '',
+      payer: transactionData.payer || null,
+      payee: transactionData.payee || null,
+      payerId: transactionData.payerId || null,
+      payeeId: transactionData.payeeId || null,
+      linkedTransactionId: creditTxnId,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Transaction B: Credit to destination account
+    const creditTransaction = {
+      id: creditTxnId,
+      date: transactionData.date || new Date().toISOString().split('T')[0],
+      description: transactionData.description + (sourceAccount ? ` from ${sourceAccount.name}` : ''),
+      accountId: transactionData.destinationAccountId,
+      destinationAccountId: null,
+      amount: parseFloat(transactionData.amount),
+      currencyId: transactionData.currencyId || null,
+      exchangeRate: exchangeRate,
+      categoryId: transactionData.categoryId,
+      subcategoryId: transactionData.subcategoryId || null,
+      reference: transactionData.reference || '',
+      notes: transactionData.notes || '',
+      payer: transactionData.payer || null,
+      payee: transactionData.payee || null,
+      payerId: transactionData.payerId || null,
+      payeeId: transactionData.payeeId || null,
+      linkedTransactionId: debitTxnId,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Add both transactions to the table
+    this.tables.transactions.push(debitTransaction);
+    this.tables.transactions.push(creditTransaction);
+    
+    // Update account balances for both transactions
+    this.updateAccountBalances(debitTransaction);
+    this.updateAccountBalances(creditTransaction);
+    
+    this.saveTableToWorkbook('transactions');
+    this.saveTableToWorkbook('accounts');
+
+    // Return the debit transaction as the primary reference
+    return debitTransaction;
   }
 
   validateForeignKeys(tableName, data) {
@@ -292,43 +347,77 @@ class RelationalDatabase {
   }
 
   updateAccountBalances(transaction) {
-    const account = this.tables.accounts.find(acc => acc.id === transaction.accountId);
-    const destinationAccount = transaction.destinationAccountId ? 
-      this.tables.accounts.find(acc => acc.id === transaction.destinationAccountId) : null;
+    const accountIndex = this.tables.accounts.findIndex(acc => acc.id === transaction.accountId);
+    const account = accountIndex >= 0 ? this.tables.accounts[accountIndex] : null;
+
+    if (!account || accountIndex < 0) return;
 
     // Determine transaction type to handle balance updates correctly
     const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
     
-    if (transactionType && account) {
+    if (transactionType) {
+      let newBalance = parseFloat(account.balance) || 0;
+      
       switch (transactionType.name) {
         case 'Income':
           // Money comes into the account - increase balance
-          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
+          newBalance += transaction.amount;
           break;
           
         case 'Expenses':
           // Money goes out of the account - decrease balance
-          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+          newBalance -= transaction.amount;
           break;
           
         case 'Transfer':
-          // Money moves from source to destination account
-          account.balance = (parseFloat(account.balance) || 0) - transaction.amount; // Source account decreases
-          if (destinationAccount) {
-            destinationAccount.balance = (parseFloat(destinationAccount.balance) || 0) + transaction.amount; // Destination account increases
+          // For transfers, we now have individual debit/credit transactions
+          // Determine if this is a debit or credit by checking if it has a linked transaction
+          if (transaction.linkedTransactionId) {
+            const linkedTransaction = this.tables.transactions.find(t => t.id === transaction.linkedTransactionId);
+            if (linkedTransaction) {
+              // If the linked transaction has the same account as destination, this is a debit (money out)
+              // If this account is the destination of the linked transaction, this is a credit (money in)
+              const isCredit = linkedTransaction.accountId === transaction.accountId;
+              newBalance += isCredit ? transaction.amount : -transaction.amount;
+            } else {
+              // Fallback: if no linked transaction found, treat as debit
+              newBalance -= transaction.amount;
+            }
+          } else {
+            // Old-style transfer logic (should not happen with new implementation)
+            newBalance -= transaction.amount;
           }
           break;
           
         case 'Investment':
           // Money goes out for investment - decrease balance
-          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+          newBalance -= transaction.amount;
           break;
           
         default:
           // Fallback - treat as expense (money going out)
-          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+          newBalance -= transaction.amount;
       }
+      
+      // Create new account object to ensure React detects the change
+      this.tables.accounts[accountIndex] = {
+        ...account,
+        balance: newBalance
+      };
     }
+  }
+
+  recalculateAllAccountBalances() {
+    // Reset all account balances to their initial balances (create new objects for React)
+    this.tables.accounts = this.tables.accounts.map(account => ({
+      ...account,
+      balance: parseFloat(account.initialBalance) || 0
+    }));
+    
+    // Apply all transactions to recalculate current balances
+    this.tables.transactions.forEach(transaction => {
+      this.updateAccountBalances(transaction);
+    });
   }
 
   addAccount(accountData) {
@@ -344,7 +433,8 @@ class RelationalDatabase {
       name: accountData.name,
       accountTypeId: accountData.accountTypeId,
       currencyId: accountData.currencyId || 'CUR_001', // Include currencyId with default fallback
-      balance: parseFloat(accountData.balance) || 0,
+      initialBalance: parseFloat(accountData.initialBalance || accountData.balance) || 0,
+      balance: parseFloat(accountData.initialBalance || accountData.balance) || 0, // Start with initial balance
       description: accountData.description || '',
       includeInOverview: accountData.includeInOverview !== undefined ? accountData.includeInOverview : true,
       order: accountData.order !== undefined ? accountData.order : maxOrder + 1,
@@ -381,18 +471,65 @@ class RelationalDatabase {
       throw new Error(`Account with id ${id} not found`);
     }
 
+    // Handle initial balance updates - if initialBalance is being changed, we need to recalculate
+    const oldAccount = this.tables.accounts[accountIndex];
     const updatedAccount = {
-      ...this.tables.accounts[accountIndex],
+      ...oldAccount,
       ...accountData,
       id: id // Ensure ID doesn't change
     };
+    
+    // If initialBalance was updated, recalculate the current balance
+    if (accountData.initialBalance !== undefined && 
+        parseFloat(accountData.initialBalance) !== parseFloat(oldAccount.initialBalance)) {
+      
+      // Reset balance to new initial balance
+      updatedAccount.balance = parseFloat(accountData.initialBalance) || 0;
+      
+      // Apply all transactions to recalculate current balance
+      this.tables.transactions.forEach(transaction => {
+        if (transaction.accountId === id || transaction.destinationAccountId === id) {
+          const transactionType = this.tables.transaction_types.find(type => type.id === transaction.categoryId);
+          if (transactionType) {
+            this.applyTransactionToAccount(updatedAccount, transaction, transactionType, id);
+          }
+        }
+      });
+    }
 
     this.tables.accounts[accountIndex] = updatedAccount;
     this.saveTableToWorkbook('accounts');
 
     return updatedAccount;
   }
-
+  
+  // Helper method to apply a single transaction's effect to an account
+  applyTransactionToAccount(account, transaction, transactionType, accountId) {
+    const isDestination = transaction.destinationAccountId === accountId;
+    
+    switch (transactionType.name) {
+      case 'Income':
+        account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
+        break;
+      case 'Expenses':
+        account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+        break;
+      case 'Transfer':
+        if (isDestination) {
+          account.balance = (parseFloat(account.balance) || 0) + transaction.amount;
+        } else {
+          account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+        }
+        break;
+      case 'Investment':
+      case 'Investment - SELL':
+      case 'Investment - BUY':
+        account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+        break;
+      default:
+        account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
+    }
+  }
 
   updateProduct(id, productData) {
     const productIndex = this.tables.tags.findIndex(product => product.id === id);
@@ -426,7 +563,22 @@ class RelationalDatabase {
     // Get the old transaction to reverse its balance effects
     const oldTransaction = { ...this.tables.transactions[transactionIndex] };
 
-    // Reverse old transaction balance effects
+    // Check if this is a linked transaction (part of a transfer)
+    if (oldTransaction.linkedTransactionId) {
+      const linkedTransactionIndex = this.tables.transactions.findIndex(
+        transaction => transaction.id === oldTransaction.linkedTransactionId
+      );
+      
+      if (linkedTransactionIndex >= 0) {
+        const linkedTransaction = { ...this.tables.transactions[linkedTransactionIndex] };
+        
+        // For linked transactions, we need to update both together
+        // For now, we'll prevent editing of linked transactions to maintain consistency
+        throw new Error('Cannot edit individual transfer transactions. Please delete and recreate the transfer.');
+      }
+    }
+
+    // Standard transaction update
     this.reverseAccountBalances(oldTransaction);
 
     // Process new transaction data
@@ -436,11 +588,16 @@ class RelationalDatabase {
       accountId: transactionData.accountId,
       destinationAccountId: transactionData.destinationAccountId,
       currencyId: transactionData.currencyId || null,
-      exchangeRate: transactionData.exchangeRate || 1.0,
+      exchangeRate: parseFloat(transactionData.exchangeRate) || 1.0,
       payer: transactionData.payer || null,
       payee: transactionData.payee || null,
       payerId: transactionData.payerId || null,
-      payeeId: transactionData.payeeId || null
+      payeeId: transactionData.payeeId || null,
+      linkedTransactionId: oldTransaction.linkedTransactionId, // Preserve linked transaction ID
+      // Remove unwanted fields if they exist
+      productId: undefined,
+      customerId: undefined,
+      vendorId: undefined
     };
 
     const updatedTransaction = {
@@ -500,14 +657,23 @@ class RelationalDatabase {
   }
 
   saveTableToWorkbook(tableName) {
-    if (!this.workbooks[tableName]) {
-      this.workbooks[tableName] = XLSX.utils.book_new();
-    }
+    try {
+      if (!this.workbooks[tableName]) {
+        this.workbooks[tableName] = XLSX.utils.book_new();
+      }
 
-    const worksheet = XLSX.utils.json_to_sheet(this.tables[tableName]);
-    this.workbooks[tableName].Sheets[tableName] = worksheet;
-    
-    if (!this.workbooks[tableName].SheetNames.includes(tableName)) {
+      const worksheet = XLSX.utils.json_to_sheet(this.tables[tableName]);
+      this.workbooks[tableName].Sheets[tableName] = worksheet;
+      
+      if (!this.workbooks[tableName].SheetNames.includes(tableName)) {
+        this.workbooks[tableName].SheetNames.push(tableName);
+      }
+    } catch (error) {
+      console.warn(`Error saving ${tableName} table:`, error);
+      // Reinitialize workbook on error
+      this.workbooks[tableName] = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(this.tables[tableName]);
+      this.workbooks[tableName].Sheets[tableName] = worksheet;
       this.workbooks[tableName].SheetNames.push(tableName);
     }
   }
@@ -871,12 +1037,42 @@ class RelationalDatabase {
 
     const deletedTransaction = { ...this.tables.transactions[transactionIndex] };
     
-    // Reverse the account balance effects
-    this.reverseAccountBalances(deletedTransaction);
+    // Check if this is a linked transaction (part of a transfer)
+    if (deletedTransaction.linkedTransactionId) {
+      const linkedTransactionIndex = this.tables.transactions.findIndex(
+        transaction => transaction.id === deletedTransaction.linkedTransactionId
+      );
+      
+      if (linkedTransactionIndex >= 0) {
+        const linkedTransaction = { ...this.tables.transactions[linkedTransactionIndex] };
+        
+        // Reverse the account balance effects for both transactions
+        this.reverseAccountBalances(deletedTransaction);
+        this.reverseAccountBalances(linkedTransaction);
+        
+        // Remove both transactions
+        this.tables.transactions.splice(transactionIndex, 1);
+        // Re-find the linked transaction index after first deletion
+        const updatedLinkedIndex = this.tables.transactions.findIndex(
+          transaction => transaction.id === linkedTransaction.id
+        );
+        if (updatedLinkedIndex >= 0) {
+          this.tables.transactions.splice(updatedLinkedIndex, 1);
+        }
+        
+        this.saveTableToWorkbook('transactions');
+        this.saveTableToWorkbook('accounts');
+        
+        // Return the primary transaction
+        return deletedTransaction;
+      }
+    }
     
+    // Standard transaction deletion
+    this.reverseAccountBalances(deletedTransaction);
     this.tables.transactions.splice(transactionIndex, 1);
     this.saveTableToWorkbook('transactions');
-    this.saveTableToWorkbook('accounts'); // Save accounts too due to balance changes
+    this.saveTableToWorkbook('accounts');
 
     return deletedTransaction;
   }
@@ -1179,7 +1375,8 @@ class RelationalDatabase {
           id: 'ACC001', 
           name: 'Default Account', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 0,
+          initialBalance: 0,
+          balance: 0, // This will be calculated dynamically
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 0,
           description: 'Cash on hand',
@@ -1242,7 +1439,8 @@ class RelationalDatabase {
           id: 'ACC001', 
           name: 'Default Account', 
           accountTypeId: 'ACCT_TYPE_001',
-          balance: 0,
+          initialBalance: 0,
+          balance: 0, // This will be calculated dynamically
           currencyId: 'CUR_001', // EUR (base currency)
           baseCurrencyValue: 0,
           description: 'Argent liquide disponible',
@@ -1580,8 +1778,8 @@ class RelationalDatabase {
         description: 'Money movement between accounts',
         color: '#2196F3',
         icon: '🔄',
-        defaultAccountId: 'ACC002', // Bank Account - Checking - typical source
-        destinationAccountId: 'ACC003', // Savings Account - typical destination
+        defaultAccountId: 'ACC001', // Primary account
+        destinationAccountId: 'ACC001', // Primary account
         isActive: true,
         createdAt: new Date().toISOString()
       },
@@ -1719,11 +1917,20 @@ class RelationalDatabase {
       },
       {
         id: 'GRP_006',
-        name: 'Digital Assets',
-        description: 'Crypto related investments',
+        name: 'Digital Assets Selling',
+        description: 'Selling of digital assets',
         color: '#9C27B0',
         isActive: true,
         transactionTypeId: 'CAT_004', // Investment
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_007',
+        name: 'Digital Assets Purchase',
+        description: 'Purchase of digital assets',
+        color: '#4CAF50',
+        isActive: true,
+        transactionTypeId: 'CAT_005', // Investment - BUY
         createdAt: new Date().toISOString()
       }
     ];
@@ -1779,10 +1986,19 @@ class RelationalDatabase {
       {
         id: 'GRP_006',
         name: 'Actifs Numériques',
-        description: 'Investissements liés aux cryptomonnaies',
+        description: 'Vente d\'actifs numériques',
         color: '#9C27B0',
         isActive: true,
         transactionTypeId: 'CAT_004', // Investment
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_007',
+        name: 'Achat Actifs Numériques',
+        description: 'Achat d\'actifs numériques',
+        color: '#4CAF50',
+        isActive: true,
+        transactionTypeId: 'CAT_005', // Investment - BUY
         createdAt: new Date().toISOString()
       }
     ];
@@ -1827,12 +2043,16 @@ class RelationalDatabase {
       { id: 'SUB_026', name: 'Wire Transfers', description: 'Domestic and international wire transfers', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_027', name: 'ATM Transfers', description: 'ATM cash deposits and transfers', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       
-      // GRP_006 - Digital Assets (Investment)
-      { id: 'SUB_028', name: 'Bitcoin Investment', description: 'Bitcoin purchases and investments', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_029', name: 'Ethereum Investment', description: 'Ethereum purchases and investments', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_030', name: 'Altcoin Investment', description: 'Alternative cryptocurrency investments', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_031', name: 'Crypto Trading', description: 'Cryptocurrency trading activities', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_032', name: 'DeFi & Staking', description: 'DeFi protocols, staking rewards', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() }
+      // GRP_006 - Digital Assets Selling (Investment - SELL)
+      { id: 'SUB_033', name: 'Bitcoin Selling', description: 'Bitcoin selling', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_034', name: 'Ethereum Selling', description: 'Ethereum selling', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+
+      // GRP_007 - Digital Assets Purchase (Investment - BUY)
+      { id: 'SUB_028', name: 'Bitcoin Investment', description: 'Bitcoin purchases and investments', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_029', name: 'Ethereum Investment', description: 'Ethereum purchases and investments', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_030', name: 'Altcoin Investment', description: 'Alternative cryptocurrency investments', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_031', name: 'Crypto Trading', description: 'Cryptocurrency trading activities', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_032', name: 'DeFi & Staking', description: 'DeFi protocols, staking rewards', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() }
     ];
   }
 
@@ -1875,12 +2095,16 @@ class RelationalDatabase {
       { id: 'SUB_026', name: 'Virements Télégraphiques', description: 'Virements nationaux et internationaux', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_027', name: 'Virements DAB', description: 'Dépôts et virements DAB', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       
-      // GRP_006 - Actifs Numériques (Investment)
-      { id: 'SUB_028', name: 'Investissement Bitcoin', description: 'Achats et investissements Bitcoin', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_029', name: 'Investissement Ethereum', description: 'Achats et investissements Ethereum', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_030', name: 'Investissement Altcoin', description: 'Investissements cryptomonnaies alternatives', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_031', name: 'Trading Crypto', description: 'Activités trading cryptomonnaies', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_032', name: 'DeFi & Staking', description: 'Protocoles DeFi, récompenses staking', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() }
+      // GRP_006 - Actifs Numériques Vente (Investment - SELL)
+      { id: 'SUB_033', name: 'Vente Bitcoin', description: 'Vente Bitcoin', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_034', name: 'Vente Ethereum', description: 'Vente Ethereum', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+
+      // GRP_007 - Achat Actifs Numériques (Investment - BUY)
+      { id: 'SUB_028', name: 'Investissement Bitcoin', description: 'Achats et investissements Bitcoin', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_029', name: 'Investissement Ethereum', description: 'Achats et investissements Ethereum', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_030', name: 'Investissement Altcoin', description: 'Investissements cryptomonnaies alternatives', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_031', name: 'Trading Crypto', description: 'Activités trading cryptomonnaies', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_032', name: 'DeFi & Staking', description: 'Protocoles DeFi, récompenses staking', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() }
     ];
   }
 
@@ -2605,472 +2829,20 @@ class RelationalDatabase {
     return newRecord;
   }
 
-  // Migration method to add missing fields to existing transaction types
-  migrateTransactionTypes() {
-    if (this.tables.transaction_types && Array.isArray(this.tables.transaction_types)) {
-      let migrationNeeded = false;
-      
-      this.tables.transaction_types = this.tables.transaction_types.map((transactionType, index) => {
-        let updated = { ...transactionType };
-        
-        // Add missing defaultAccountId field
-        if (updated.defaultAccountId === undefined) {
-          updated.defaultAccountId = null;
-          migrationNeeded = true;
-        }
-        
-        // Add missing destinationAccountId field
-        if (updated.destinationAccountId === undefined) {
-          updated.destinationAccountId = null;
-          migrationNeeded = true;
-        }
-        
-        // Add missing order field
-        if (updated.order === undefined) {
-          updated.order = index + 1;
-          migrationNeeded = true;
-        }
-        
-        return updated;
-      });
-      
-      // Save if migration was needed
-      if (migrationNeeded) {
-        console.log('Migrated transaction types to include account fields and order');
-        this.saveTableToWorkbook('transaction_types');
-      }
-    }
-  }
-
-  // Migration method to add missing fields to existing subcategories
-  migrateSubcategories() {
-    if (this.tables.subcategories && Array.isArray(this.tables.subcategories)) {
-      let migrationNeeded = false;
-      
-      this.tables.subcategories = this.tables.subcategories.map((subcategory, index) => {
-        let updated = { ...subcategory };
-        
-        // Add missing order field
-        if (updated.order === undefined) {
-          updated.order = index + 1;
-          migrationNeeded = true;
-        }
-        
-        // Remove categoryId field if it exists (no longer needed)
-        if (updated.categoryId !== undefined) {
-          delete updated.categoryId;
-          migrationNeeded = true;
-        }
-        
-        return updated;
-      });
-      
-      // Save if migration was needed
-      if (migrationNeeded) {
-        console.log('Migrated subcategories to include order field and remove categoryId');
-        this.saveTableToWorkbook('subcategories');
-      }
-    }
-  }
-
-  // Migration method to add missing fields to existing transaction groups
-  migrateTransactionGroups() {
-    if (this.tables.transaction_groups && Array.isArray(this.tables.transaction_groups)) {
-      let migrationNeeded = false;
-      
-      this.tables.transaction_groups = this.tables.transaction_groups.map((group, index) => {
-        let updated = { ...group };
-        
-        // Add missing order field
-        if (updated.order === undefined) {
-          updated.order = index + 1;
-          migrationNeeded = true;
-        }
-        
-        // Add missing transactionTypeId field - default to Expenses (CAT_002)
-        if (updated.transactionTypeId === undefined) {
-          // Assign based on group name patterns or default to Expenses
-          if (updated.name && (updated.name.toLowerCase().includes('income') || 
-                               updated.name.toLowerCase().includes('investment') || 
-                               updated.name.toLowerCase().includes('savings') ||
-                               updated.name.toLowerCase().includes('épargne') ||
-                               updated.name.toLowerCase().includes('investissement'))) {
-            updated.transactionTypeId = 'CAT_001'; // Income
-          } else {
-            updated.transactionTypeId = 'CAT_002'; // Expenses (default)
-          }
-          migrationNeeded = true;
-        }
-        
-        return updated;
-      });
-      
-      // Save if migration was needed
-      if (migrationNeeded) {
-        console.log('Migrated transaction groups to include order field and transactionTypeId');
-        this.saveTableToWorkbook('transaction_groups');
-      }
-    }
-  }
-
-  // Migration method to update default account (ACC001) name and balance
-  migrateDefaultAccount() {
-    if (this.tables.accounts && Array.isArray(this.tables.accounts)) {
-      const defaultAccount = this.tables.accounts.find(account => account.id === 'ACC001');
-      if (defaultAccount) {
-        let migrationNeeded = false;
-        
-        // Update name if needed
-        if (defaultAccount.name === 'Cash' || defaultAccount.name === 'Espèces') {
-          console.log('Migrating default account (ACC001) name from "' + defaultAccount.name + '" to "Default Account"');
-          defaultAccount.name = 'Default Account';
-          migrationNeeded = true;
-        }
-        
-        // Reset balance to 0
-        if (defaultAccount.balance !== 0) {
-          console.log('Migrating default account (ACC001) balance from ' + defaultAccount.balance + ' to 0');
-          defaultAccount.balance = 0;
-          migrationNeeded = true;
-        }
-        
-        // Reset base currency value to 0
-        if (defaultAccount.baseCurrencyValue !== 0) {
-          console.log('Migrating default account (ACC001) base currency value from ' + defaultAccount.baseCurrencyValue + ' to 0');
-          defaultAccount.baseCurrencyValue = 0;
-          migrationNeeded = true;
-        }
-        
-        if (migrationNeeded) {
-          this.saveTableToWorkbook('accounts');
-        }
-      }
-    }
-  }
-
-  // Migration method to update transaction type default accounts to ACC001
-  migrateTransactionTypeAccounts() {
-    if (this.tables.transaction_types && Array.isArray(this.tables.transaction_types)) {
-      let migrationNeeded = false;
-      
-      // Update CAT_001, CAT_002, and CAT_004 to use ACC001 as defaultAccountId
-      const categoriesToUpdate = ['CAT_001', 'CAT_002', 'CAT_004'];
-      
-      categoriesToUpdate.forEach(categoryId => {
-        const category = this.tables.transaction_types.find(cat => cat.id === categoryId);
-        if (category && category.defaultAccountId !== 'ACC001') {
-          console.log(`Migrating transaction type ${categoryId} default account from ${category.defaultAccountId} to ACC001`);
-          category.defaultAccountId = 'ACC001';
-          migrationNeeded = true;
-        }
-      });
-      
-      // For CAT_003 (Transfer), we need to also update destinationAccountId if it's pointing to a removed account
-      const transferCategory = this.tables.transaction_types.find(cat => cat.id === 'CAT_003');
-      if (transferCategory) {
-        // Only update if pointing to removed accounts (ACC002, ACC003, etc.)
-        if (transferCategory.defaultAccountId && transferCategory.defaultAccountId !== 'ACC001') {
-          console.log(`Migrating CAT_003 default account from ${transferCategory.defaultAccountId} to ACC001`);
-          transferCategory.defaultAccountId = 'ACC001';
-          migrationNeeded = true;
-        }
-        if (transferCategory.destinationAccountId && transferCategory.destinationAccountId !== 'ACC001') {
-          console.log(`Migrating CAT_003 destination account from ${transferCategory.destinationAccountId} to ACC001`);
-          transferCategory.destinationAccountId = 'ACC001';
-          migrationNeeded = true;
-        }
-      }
-      
-      if (migrationNeeded) {
-        this.saveTableToWorkbook('transaction_types');
-        console.log('Migration completed: transaction type accounts updated to ACC001');
-      }
-    }
-  }
-
-  // Migration method to remove all accounts except ACC001
-  migrateToSingleAccount() {
-    if (this.tables.accounts && Array.isArray(this.tables.accounts)) {
-      const initialCount = this.tables.accounts.length;
-      
-      // Check if we have more than just ACC001
-      if (initialCount > 1) {
-        // Check if any non-ACC001 accounts are used in transactions
-        const nonDefaultAccounts = this.tables.accounts.filter(account => account.id !== 'ACC001');
-        let hasTransactions = false;
-        
-        if (this.tables.transactions && Array.isArray(this.tables.transactions)) {
-          hasTransactions = this.tables.transactions.some(transaction => 
-            nonDefaultAccounts.some(acc => 
-              transaction.accountId === acc.id ||
-              transaction.destinationAccountId === acc.id
-            )
-          );
-        }
-        
-        if (!hasTransactions) {
-          console.log(`Migrating database to single account: removing ${initialCount - 1} accounts, keeping only ACC001`);
-          
-          // Keep only ACC001
-          this.tables.accounts = this.tables.accounts.filter(account => account.id === 'ACC001');
-          
-          // Ensure ACC001 exists and has correct properties
-          if (this.tables.accounts.length === 0) {
-            this.tables.accounts.push({
-              id: 'ACC001',
-              name: 'Default Account',
-              accountTypeId: 'ACCT_TYPE_001',
-              balance: 0,
-              currencyId: 'CUR_001',
-              baseCurrencyValue: 0,
-              description: 'Default account for transactions',
-              includeInOverview: true,
-              isActive: true,
-              createdAt: new Date().toISOString(),
-              lastUpdated: new Date().toISOString()
-            });
-          }
-          
-          this.saveTableToWorkbook('accounts');
-          console.log('Migration completed: database now has only ACC001');
-        } else {
-          console.log('Migration skipped: other accounts are referenced in transactions');
-        }
-      }
-    }
-  }
-
-  // Migration method to remove all subcategories
-  migrateRemoveAllSubcategories() {
-    if (this.tables.subcategories && Array.isArray(this.tables.subcategories)) {
-      const initialCount = this.tables.subcategories.length;
-      
-      if (initialCount > 0) {
-        console.log(`Migrating database: removing all ${initialCount} subcategories`);
-        this.tables.subcategories = [];
-        this.saveTableToWorkbook('subcategories');
-        console.log('Migration completed: all subcategories removed');
-      }
-    }
-  }
-
-  // Migration method to initialize subcategories if they don't exist
-  migrateInitializeSubcategories() {
-    if (!this.tables.subcategories || !Array.isArray(this.tables.subcategories)) {
-      this.tables.subcategories = [];
-    }
+  // Get current balance (calculated from initial balance + transactions)
+  getCurrentBalance(accountId) {
+    const account = this.tables.accounts.find(acc => acc.id === accountId);
+    if (!account) return 0;
     
-    if (this.tables.subcategories.length === 0) {
-      console.log('Migrating database: initializing subcategories');
-      
-      // Determine language based on existing data
-      let language = 'en';
-      if (this.tables.transaction_groups && this.tables.transaction_groups.length > 0) {
-        const firstGroup = this.tables.transaction_groups[0];
-        // Check if French name pattern exists
-        if (firstGroup.name && (firstGroup.name.includes('Dépenses') || firstGroup.name.includes('Essentielles'))) {
-          language = 'fr';
-        }
-      }
-      
-      // Initialize subcategories with appropriate language
-      this.tables.subcategories = this.generateSubcategories(language);
-      this.saveTableToWorkbook('subcategories');
-      console.log(`Migration completed: initialized ${this.tables.subcategories.length} subcategories in ${language}`);
-    }
+    return parseFloat(account.balance) || 0;
   }
-
-  // Migration method to reorder transaction types (put CAT_002 Expenses first)
-  migrateReorderTransactionTypes() {
-    if (!this.tables.transaction_types || !Array.isArray(this.tables.transaction_types)) {
-      return;
-    }
+  
+  // Get initial balance (user-set starting balance)
+  getInitialBalance(accountId) {
+    const account = this.tables.accounts.find(acc => acc.id === accountId);
+    if (!account) return 0;
     
-    // Check if CAT_002 is already first
-    if (this.tables.transaction_types.length > 0 && this.tables.transaction_types[0].id === 'CAT_002') {
-      return; // Already in correct order
-    }
-    
-    // Find CAT_002 (Expenses)
-    const expensesIndex = this.tables.transaction_types.findIndex(type => type.id === 'CAT_002');
-    
-    if (expensesIndex > 0) { // Found and not already first
-      console.log('Migrating database: reordering transaction types to put Expenses (CAT_002) first');
-      
-      // Remove CAT_002 from current position
-      const expensesType = this.tables.transaction_types.splice(expensesIndex, 1)[0];
-      
-      // Insert CAT_002 at the beginning
-      this.tables.transaction_types.unshift(expensesType);
-      
-      this.saveTableToWorkbook('transaction_types');
-      console.log('Migration completed: CAT_002 (Expenses) moved to first position');
-    }
-  }
-
-  // Migration method to update transaction groups (GRP_003 and GRP_005)
-  migrateRemoveSpecificTransactionGroups() {
-    if (this.tables.transaction_groups && Array.isArray(this.tables.transaction_groups)) {
-      let migrationNeeded = false;
-      
-      // Update existing GRP_003 to new Income-focused version if it exists
-      const grp003 = this.tables.transaction_groups.find(group => group.id === 'GRP_003');
-      if (grp003) {
-        // Check if it's the old expenses-focused version
-        if (grp003.transactionTypeId === 'CAT_002' || grp003.description.includes('expenses')) {
-          console.log('Migrating GRP_003 from expenses to income focus');
-          grp003.name = 'Professional & Business';
-          grp003.description = 'Work and business related income';
-          grp003.transactionTypeId = 'CAT_001'; // Income
-          migrationNeeded = true;
-        }
-      } else {
-        // Add the new GRP_003 if it doesn't exist
-        console.log('Adding new GRP_003 Professional & Business income group');
-        this.tables.transaction_groups.push({
-          id: 'GRP_003',
-          name: 'Professional & Business',
-          description: 'Work and business related income',
-          color: '#eab308',
-          isActive: true,
-          transactionTypeId: 'CAT_001', // Income
-          createdAt: new Date().toISOString()
-        });
-        migrationNeeded = true;
-      }
-      
-      // Update existing GRP_005 to new Transfer-focused version if it exists and is old version
-      const grp005 = this.tables.transaction_groups.find(group => group.id === 'GRP_005');
-      if (grp005) {
-        // Check if it's the old health/wellness version
-        if (grp005.name === 'Health & Wellness' || grp005.transactionTypeId === 'CAT_002') {
-          console.log('Migrating GRP_005 from Health & Wellness to Bank Transfer');
-          grp005.name = 'Bank Transfer';
-          grp005.description = 'Internal bank transfers';
-          grp005.color = '#2196F3';
-          grp005.transactionTypeId = 'CAT_003'; // Transfer
-          migrationNeeded = true;
-        }
-      } else {
-        // Add the new GRP_005 if it doesn't exist
-        console.log('Adding new GRP_005 Bank Transfer group');
-        this.tables.transaction_groups.push({
-          id: 'GRP_005',
-          name: 'Bank Transfer',
-          description: 'Internal bank transfers',
-          color: '#2196F3',
-          isActive: true,
-          transactionTypeId: 'CAT_003', // Transfer
-          createdAt: new Date().toISOString()
-        });
-        migrationNeeded = true;
-      }
-      
-      // Add GRP_006 if it doesn't exist
-      const grp006 = this.tables.transaction_groups.find(group => group.id === 'GRP_006');
-      if (!grp006) {
-        console.log('Adding new GRP_006 Digital Assets group');
-        this.tables.transaction_groups.push({
-          id: 'GRP_006',
-          name: 'Digital Assets',
-          description: 'Crypto related investments',
-          color: '#9C27B0',
-          isActive: true,
-          transactionTypeId: 'CAT_004', // Investment
-          createdAt: new Date().toISOString()
-        });
-        migrationNeeded = true;
-      }
-      
-      if (migrationNeeded) {
-        this.saveTableToWorkbook('transaction_groups');
-        console.log('Migration completed: transaction groups updated');
-      }
-    }
-  }
-
-  migrateTransactionFields() {
-    if (this.tables.transactions && Array.isArray(this.tables.transactions)) {
-      let migrationNeeded = false;
-      
-      console.log(`Checking ${this.tables.transactions.length} transactions for missing fields...`);
-      
-      this.tables.transactions = this.tables.transactions.map(transaction => {
-        let updated = { ...transaction };
-        let transactionUpdated = false;
-        
-        // Add missing currencyId field (default to base currency)
-        if (updated.currencyId === undefined || updated.currencyId === null) {
-          updated.currencyId = 'CUR_001'; // Default to EUR (base currency)
-          transactionUpdated = true;
-        }
-        
-        // Add missing exchangeRate field
-        if (updated.exchangeRate === undefined || updated.exchangeRate === null) {
-          updated.exchangeRate = 1.0; // Default to 1.0 for base currency
-          transactionUpdated = true;
-        }
-        
-        // Add missing categoryId field (try to derive from subcategory if possible)
-        if (updated.categoryId === undefined || updated.categoryId === null) {
-          if (updated.subcategoryId) {
-            // Try to find the category through subcategory -> transaction group -> transaction type
-            const subcategory = this.tables.subcategories?.find(sub => sub.id === updated.subcategoryId);
-            if (subcategory && subcategory.groupId) {
-              const group = this.tables.transaction_groups?.find(grp => grp.id === subcategory.groupId);
-              if (group && group.transactionTypeId) {
-                updated.categoryId = group.transactionTypeId;
-                transactionUpdated = true;
-              }
-            }
-          }
-          
-          // If we still don't have categoryId, default based on account type or amount
-          if (!updated.categoryId) {
-            // Default to Expenses (CAT_002) - most common transaction type
-            updated.categoryId = 'CAT_002';
-            transactionUpdated = true;
-          }
-        }
-        
-        // Add missing payer field
-        if (updated.payer === undefined) {
-          updated.payer = null;
-          transactionUpdated = true;
-        }
-        
-        // Add missing payee field  
-        if (updated.payee === undefined) {
-          updated.payee = null;
-          transactionUpdated = true;
-        }
-        
-        // Add missing payerId field
-        if (updated.payerId === undefined) {
-          updated.payerId = null;
-          transactionUpdated = true;
-        }
-        
-        // Add missing payeeId field
-        if (updated.payeeId === undefined) {
-          updated.payeeId = null;
-          transactionUpdated = true;
-        }
-        
-        if (transactionUpdated) {
-          migrationNeeded = true;
-        }
-        
-        return updated;
-      });
-      
-      if (migrationNeeded) {
-        this.saveTableToWorkbook('transactions');
-        console.log('Migration completed: transaction fields updated with missing currencyId, categoryId, payer/payee fields');
-      } else {
-        console.log('No transaction field migration needed');
-      }
-    }
+    return parseFloat(account.initialBalance) || 0;
   }
 
   // Payees CRUD methods
@@ -3093,54 +2865,38 @@ class RelationalDatabase {
     return newPayee;
   }
 
+  getPayees() {
+    return this.tables.payees || [];
+  }
+
+  getActivePayees() {
+    return this.getPayees().filter(payee => payee.isActive !== false);
+  }
+
   updatePayee(id, payeeData) {
-    // Initialize payees table if it doesn't exist
-    if (!this.tables.payees) {
-      this.tables.payees = [];
-    }
-    
     const payeeIndex = this.tables.payees.findIndex(payee => payee.id === id);
     if (payeeIndex === -1) {
       throw new Error(`Payee with id ${id} not found`);
     }
-
     const updatedPayee = {
       ...this.tables.payees[payeeIndex],
       ...payeeData,
-      id: id // Ensure ID doesn't change
+      id: id
     };
-
     this.tables.payees[payeeIndex] = updatedPayee;
     this.saveTableToWorkbook('payees');
     return updatedPayee;
   }
 
   deletePayee(id) {
-    // Initialize payees table if it doesn't exist
-    if (!this.tables.payees) {
-      this.tables.payees = [];
-    }
-    
     const payeeIndex = this.tables.payees.findIndex(payee => payee.id === id);
     if (payeeIndex === -1) {
       throw new Error(`Payee with id ${id} not found`);
     }
-
-    const deletedPayee = this.tables.payees.splice(payeeIndex, 1)[0];
+    const deletedPayee = this.tables.payees[payeeIndex];
+    this.tables.payees.splice(payeeIndex, 1);
     this.saveTableToWorkbook('payees');
     return deletedPayee;
-  }
-
-  getPayees() {
-    // Initialize payees table if it doesn't exist
-    if (!this.tables.payees) {
-      this.tables.payees = [];
-    }
-    return this.tables.payees;
-  }
-
-  getActivePayees() {
-    return this.getPayees().filter(payee => payee.isActive);
   }
 
   // Payers CRUD methods
@@ -3150,7 +2906,7 @@ class RelationalDatabase {
       this.tables.payers = [];
     }
     
-    const id = this.generateId('PAYER');
+    const id = this.generateId('PAY');
     const newPayer = {
       id,
       name: payerData.name,
@@ -3163,54 +2919,38 @@ class RelationalDatabase {
     return newPayer;
   }
 
+  getPayers() {
+    return this.tables.payers || [];
+  }
+
+  getActivePayers() {
+    return this.getPayers().filter(payer => payer.isActive !== false);
+  }
+
   updatePayer(id, payerData) {
-    // Initialize payers table if it doesn't exist
-    if (!this.tables.payers) {
-      this.tables.payers = [];
-    }
-    
     const payerIndex = this.tables.payers.findIndex(payer => payer.id === id);
     if (payerIndex === -1) {
       throw new Error(`Payer with id ${id} not found`);
     }
-
     const updatedPayer = {
       ...this.tables.payers[payerIndex],
       ...payerData,
-      id: id // Ensure ID doesn't change
+      id: id
     };
-
     this.tables.payers[payerIndex] = updatedPayer;
     this.saveTableToWorkbook('payers');
     return updatedPayer;
   }
 
   deletePayer(id) {
-    // Initialize payers table if it doesn't exist
-    if (!this.tables.payers) {
-      this.tables.payers = [];
-    }
-    
     const payerIndex = this.tables.payers.findIndex(payer => payer.id === id);
     if (payerIndex === -1) {
       throw new Error(`Payer with id ${id} not found`);
     }
-
-    const deletedPayer = this.tables.payers.splice(payerIndex, 1)[0];
+    const deletedPayer = this.tables.payers[payerIndex];
+    this.tables.payers.splice(payerIndex, 1);
     this.saveTableToWorkbook('payers');
     return deletedPayer;
-  }
-
-  getPayers() {
-    // Initialize payers table if it doesn't exist
-    if (!this.tables.payers) {
-      this.tables.payers = [];
-    }
-    return this.tables.payers;
-  }
-
-  getActivePayers() {
-    return this.getPayers().filter(payer => payer.isActive);
   }
 }
 

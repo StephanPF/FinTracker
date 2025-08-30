@@ -1233,6 +1233,18 @@ body {
 /* Transaction amount color styling */
 .transaction-amount {
   font-weight: 600 !important;
+  text-align: right !important;
+}
+
+/* Hide number input spinner arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* Ensure transaction amount color overrides default table styling */

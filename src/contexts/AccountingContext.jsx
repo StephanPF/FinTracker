@@ -83,23 +83,28 @@ export const AccountingProvider = ({ children }) => {
 
   const updateStateFromDatabase = () => {
     // Ensure all tables have workbooks initialized (including new tables like payers)
-    database.saveAllTablesToWorkbooks();
+    if (database.saveAllTablesToWorkbooks) {
+      database.saveAllTablesToWorkbooks();
+    }
     
-    setAccounts(database.getTable('accounts'));
-    setTransactions(database.getTable('transactions'));
-    setTags(database.getTable('tags'));
-    setProducts(database.getTable('tags'));
-    setTodos(database.getTable('todos'));
-    setPayees(database.getTable('payees'));
-    setPayers(database.getTable('payers'));
-    setCategories(database.getCategories());
-    setTransactionGroups(database.getTransactionGroups());
-    setSubcategories(database.getSubcategories());
-    setCurrencies(database.getTable('currencies'));
-    setExchangeRates(database.getTable('exchange_rates'));
-    setCurrencySettings(database.getTable('currency_settings'));
-    setUserPreferences(database.getTable('user_preferences'));
-    setApiSettings(database.getTable('api_settings'));
+    const accountsData = database.getTable('accounts');
+    
+    // Create new arrays to ensure React detects changes
+    setAccounts([...accountsData]);
+    setTransactions([...database.getTable('transactions')]);
+    setTags([...database.getTable('tags')]);
+    setProducts([...database.getTable('tags')]);
+    setTodos([...database.getTable('todos')]);
+    setPayees([...database.getTable('payees')]);
+    setPayers([...database.getTable('payers')]);
+    setCategories([...database.getCategories()]);
+    setTransactionGroups([...database.getTransactionGroups()]);
+    setSubcategories([...database.getSubcategories()]);
+    setCurrencies([...database.getTable('currencies')]);
+    setExchangeRates([...database.getTable('exchange_rates')]);
+    setCurrencySettings([...database.getTable('currency_settings')]);
+    setUserPreferences([...database.getTable('user_preferences')]);
+    setApiSettings([...database.getTable('api_settings')]);
     setApiUsage(database.getTable('api_usage'));
     setDatabaseInfo(database.getTable('database_info'));
     
@@ -637,11 +642,23 @@ export const AccountingProvider = ({ children }) => {
   };
 
   const getAccountsWithTypes = () => {
-    return database.getAccountsWithTypes();
+    // Use reactive Context state instead of direct database call
+    const accountTypes = database.getAccountTypes();
+    return accounts.map(account => ({
+      ...account,
+      accountType: accountTypes.find(type => type.id === account.accountTypeId)
+    }));
   };
 
   const getActiveAccountsWithTypes = () => {
-    return database.getActiveAccountsWithTypes();
+    // Use reactive Context state instead of direct database call
+    const accountTypes = database.getAccountTypes();
+    return accounts
+      .filter(account => account.isActive)
+      .map(account => ({
+        ...account,
+        accountType: accountTypes.find(type => type.id === account.accountTypeId)
+      }));
   };
 
   // Category methods

@@ -28,6 +28,23 @@ const TransactionList = ({ limit }) => {
     return account ? account.name : t('unknownAccount');
   };
 
+  const getToAccountDisplay = (transaction) => {
+    // For new linked transactions (transfers), check if there's a linked transaction
+    if (transaction.linkedTransactionId && transaction.categoryId === 'CAT_003') {
+      const linkedTransaction = transactions.find(t => t.id === transaction.linkedTransactionId);
+      if (linkedTransaction) {
+        return getAccountName(linkedTransaction.accountId);
+      }
+    }
+    
+    // For old-style transfers or other transactions with destinationAccountId
+    if (transaction.destinationAccountId) {
+      return getAccountName(transaction.destinationAccountId);
+    }
+    
+    return '-';
+  };
+
   const getCategoryName = (categoryId) => {
     if (!categoryId) return '-';
     const category = categories.find(cat => cat.id === categoryId);
@@ -120,16 +137,44 @@ const TransactionList = ({ limit }) => {
   const formatAmountWithCurrency = (transaction) => {
     const currency = currencies.find(c => c.id === transaction.currencyId);
     
+    // Check if this should show as negative (expenses or transfer debits)
+    const isExpense = transaction.categoryId === 'CAT_002';
+    const isTransferDebit = transaction.categoryId === 'CAT_003' && transaction.linkedTransactionId && 
+      transaction.description && transaction.description.includes(' to ');
+    const shouldShowNegative = isExpense || isTransferDebit;
+    
     if (currency && exchangeRateService) {
-      const primaryAmount = exchangeRateService.formatAmount(transaction.amount || 0, currency.id);
+      let primaryAmount = exchangeRateService.formatAmount(transaction.amount || 0, currency.id);
       
-      // If not in base currency, also show converted amount
+      // Add minus sign for expenses and transfer debits
+      if (shouldShowNegative) {
+        primaryAmount = primaryAmount.startsWith('-') ? primaryAmount : '-' + primaryAmount;
+      }
+      
+      // If not in base currency, also show converted amount using stored exchange rate
       if (transaction.currencyId !== exchangeRateService.getBaseCurrencyId()) {
         const baseCurrency = currencies.find(c => c.id === exchangeRateService.getBaseCurrencyId());
-        const convertedAmount = exchangeRateService.formatAmount(
-          transaction.baseCurrencyAmount || transaction.amount || 0, 
+        
+        // Calculate base currency amount using the transaction's stored exchange rate
+        let baseCurrencyAmount = transaction.amount || 0;
+        if (transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
+          // Handle exchange rate as object or number
+          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
+            ? transaction.exchangeRate.rate 
+            : transaction.exchangeRate;
+          baseCurrencyAmount = (transaction.amount || 0) * rate;
+        }
+        
+        let convertedAmount = exchangeRateService.formatAmount(
+          baseCurrencyAmount, 
           baseCurrency?.id
         );
+        
+        // Add minus sign for expenses and transfer debits in converted amount too
+        if (shouldShowNegative) {
+          convertedAmount = convertedAmount.startsWith('-') ? convertedAmount : '-' + convertedAmount;
+        }
+        
         return (
           <div className="amount-with-conversion" style={{ color: 'inherit' }}>
             <div className="primary-amount" style={{ color: 'inherit' }}>{primaryAmount}</div>
@@ -142,12 +187,19 @@ const TransactionList = ({ limit }) => {
     
     // Use numberFormatService with the transaction's currency if available
     if (numberFormatService && transaction.currencyId) {
-      const formatted = numberFormatService.formatCurrency(transaction.amount || 0, transaction.currencyId);
+      let formatted = numberFormatService.formatCurrency(transaction.amount || 0, transaction.currencyId);
+      
+      // Add minus sign for expenses and transfer debits
+      if (shouldShowNegative) {
+        formatted = formatted.startsWith('-') ? formatted : '-' + formatted;
+      }
+      
       return formatted;
     }
     
     // Fallback: basic formatting without currency symbol
-    return (transaction.amount || 0).toFixed(2);
+    const basicAmount = (transaction.amount || 0).toFixed(2);
+    return shouldShowNegative ? (basicAmount.startsWith('-') ? basicAmount : '-' + basicAmount) : basicAmount;
   };
 
   const filteredTransactions = useMemo(() => {
@@ -156,19 +208,12 @@ const TransactionList = ({ limit }) => {
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(transaction => {
-        const customer = transaction.customerId ? customers.find(c => c.id === transaction.customerId) : null;
-        const vendor = transaction.vendorId ? vendors.find(v => v.id === transaction.vendorId) : null;
-        const tag = transaction.productId ? tags.find(t => t.id === transaction.productId) : null;
-        
         return transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
           transaction.id.toString().includes(searchTerm) ||
           getAccountName(transaction.debitAccountId).toLowerCase().includes(searchTerm.toLowerCase()) ||
           getAccountName(transaction.creditAccountId).toLowerCase().includes(searchTerm.toLowerCase()) ||
           getCategoryName(transaction.categoryId).toLowerCase().includes(searchTerm.toLowerCase()) ||
           getSubcategoryName(transaction.subcategoryId).toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (customer && customer.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (vendor && vendor.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (tag && tag.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (transaction.reference && transaction.reference.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (transaction.notes && transaction.notes.toLowerCase().includes(searchTerm.toLowerCase()));
       });
@@ -433,26 +478,30 @@ const TransactionList = ({ limit }) => {
           <thead>
             <tr>
               <th>{t('date')}</th>
+              <th>Type</th>
               <th>{t('description')}</th>
-              <th>Transaction Type</th>
-              <th>Category</th>
+              <th>Account</th>
+              <th>To Account</th>
               <th>Payee/Payer</th>
-              <th>{t('amount')}</th>
-              <th style={{ width: '50px' }}>Actions</th>
+              <th>Reference</th>
+              <th style={{ width: '100px', textAlign: 'right' }}>{t('amount')}</th>
+              <th style={{ width: '50px', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {displayTransactions.map(transaction => (
               <tr key={transaction.id}>
                 <td>{formatDate(transaction.date)}</td>
+                <td>{getTransactionType(transaction)}</td>
                 <td>
                   <div className="transaction-description">
                     {transaction.description}
                   </div>
                 </td>
-                <td>{getTransactionType(transaction)}</td>
-                <td>{getSubcategoryName(transaction.subcategoryId)}</td>
+                <td>{getAccountName(transaction.accountId)}</td>
+                <td>{getToAccountDisplay(transaction)}</td>
                 <td>{getPayeePayerDisplay(transaction)}</td>
+                <td>{transaction.reference || '-'}</td>
                 <td 
                   className="transaction-amount" 
                   style={{ 
@@ -465,7 +514,7 @@ const TransactionList = ({ limit }) => {
                     {formatAmountWithCurrency(transaction)}
                   </div>
                 </td>
-                <td>
+                <td style={{ textAlign: 'center' }}>
                   <div className="transaction-actions">
                     <button 
                       className="action-menu-btn"
@@ -540,7 +589,38 @@ const TransactionList = ({ limit }) => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Exchange Rate:</span>
-                  <span className="detail-value">{selectedTransaction.exchangeRate || '-'}</span>
+                  <span className="detail-value">
+                    {(() => {
+                      // Try multiple possible exchange rate fields
+                      const rate = selectedTransaction.exchangeRate || 
+                                   selectedTransaction.exchange_rate ||
+                                   (selectedTransaction.currencyId === exchangeRateService?.getBaseCurrencyId() ? 1.0 : null);
+                      
+                      if (rate === null || rate === undefined) {
+                        // Try to get current exchange rate for the currency
+                        if (selectedTransaction.currencyId && exchangeRateService) {
+                          const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+                          if (selectedTransaction.currencyId === baseCurrencyId) {
+                            return '1.0000';
+                          } else {
+                            try {
+                              const currentRate = exchangeRateService.getExchangeRate(selectedTransaction.currencyId, baseCurrencyId);
+                              return currentRate ? Number(currentRate).toFixed(4) : 'N/A';
+                            } catch (error) {
+                              return 'N/A';
+                            }
+                          }
+                        }
+                        return '-';
+                      }
+                      
+                      if (typeof rate === 'object' && rate.rate !== undefined) {
+                        return Number(rate.rate).toFixed(4);
+                      }
+                      
+                      return Number(rate).toFixed(4);
+                    })()}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Account ID:</span>
@@ -557,18 +637,6 @@ const TransactionList = ({ limit }) => {
                 <div className="detail-row">
                   <span className="detail-label">Category ID:</span>
                   <span className="detail-value">{selectedTransaction.categoryId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Customer ID:</span>
-                  <span className="detail-value">{selectedTransaction.customerId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Vendor ID:</span>
-                  <span className="detail-value">{selectedTransaction.vendorId || '-'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Product ID:</span>
-                  <span className="detail-value">{selectedTransaction.productId || '-'}</span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Payer:</span>
@@ -616,7 +684,7 @@ const TransactionList = ({ limit }) => {
               }
             }}
           >
-            👁️ View
+            👁️ View details
           </button>
         </div>,
         document.body

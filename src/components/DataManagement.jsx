@@ -479,12 +479,31 @@ const DataManagement = () => {
         <input
           type="number"
           step="0.01"
-          value={formData.balance || ''}
-          onChange={(e) => handleInputChange('balance', parseFloat(e.target.value) || 0)}
+          value={formData.initialBalance !== undefined ? formData.initialBalance : formData.balance || ''}
+          onChange={(e) => handleInputChange('initialBalance', parseFloat(e.target.value) || 0)}
           style={{ textAlign: 'left' }}
           className="no-spinners"
         />
+        <small style={{ color: '#6b7280', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
+          This is the starting balance you set for this account
+        </small>
       </div>
+      {editingId && (
+        <div className="form-group">
+          <label>Current Balance</label>
+          <input
+            type="number"
+            step="0.01"
+            value={formData.balance || ''}
+            disabled
+            style={{ textAlign: 'left', backgroundColor: '#f9fafb', cursor: 'not-allowed' }}
+            className="no-spinners"
+          />
+          <small style={{ color: '#6b7280', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
+            This balance is calculated automatically based on transactions
+          </small>
+        </div>
+      )}
       <div className="form-actions">
         <button type="submit" className="btn-primary">
           {editingId ? t('updateAccount') : t('addAccount')}
@@ -1041,8 +1060,8 @@ const DataManagement = () => {
               }
             },
             { 
-              key: 'balance', 
-              label: t('balance'), 
+              key: 'initialBalance', 
+              label: 'Initial Balance', 
               render: (value, row) => {
                 const currency = currencies.find(c => c.id === row.currencyId);
                 if (currency && exchangeRateService) {
@@ -1053,6 +1072,33 @@ const DataManagement = () => {
                   return numberFormatService.formatCurrency(value || 0, row.currencyId);
                 }
                 return (value || 0).toFixed(2);
+              }
+            },
+            { 
+              key: 'balance', 
+              label: 'Current Balance', 
+              render: (value, row) => {
+                const currency = currencies.find(c => c.id === row.currencyId);
+                const currentBalance = value || 0;
+                const initialBalance = row.initialBalance || 0;
+                
+                // Style based on whether current balance is higher or lower than initial
+                const isPositive = currentBalance >= initialBalance;
+                const style = {
+                  color: isPositive ? '#059669' : '#dc2626',
+                  fontWeight: '600'
+                };
+                
+                let formattedAmount;
+                if (currency && exchangeRateService) {
+                  formattedAmount = exchangeRateService.formatAmount(currentBalance, currency.id);
+                } else if (numberFormatService && row.currencyId) {
+                  formattedAmount = numberFormatService.formatCurrency(currentBalance, row.currencyId);
+                } else {
+                  formattedAmount = currentBalance.toFixed(2);
+                }
+                
+                return <span style={style}>{formattedAmount}</span>;
               }
             },
             {

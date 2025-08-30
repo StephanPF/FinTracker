@@ -34,7 +34,6 @@ const TransactionForm = ({ onSuccess }) => {
     destinationAccountId: '', // Destination account (for transfers)
     currencyId: 'CUR_001', // Default to EUR (base currency)
     exchangeRate: 1.0,
-    productId: '',
     reference: '',
     notes: '',
     subcategoryId: '',
@@ -78,10 +77,29 @@ const TransactionForm = ({ onSuccess }) => {
       setSelectedTransactionType(firstTransactionType);
       
       // Set default account and destination account for the initial transaction type
+      const defaultAccount = accountsWithTypes.find(acc => acc.id === firstTransactionType.defaultAccountId);
+      const currencyId = defaultAccount?.currencyId || 'CUR_001';
+      
+      // Update exchange rate based on the default account's currency
+      let exchangeRate = 1.0;
+      if (exchangeRateService) {
+        const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+        if (currencyId === baseCurrencyId) {
+          exchangeRate = 1.0;
+        } else {
+          const rateData = exchangeRateService.getExchangeRateWithFallback(currencyId, baseCurrencyId, 1.0);
+          exchangeRate = typeof rateData === 'object' && rateData.rate !== undefined 
+            ? rateData.rate 
+            : rateData;
+        }
+      }
+      
       setFormData(prev => ({
         ...prev,
         accountId: firstTransactionType.defaultAccountId || '',
         destinationAccountId: firstTransactionType.destinationAccountId || '',
+        currencyId: currencyId,
+        exchangeRate: exchangeRate,
         description: firstTransactionType.name
       }));
       
@@ -198,11 +216,50 @@ const TransactionForm = ({ onSuccess }) => {
       setSelectedCategory(selectedSubcategory?.category || null);
     }
     
+    // Handle account selection and update currency
+    if (name === 'accountId') {
+      const selectedAccount = accountsWithTypes.find(acc => acc.id === value);
+      const currencyId = selectedAccount?.currencyId || 'CUR_001';
+      
+      // Update exchange rate based on the account's currency
+      // For same currency as base, rate is 1.0
+      // For other currencies, get the current market rate for that currency
+      let exchangeRate = 1.0;
+      if (exchangeRateService && currencyId) {
+        const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+        if (currencyId === baseCurrencyId) {
+          exchangeRate = 1.0;
+        } else {
+          // Get the exchange rate for this currency pair
+          const rateData = exchangeRateService.getExchangeRateWithFallback(currencyId, baseCurrencyId, 1.0);
+          // Extract just the rate value if it's an object, otherwise use as-is
+          exchangeRate = typeof rateData === 'object' && rateData.rate !== undefined 
+            ? rateData.rate 
+            : rateData;
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        currencyId: currencyId,
+        exchangeRate: exchangeRate
+      }));
+      return;
+    }
+    
     // Handle currency changes and update exchange rate
     if (name === 'currencyId' && exchangeRateService) {
       const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
-      const exchangeRate = value === baseCurrencyId ? 1.0 : 
-        exchangeRateService.getExchangeRateWithFallback(value, baseCurrencyId, 1.0);
+      let exchangeRate = 1.0;
+      if (value === baseCurrencyId) {
+        exchangeRate = 1.0;
+      } else {
+        const rateData = exchangeRateService.getExchangeRateWithFallback(value, baseCurrencyId, 1.0);
+        exchangeRate = typeof rateData === 'object' && rateData.rate !== undefined 
+          ? rateData.rate 
+          : rateData;
+      }
       
       setFormData(prev => ({
         ...prev,
@@ -239,6 +296,14 @@ const TransactionForm = ({ onSuccess }) => {
     if (selectedTransactionType && selectedTransactionType.name === 'Expenses' && !formData.payee) {
       missing.push('payee');
     }
+    // For Investment - SELL transactions, require payer
+    if (selectedTransactionType && selectedTransactionType.name === 'Investment - SELL' && !formData.payer) {
+      missing.push('payer');
+    }
+    // For Investment - BUY transactions, require payee
+    if (selectedTransactionType && selectedTransactionType.name === 'Investment - BUY' && !formData.payee) {
+      missing.push('payee');
+    }
     
     if (missing.length > 0) {
       setMissingFields(missing);
@@ -252,6 +317,17 @@ const TransactionForm = ({ onSuccess }) => {
     if (formData.accountId === formData.destinationAccountId && selectedTransactionType && selectedTransactionType.name === 'Transfer') {
       setError(t('differentAccounts'));
       return;
+    }
+
+    // For Transfer transactions, validate that both accounts have the same currency
+    if (selectedTransactionType && selectedTransactionType.name === 'Transfer') {
+      const sourceAccount = accountsWithTypes.find(acc => acc.id === formData.accountId);
+      const destAccount = accountsWithTypes.find(acc => acc.id === formData.destinationAccountId);
+      
+      if (sourceAccount && destAccount && sourceAccount.currencyId !== destAccount.currencyId) {
+        setError('Transfer accounts must have the same currency');
+        return;
+      }
     }
 
     if (parseFloat(formData.amount) <= 0) {
@@ -279,6 +355,10 @@ const TransactionForm = ({ onSuccess }) => {
         // If payee doesn't exist, the database should handle creating a new one
       }
       
+      // Ensure currency is set based on selected account
+      const selectedAccount = accountsWithTypes.find(acc => acc.id === formData.accountId);
+      const finalCurrencyId = selectedAccount?.currencyId || formData.currencyId || 'CUR_001';
+      
       // Prepare transaction data with accountId and destinationAccountId (no debit/credit mapping)
       const transactionData = {
         ...formData,
@@ -286,6 +366,8 @@ const TransactionForm = ({ onSuccess }) => {
         // Use the form's account fields directly
         accountId: formData.accountId,
         destinationAccountId: formData.destinationAccountId,
+        // Ensure currency is properly set
+        currencyId: finalCurrencyId,
         // Include the selected transaction type as categoryId
         categoryId: selectedTransactionType?.id || null,
         payerId,
@@ -295,7 +377,48 @@ const TransactionForm = ({ onSuccess }) => {
         payee: formData.payee
       };
       
+      // Get exchange rate for account currency to base currency
+      if (exchangeRateService && transactionData.accountId) {
+        const selectedAccount = accountsWithTypes.find(acc => acc.id === transactionData.accountId);
+        const accountCurrency = selectedAccount?.currencyId;
+        const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+        
+        if (accountCurrency === baseCurrencyId) {
+          transactionData.exchangeRate = 1.0;
+        } else if (accountCurrency) {
+          const rateData = exchangeRateService.getExchangeRateWithFallback(
+            accountCurrency, 
+            baseCurrencyId, 
+            1.0
+          );
+          // Extract just the rate value if it's an object, otherwise use as-is
+          transactionData.exchangeRate = typeof rateData === 'object' && rateData.rate !== undefined 
+            ? rateData.rate 
+            : rateData;
+        } else {
+          transactionData.exchangeRate = 1.0;
+        }
+      } else {
+        transactionData.exchangeRate = 1.0;
+      }
+      
       await addTransaction(transactionData);
+      
+      // Reset form data with proper currency from the current transaction type's default account
+      const resetAccount = accountsWithTypes.find(acc => acc.id === selectedTransactionType?.defaultAccountId);
+      const resetCurrencyId = resetAccount?.currencyId || 'CUR_001';
+      let resetExchangeRate = 1.0;
+      if (exchangeRateService) {
+        const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+        if (resetCurrencyId === baseCurrencyId) {
+          resetExchangeRate = 1.0;
+        } else {
+          const rateData = exchangeRateService.getExchangeRateWithFallback(resetCurrencyId, baseCurrencyId, 1.0);
+          resetExchangeRate = typeof rateData === 'object' && rateData.rate !== undefined 
+            ? rateData.rate 
+            : rateData;
+        }
+      }
       
       setFormData({
         date: new Date().toISOString().split('T')[0],
@@ -303,11 +426,8 @@ const TransactionForm = ({ onSuccess }) => {
         amount: '',
         accountId: '',
         destinationAccountId: '',
-        currencyId: 'CUR_001',
-        exchangeRate: 1.0,
-        customerId: '',
-        vendorId: '',
-        productId: '',
+        currencyId: resetCurrencyId,
+        exchangeRate: resetExchangeRate,
         reference: '',
         notes: '',
         subcategoryId: '',
@@ -350,25 +470,44 @@ const TransactionForm = ({ onSuccess }) => {
     setSelectedTransactionGroup(firstGroup);
     
     // Set default account, destination account, description and clear selected subcategory when transaction type changes
+    const defaultAccount = accountsWithTypes.find(acc => acc.id === transactionType.defaultAccountId);
+    const currencyId = defaultAccount?.currencyId || 'CUR_001';
+    
+    // Update exchange rate based on the default account's currency
+    let exchangeRate = 1.0;
+    if (exchangeRateService) {
+      const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+      if (currencyId === baseCurrencyId) {
+        exchangeRate = 1.0;
+      } else {
+        const rateData = exchangeRateService.getExchangeRateWithFallback(currencyId, baseCurrencyId, 1.0);
+        exchangeRate = typeof rateData === 'object' && rateData.rate !== undefined 
+          ? rateData.rate 
+          : rateData;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       subcategoryId: '',
       accountId: transactionType.defaultAccountId || '',
       destinationAccountId: transactionType.destinationAccountId || '',
+      currencyId: currencyId,
+      exchangeRate: exchangeRate,
       description: isDescriptionUserModified ? prev.description : transactionType.name,
-      payee: transactionType.name !== 'Expenses' ? '' : prev.payee, // Clear payee if not Expenses
-      payer: transactionType.name !== 'Income' ? '' : prev.payer // Clear payer if not Income
+      payee: (transactionType.name !== 'Expenses' && transactionType.name !== 'Investment - BUY') ? '' : prev.payee, // Clear payee if not Expenses or Investment - BUY
+      payer: (transactionType.name !== 'Income' && transactionType.name !== 'Investment - SELL') ? '' : prev.payer // Clear payer if not Income or Investment - SELL
     }));
     setSelectedCategory(null);
     
-    // Clear payee input if not Expenses transaction type
-    if (transactionType.name !== 'Expenses') {
+    // Clear payee input if not Expenses or Investment - BUY transaction type
+    if (transactionType.name !== 'Expenses' && transactionType.name !== 'Investment - BUY') {
       setPayeeInput('');
       setShowPayeeDropdown(false);
     }
     
-    // Clear payer input if not Income transaction type
-    if (transactionType.name !== 'Income') {
+    // Clear payer input if not Income or Investment - SELL transaction type
+    if (transactionType.name !== 'Income' && transactionType.name !== 'Investment - SELL') {
       setPayerInput('');
       setShowPayerDropdown(false);
     }
@@ -623,7 +762,7 @@ const TransactionForm = ({ onSuccess }) => {
                 className={`${!isDescriptionUserModified && formData.description ? 'default-description' : ''} ${missingFields.includes('description') ? 'field-error' : ''}`.trim()}
               />
             </div>
-            {selectedTransactionType.name === 'Expenses' && (
+            {(selectedTransactionType.name === 'Expenses' || selectedTransactionType.name === 'Investment - BUY') && (
               <div className="payee-field">
                 <div className="payee-autocomplete-container">
                   <input
@@ -634,7 +773,7 @@ const TransactionForm = ({ onSuccess }) => {
                     onChange={handlePayeeInputChange}
                     onBlur={handlePayeeInputBlur}
                     onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
-                    placeholder="👤 Start typing payee name... *"
+                    placeholder={selectedTransactionType.name === 'Investment - BUY' ? "🏢 Start typing broker/exchange name... *" : "👤 Start typing payee name... *"}
                     className={missingFields.includes('payee') ? 'field-error' : ''}
                   />
                   
@@ -654,7 +793,7 @@ const TransactionForm = ({ onSuccess }) => {
                 </div>
               </div>
             )}
-            {selectedTransactionType.name === 'Income' && (
+            {(selectedTransactionType.name === 'Income' || selectedTransactionType.name === 'Investment - SELL') && (
               <div className="payee-field">
                 <div className="payee-autocomplete-container">
                   <input
@@ -665,7 +804,7 @@ const TransactionForm = ({ onSuccess }) => {
                     onChange={handlePayerInputChange}
                     onBlur={handlePayerInputBlur}
                     onFocus={() => payerInput.length > 0 && setShowPayerDropdown(true)}
-                    placeholder="💼 Start typing payer name... *"
+                    placeholder={selectedTransactionType.name === 'Investment - SELL' ? "🏢 Start typing broker/exchange name... *" : "💼 Start typing payer name... *"}
                     className={missingFields.includes('payer') ? 'field-error' : ''}
                   />
                   
