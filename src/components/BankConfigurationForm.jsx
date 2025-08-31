@@ -1,36 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useAccounting } from '../contexts/AccountingContext';
 import './BankConfigurationForm.css';
 
 const PRESET_BANKS = [
-  // Major US Banks
-  { name: 'Chase Bank', type: 'Major US Bank', csvFormat: 'Date,Description,Amount,Type,Balance' },
-  { name: 'Bank of America', type: 'Major US Bank', csvFormat: 'Date,Description,Amount,Running Bal.' },
-  { name: 'Wells Fargo', type: 'Major US Bank', csvFormat: 'Date,Amount,*,*,Description' },
-  { name: 'Citibank', type: 'Major US Bank', csvFormat: 'Date,Description,Debit,Credit,Balance' },
-  { name: 'US Bank', type: 'Major US Bank', csvFormat: 'Date,Name,Memo,Amount' },
-  
-  // Credit Unions
-  { name: 'Navy Federal', type: 'Credit Union', csvFormat: 'Date,Description,Amount,Balance' },
-  { name: 'USAA', type: 'Credit Union', csvFormat: 'Date,Description,Original Description,Amount,Type' },
-  { name: 'Alliant Credit Union', type: 'Credit Union', csvFormat: 'Date,Amount,Description' },
-  
-  // Online Banks
-  { name: 'Ally Bank', type: 'Online Bank', csvFormat: 'Date,Time,Amount,Type,Description' },
-  { name: 'Capital One 360', type: 'Online Bank', csvFormat: 'Account Number,Date,Card No.,Description,Amount' },
-  { name: 'Marcus by Goldman Sachs', type: 'Online Bank', csvFormat: 'Date,Description,Amount,Balance' },
-  
   // Credit Cards
   { name: 'American Express', type: 'Credit Card', csvFormat: 'Date,Description,Card Member,Account #,Amount' },
-  { name: 'Discover Card', type: 'Credit Card', csvFormat: 'Trans. Date,Post Date,Description,Amount,Category' },
-  { name: 'Capital One Credit Card', type: 'Credit Card', csvFormat: 'Transaction Date,Posted Date,Card No.,Description,Category,Debit,Credit' },
-  
-  // Investment
-  { name: 'Fidelity', type: 'Investment', csvFormat: 'Run Date,Account,Action,Symbol,Security Description,Security Type,Quantity,Price ($),Commission ($),Fees ($),Accrued Interest ($),Amount ($),Settlement Date' },
-  { name: 'Vanguard', type: 'Investment', csvFormat: 'Trade Date,Process Date,Settle Date,Account Number,Transaction Type,Transaction Description,Investment Name,Symbol,Shares,Price,Total Amount' },
-  
-  // Fintech
-  { name: 'PayPal', type: 'Fintech', csvFormat: 'Date,Time,TimeZone,Name,Type,Status,Currency,Amount,Fee,Net' },
-  { name: 'Venmo', type: 'Fintech', csvFormat: 'ID,Datetime,Type,Status,Note,From,To,Amount (total),Amount (fee)' },
+  { name: 'Citibank', type: 'Major US Bank', csvFormat: 'Date,Description,Debit,Credit,Balance' },
   
   // Custom
   { name: 'Custom Configuration', type: 'Custom', csvFormat: 'Configure your own mapping' }
@@ -43,12 +18,37 @@ const SYSTEM_FIELDS = [
   { key: 'debit', label: 'Debit', required: false, description: 'Debit amount (separate column)' },
   { key: 'credit', label: 'Credit', required: false, description: 'Credit amount (separate column)' },
   { key: 'account', label: 'Account', required: false, description: 'Account number or name' },
+  { key: 'destinationAccountId', label: 'Destination Account', required: false, description: 'Destination account for transfers/investments' },
+  { key: 'destinationAmount', label: 'Destination Amount', required: false, description: 'Amount for destination account (investments)' },
   { key: 'reference', label: 'Reference', required: false, description: 'Transaction ID/reference' },
-  { key: 'category', label: 'Category', required: false, description: 'Transaction category' },
-  { key: 'balance', label: 'Balance', required: false, description: 'Running balance' },
-  { key: 'checkNumber', label: 'Check Number', required: false, description: 'Check number' },
-  { key: 'merchant', label: 'Merchant', required: false, description: 'Merchant/payee name' }
+  { key: 'transactionType', label: 'Transaction Type', required: false, description: 'Transaction type (Income, Expenses, Transfer, etc.)' },
+  { key: 'transactionGroup', label: 'Transaction Group', required: false, description: 'Transaction group within the type' },
+  { key: 'category', label: 'Category', required: false, description: 'Transaction category (legacy)' },
+  { key: 'subcategoryId', label: 'Subcategory', required: false, description: 'Transaction subcategory' },
+  { key: 'payee', label: 'Payee', required: false, description: 'Payee name (for expenses/investments)' },
+  { key: 'payer', label: 'Payer', required: false, description: 'Payer name (for income/investments)' },
+  { key: 'tag', label: 'Tag', required: false, description: 'Transaction tag' },
+  { key: 'notes', label: 'Notes', required: false, description: 'Additional transaction notes' }
 ];
+
+const CurrencySelect = ({ id, value, onChange }) => {
+  const { getActiveCurrencies } = useAccounting();
+  const activeCurrencies = getActiveCurrencies();
+
+  return (
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {activeCurrencies.map((currency) => (
+        <option key={currency.id} value={currency.code}>
+          {currency.code} - {currency.name}
+        </option>
+      ))}
+    </select>
+  );
+};
 
 const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => {
   const [formData, setFormData] = useState(initialData || {
@@ -70,6 +70,21 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
   const [csvColumns, setCsvColumns] = useState([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Initialize form when editing - extract CSV columns from existing field mappings
+  useEffect(() => {
+    if (isEditing && initialData && initialData.fieldMapping) {
+      // Extract all the CSV columns from existing mappings
+      const existingColumns = Object.values(initialData.fieldMapping).filter(Boolean);
+      // Remove duplicates and sort
+      const uniqueColumns = [...new Set(existingColumns)].sort();
+      
+      if (uniqueColumns.length > 0) {
+        setCsvColumns(uniqueColumns);
+        setCsvSample(uniqueColumns.join(','));
+      }
+    }
+  }, [isEditing, initialData]);
 
   const handlePresetChange = (presetName) => {
     setSelectedPreset(presetName);
@@ -160,7 +175,6 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
     <div className="bank-configuration-form">
       <div className="form-header">
         <h3>{isEditing ? 'Edit' : 'Add'} Bank Configuration</h3>
-        <p>Configure how to import CSV files from your bank</p>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -254,32 +268,83 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
         {/* Step 4: Field Mapping */}
         <div className="form-section">
           <h4>Step 4: Field Mapping</h4>
-          <p>Map CSV columns to transaction fields</p>
+          
+          {/* Mapping Progress Summary */}
+          {csvColumns.length > 0 && (
+            <div className="mapping-summary">
+              {(() => {
+                const totalFields = SYSTEM_FIELDS.length;
+                const mappedFields = SYSTEM_FIELDS.filter(field => 
+                  formData.fieldMapping[field.key] && formData.fieldMapping[field.key] !== ''
+                ).length;
+                const requiredFields = SYSTEM_FIELDS.filter(field => field.required).length;
+                const mappedRequired = SYSTEM_FIELDS.filter(field => 
+                  field.required && formData.fieldMapping[field.key] && formData.fieldMapping[field.key] !== ''
+                ).length;
+                
+                return (
+                  <div className="summary-stats">
+                    <div className="stat-item">
+                      <span className="stat-label">Total Mapped:</span>
+                      <span className="stat-value">{mappedFields}/{totalFields}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Required Mapped:</span>
+                      <span className={`stat-value ${mappedRequired === requiredFields ? 'complete' : 'incomplete'}`}>
+                        {mappedRequired}/{requiredFields}
+                      </span>
+                    </div>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${(mappedFields / totalFields) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
           
           <div className="field-mapping-grid">
-            {SYSTEM_FIELDS.map((field) => (
-              <div key={field.key} className="mapping-row">
-                <div className="field-info">
-                  <label className={field.required ? 'required' : ''}>
-                    {field.label}
-                    {field.required && ' *'}
-                  </label>
-                  <p className="field-description">{field.description}</p>
+            {SYSTEM_FIELDS.map((field) => {
+              const isMapped = formData.fieldMapping[field.key] && formData.fieldMapping[field.key] !== '';
+              const isRequired = field.required;
+              
+              return (
+                <div key={field.key} className={`mapping-row ${isMapped ? 'mapped' : 'unmapped'} ${isRequired && !isMapped ? 'required-unmapped' : ''}`}>
+                  <div className="field-info">
+                    <div className="field-header">
+                      <span className={`mapping-status ${isMapped ? 'status-mapped' : 'status-unmapped'}`}>
+                        {isMapped ? '✓' : '○'}
+                      </span>
+                      <label className={field.required ? 'required' : ''}>
+                        {field.label}
+                        {field.required && ' *'}
+                      </label>
+                    </div>
+                    <p className="field-description">{field.description}</p>
+                    {isMapped && (
+                      <p className="mapping-info">
+                        → Mapped to: <strong>"{formData.fieldMapping[field.key]}"</strong>
+                      </p>
+                    )}
+                  </div>
+                  <select
+                    value={formData.fieldMapping[field.key] || ''}
+                    onChange={(e) => handleFieldMapping(field.key, e.target.value)}
+                    className={`mapping-select ${isMapped ? 'mapped-select' : 'unmapped-select'}`}
+                  >
+                    <option value="">Not mapped</option>
+                    {csvColumns.map((col, index) => (
+                      <option key={index} value={col}>
+                        {col || `Column ${index + 1}`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <select
-                  value={formData.fieldMapping[field.key] || ''}
-                  onChange={(e) => handleFieldMapping(field.key, e.target.value)}
-                  className="mapping-select"
-                >
-                  <option value="">Not mapped</option>
-                  {csvColumns.map((col, index) => (
-                    <option key={index} value={col}>
-                      {col || `Column ${index + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -315,17 +380,11 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
 
                 <div className="form-field">
                   <label htmlFor="currency">Default Currency</label>
-                  <select
+                  <CurrencySelect
                     id="currency"
                     value={formData.settings.currency}
-                    onChange={(e) => handleSettingChange('currency', e.target.value)}
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="GBP">GBP</option>
-                    <option value="CAD">CAD</option>
-                    <option value="AUD">AUD</option>
-                  </select>
+                    onChange={(value) => handleSettingChange('currency', value)}
+                  />
                 </div>
 
                 <div className="form-field">

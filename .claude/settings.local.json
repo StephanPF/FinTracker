@@ -38,7 +38,9 @@
       "Read(/C:\\Users\\steph\\Desktop/**)",
       "Bash(dir)",
       "mcp__ide__getDiagnostics",
-      "Read(C:\\Users\\steph\\Desktop/**)"
+      "Read(C:\\Users\\steph\\Desktop/**)",
+      "Read(c:\\Users\\steph\\Desktop/**)",
+      "Read(c:\\Users\\steph\\Desktop/**)"
     ],
     "deny": [],
     "ask": []

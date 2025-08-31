@@ -49,15 +49,33 @@ export const AccountingProvider = ({ children }) => {
 
   useEffect(() => {
     initializeDatabase();
-    loadBankConfigurations();
   }, []);
 
   const loadBankConfigurations = () => {
+    // Migration: Check for existing localStorage data and migrate to database
     try {
       const stored = localStorage.getItem('bankConfigurations');
-      if (stored) {
+      if (stored && database) {
         const configs = JSON.parse(stored);
-        setBankConfigurations(configs);
+        // Migrate each config to database if not already there
+        configs.forEach(config => {
+          const existingConfigs = database.getBankConfigurations();
+          const exists = existingConfigs.find(existing => existing.id === config.id);
+          if (!exists) {
+            console.log('Migrating bank configuration to database:', config.name);
+            database.addBankConfiguration(config);
+          }
+        });
+        
+        // Update state from database
+        setBankConfigurations([...database.getBankConfigurations()]);
+        
+        // Clear localStorage after successful migration
+        localStorage.removeItem('bankConfigurations');
+        console.log('Bank configurations migrated from localStorage to database');
+      } else if (database) {
+        // No localStorage data, just load from database
+        setBankConfigurations([...database.getBankConfigurations()]);
       }
     } catch (error) {
       console.error('Error loading bank configurations:', error);
@@ -111,6 +129,7 @@ export const AccountingProvider = ({ children }) => {
     setTodos([...database.getTable('todos')]);
     setPayees([...database.getTable('payees')]);
     setPayers([...database.getTable('payers')]);
+    setBankConfigurations([...database.getBankConfigurations()]);
     setCategories([...database.getCategories()]);
     setTransactionGroups([...database.getTransactionGroups()]);
     setSubcategories([...database.getSubcategories()]);
@@ -157,6 +176,9 @@ export const AccountingProvider = ({ children }) => {
       updateStateFromDatabase();
       setIsLoaded(true);
       
+      // Load bank configurations after database is created
+      loadBankConfigurations();
+      
       const buffers = database.exportAllTablesToBuffers();
       await fileStorage.saveAllTables(buffers);
       
@@ -185,6 +207,9 @@ export const AccountingProvider = ({ children }) => {
         if (dbLanguage && dbLanguage !== language) {
           changeLanguage(dbLanguage);
         }
+        
+        // Load bank configurations after database is loaded
+        loadBankConfigurations();
         
         setIsLoaded(true);
         return true;
@@ -441,54 +466,53 @@ export const AccountingProvider = ({ children }) => {
   };
 
   // Bank Configuration functions
-  const addBankConfiguration = (bankConfig) => {
-    const newConfig = {
-      ...bankConfig,
-      id: bankConfig.id || Date.now().toString(),
-      createdAt: bankConfig.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setBankConfigurations(prev => [...prev, newConfig]);
-    
-    // Store in localStorage for persistence
-    const existing = JSON.parse(localStorage.getItem('bankConfigurations') || '[]');
-    const updated = [...existing, newConfig];
-    localStorage.setItem('bankConfigurations', JSON.stringify(updated));
-    
-    return newConfig;
+  const addBankConfiguration = async (bankConfig) => {
+    try {
+      const newConfig = database.addBankConfiguration(bankConfig);
+      setBankConfigurations([...database.getBankConfigurations()]);
+      
+      const buffer = database.exportTableToBuffer('bank_configurations');
+      await fileStorage.saveTable('bank_configurations', buffer);
+      
+      return newConfig;
+    } catch (error) {
+      console.error('Error adding bank configuration:', error);
+      throw error;
+    }
   };
 
-  const updateBankConfiguration = (id, updates) => {
-    const updatedConfig = {
-      ...updates,
-      id,
-      updatedAt: new Date().toISOString()
-    };
-    
-    setBankConfigurations(prev => 
-      prev.map(config => config.id === id ? updatedConfig : config)
-    );
-    
-    // Update in localStorage
-    const existing = JSON.parse(localStorage.getItem('bankConfigurations') || '[]');
-    const updated = existing.map(config => config.id === id ? updatedConfig : config);
-    localStorage.setItem('bankConfigurations', JSON.stringify(updated));
-    
-    return updatedConfig;
+  const updateBankConfiguration = async (id, updates) => {
+    try {
+      const updatedConfig = database.updateBankConfiguration(id, updates);
+      setBankConfigurations([...database.getBankConfigurations()]);
+      
+      const buffer = database.exportTableToBuffer('bank_configurations');
+      await fileStorage.saveTable('bank_configurations', buffer);
+      
+      return updatedConfig;
+    } catch (error) {
+      console.error('Error updating bank configuration:', error);
+      throw error;
+    }
   };
 
-  const removeBankConfiguration = (id) => {
-    setBankConfigurations(prev => prev.filter(config => config.id !== id));
-    
-    // Remove from localStorage
-    const existing = JSON.parse(localStorage.getItem('bankConfigurations') || '[]');
-    const updated = existing.filter(config => config.id !== id);
-    localStorage.setItem('bankConfigurations', JSON.stringify(updated));
+  const removeBankConfiguration = async (id) => {
+    try {
+      const deletedConfig = database.deleteBankConfiguration(id);
+      setBankConfigurations([...database.getBankConfigurations()]);
+      
+      const buffer = database.exportTableToBuffer('bank_configurations');
+      await fileStorage.saveTable('bank_configurations', buffer);
+      
+      return deletedConfig;
+    } catch (error) {
+      console.error('Error removing bank configuration:', error);
+      throw error;
+    }
   };
 
   const getBankConfigurations = () => {
-    return bankConfigurations;
+    return database.getBankConfigurations();
   };
 
   const updateTransaction = async (id, transactionData) => {
@@ -561,7 +585,7 @@ export const AccountingProvider = ({ children }) => {
         'transaction_types', 'transaction_groups', 'subcategories',
         'currencies', 'exchange_rates', 'currency_settings',
         'user_preferences', 'api_usage', 'api_settings', 'database_info',
-        'payees', 'payers'
+        'payees', 'payers', 'bank_configurations'
       ];
       
       for (const tableName of tablesToSave) {
@@ -637,6 +661,9 @@ export const AccountingProvider = ({ children }) => {
         if (dbLanguage && dbLanguage !== language) {
           changeLanguage(dbLanguage);
         }
+        
+        // Load bank configurations after database is loaded
+        loadBankConfigurations();
         
         setIsLoaded(true);
         return true;

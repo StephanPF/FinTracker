@@ -18,7 +18,8 @@ class RelationalDatabase {
       api_settings: [],
       database_info: [],
       payees: [],
-      payers: []
+      payers: [],
+      bank_configurations: []
     };
     
     // Define table schemas with headers for empty tables
@@ -38,7 +39,8 @@ class RelationalDatabase {
       payees: ['id', 'name', 'description', 'isActive', 'createdAt'],
       payers: ['id', 'name', 'description', 'isActive', 'createdAt'],
       api_usage: ['id', 'provider', 'endpoint', 'requestCount', 'date', 'createdAt'],
-      api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt']
+      api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt'],
+      bank_configurations: ['id', 'name', 'type', 'fieldMapping', 'settings', 'isActive', 'createdAt', 'updatedAt']
     };
     
     this.workbooks = {};
@@ -119,6 +121,7 @@ class RelationalDatabase {
       api_settings: this.generateApiSettings(),
       payees: [],
       payers: [],
+      bank_configurations: [],
       
       database_info: [
         {
@@ -873,7 +876,7 @@ class RelationalDatabase {
       'accounts', 'transactions', 'tags', 'todos', 'transaction_types',
       'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
-      'database_info', 'payees', 'payers'
+      'database_info', 'payees', 'payers', 'bank_configurations'
     ];
 
     for (const tableName of requiredTables) {
@@ -2994,6 +2997,87 @@ class RelationalDatabase {
     this.tables.payers.splice(payerIndex, 1);
     this.saveTableToWorkbook('payers');
     return deletedPayer;
+  }
+
+  // Bank Configuration CRUD methods
+  addBankConfiguration(bankConfigData) {
+    if (!this.tables.bank_configurations) {
+      this.tables.bank_configurations = [];
+    }
+    
+    const id = bankConfigData.id || Date.now().toString();
+    const newBankConfig = {
+      id,
+      name: bankConfigData.name,
+      type: bankConfigData.type,
+      fieldMapping: JSON.stringify(bankConfigData.fieldMapping || {}),
+      settings: JSON.stringify(bankConfigData.settings || {}),
+      isActive: bankConfigData.isActive !== undefined ? bankConfigData.isActive : true,
+      createdAt: bankConfigData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    this.tables.bank_configurations.push(newBankConfig);
+    this.saveTableToWorkbook('bank_configurations');
+    return {
+      ...newBankConfig,
+      fieldMapping: JSON.parse(newBankConfig.fieldMapping),
+      settings: JSON.parse(newBankConfig.settings)
+    };
+  }
+
+  getBankConfigurations() {
+    const configs = this.tables.bank_configurations || [];
+    return configs.map(config => ({
+      ...config,
+      fieldMapping: typeof config.fieldMapping === 'string' ? JSON.parse(config.fieldMapping) : config.fieldMapping,
+      settings: typeof config.settings === 'string' ? JSON.parse(config.settings) : config.settings
+    }));
+  }
+
+  getActiveBankConfigurations() {
+    return this.getBankConfigurations().filter(config => config.isActive !== false);
+  }
+
+  updateBankConfiguration(id, bankConfigData) {
+    const configIndex = this.tables.bank_configurations.findIndex(config => config.id === id);
+    if (configIndex === -1) {
+      throw new Error(`Bank configuration with id ${id} not found`);
+    }
+    
+    const updatedConfig = {
+      ...this.tables.bank_configurations[configIndex],
+      name: bankConfigData.name,
+      type: bankConfigData.type,
+      fieldMapping: JSON.stringify(bankConfigData.fieldMapping || {}),
+      settings: JSON.stringify(bankConfigData.settings || {}),
+      isActive: bankConfigData.isActive !== undefined ? bankConfigData.isActive : true,
+      updatedAt: new Date().toISOString()
+    };
+    
+    this.tables.bank_configurations[configIndex] = updatedConfig;
+    this.saveTableToWorkbook('bank_configurations');
+    return {
+      ...updatedConfig,
+      fieldMapping: JSON.parse(updatedConfig.fieldMapping),
+      settings: JSON.parse(updatedConfig.settings)
+    };
+  }
+
+  deleteBankConfiguration(id) {
+    const configIndex = this.tables.bank_configurations.findIndex(config => config.id === id);
+    if (configIndex === -1) {
+      throw new Error(`Bank configuration with id ${id} not found`);
+    }
+    
+    const deletedConfig = this.tables.bank_configurations[configIndex];
+    this.tables.bank_configurations.splice(configIndex, 1);
+    this.saveTableToWorkbook('bank_configurations');
+    return {
+      ...deletedConfig,
+      fieldMapping: typeof deletedConfig.fieldMapping === 'string' ? JSON.parse(deletedConfig.fieldMapping) : deletedConfig.fieldMapping,
+      settings: typeof deletedConfig.settings === 'string' ? JSON.parse(deletedConfig.settings) : deletedConfig.settings
+    };
   }
 }
 

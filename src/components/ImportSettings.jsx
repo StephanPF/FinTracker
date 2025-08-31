@@ -43,7 +43,6 @@ const ImportSettings = () => {
         <div className="section-header">
           <div className="section-title">
             <h2>Bank Configurations</h2>
-            <p>Configure your banks for importing transactions from CSV files</p>
           </div>
           {!showAddForm && (
             <button 

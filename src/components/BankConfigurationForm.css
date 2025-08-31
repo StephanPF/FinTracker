@@ -3,9 +3,11 @@
 }
 
 .form-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin: 0 !important;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-header h3 {
@@ -21,23 +23,22 @@
 }
 
 .form-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 12px !important;
+  padding: 12px !important;
   background: white;
-  border: 1px solid #e0e0e0;
   border-radius: 8px;
 }
 
 .form-section h4 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
   color: #333;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .form-section p {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
   color: #666;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 /* Form Controls */
@@ -71,6 +72,8 @@
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 1rem;
+  background: white;
+  color: #333;
   transition: border-color 0.2s ease;
 }
 
@@ -155,15 +158,138 @@
   gap: 1rem;
 }
 
+/* Mapping Progress Summary */
+.mapping-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-stats {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #334155;
+}
+
+.stat-value.complete {
+  color: #059669;
+}
+
+.stat-value.incomplete {
+  color: #dc2626;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 120px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  transition: width 0.3s ease;
+}
+
 .mapping-row {
   display: grid;
   grid-template-columns: 1fr 200px;
   gap: 1rem;
   align-items: start;
-  padding: 1rem;
+  padding: 6px 1rem;
   background: #f8f9fa;
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+/* Visual states for mapping rows */
+.mapping-row.mapped {
+  background: #f0f9ff;
+  border-color: #22c55e;
+}
+
+.mapping-row.unmapped {
+  background: #f8f9fa;
+  border-color: #e5e7eb;
+}
+
+.mapping-row.required-unmapped {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+/* Field header with status icon */
+.field-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Status indicators */
+.mapping-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.status-mapped {
+  background: #22c55e;
+  color: white;
+}
+
+.status-unmapped {
+  background: #e5e7eb;
+  color: #6b7280;
+  border: 2px solid #d1d5db;
+}
+
+/* Mapping info display */
+.mapping-info {
+  color: #059669;
+  font-size: 0.8rem;
+  margin: 0.25rem 0 0 0;
+  font-style: italic;
+}
+
+/* Select styling based on mapping status */
+.mapping-select.mapped-select {
+  border-color: #22c55e;
+  background: white;
+}
+
+.mapping-select.unmapped-select {
+  border-color: #d1d5db;
+  background: white;
 }
 
 .field-info label {
@@ -180,6 +306,8 @@
 
 .mapping-select {
   height: fit-content;
+  background: white;
+  color: #333;
 }
 
 /* Advanced Settings */

@@ -18,7 +18,8 @@ class RelationalFileStorage {
       api_settings: 'api_settings.xlsx',
       database_info: 'database_info.xlsx',
       payees: 'payees.xlsx',
-      payers: 'payers.xlsx'
+      payers: 'payers.xlsx',
+      bank_configurations: 'bank_configurations.xlsx'
     };
   }
 

@@ -73,6 +73,8 @@
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 1rem;
+  background: white;
+  color: #333;
   transition: border-color 0.2s ease;
   box-sizing: border-box;
 }
