@@ -44,11 +44,25 @@ export const AccountingProvider = ({ children }) => {
   const [databaseInfo, setDatabaseInfo] = useState([]);
   const [payees, setPayees] = useState([]);
   const [payers, setPayers] = useState([]);
+  const [bankConfigurations, setBankConfigurations] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     initializeDatabase();
+    loadBankConfigurations();
   }, []);
+
+  const loadBankConfigurations = () => {
+    try {
+      const stored = localStorage.getItem('bankConfigurations');
+      if (stored) {
+        const configs = JSON.parse(stored);
+        setBankConfigurations(configs);
+      }
+    } catch (error) {
+      console.error('Error loading bank configurations:', error);
+    }
+  };
 
   const initializeDatabase = async () => {
     try {
@@ -424,6 +438,57 @@ export const AccountingProvider = ({ children }) => {
 
   const getActivePayers = () => {
     return database.getActivePayers();
+  };
+
+  // Bank Configuration functions
+  const addBankConfiguration = (bankConfig) => {
+    const newConfig = {
+      ...bankConfig,
+      id: bankConfig.id || Date.now().toString(),
+      createdAt: bankConfig.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    setBankConfigurations(prev => [...prev, newConfig]);
+    
+    // Store in localStorage for persistence
+    const existing = JSON.parse(localStorage.getItem('bankConfigurations') || '[]');
+    const updated = [...existing, newConfig];
+    localStorage.setItem('bankConfigurations', JSON.stringify(updated));
+    
+    return newConfig;
+  };
+
+  const updateBankConfiguration = (id, updates) => {
+    const updatedConfig = {
+      ...updates,
+      id,
+      updatedAt: new Date().toISOString()
+    };
+    
+    setBankConfigurations(prev => 
+      prev.map(config => config.id === id ? updatedConfig : config)
+    );
+    
+    // Update in localStorage
+    const existing = JSON.parse(localStorage.getItem('bankConfigurations') || '[]');
+    const updated = existing.map(config => config.id === id ? updatedConfig : config);
+    localStorage.setItem('bankConfigurations', JSON.stringify(updated));
+    
+    return updatedConfig;
+  };
+
+  const removeBankConfiguration = (id) => {
+    setBankConfigurations(prev => prev.filter(config => config.id !== id));
+    
+    // Remove from localStorage
+    const existing = JSON.parse(localStorage.getItem('bankConfigurations') || '[]');
+    const updated = existing.filter(config => config.id !== id);
+    localStorage.setItem('bankConfigurations', JSON.stringify(updated));
+  };
+
+  const getBankConfigurations = () => {
+    return bankConfigurations;
   };
 
   const updateTransaction = async (id, transactionData) => {
@@ -1156,6 +1221,12 @@ export const AccountingProvider = ({ children }) => {
     deletePayer,
     getPayers,
     getActivePayers,
+    // Bank Configuration functions
+    bankConfigurations,
+    addBankConfiguration,
+    updateBankConfiguration,
+    removeBankConfiguration,
+    getBankConfigurations,
     addTodo,
     updateTodo,
     deleteTodo,

@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import CurrencyFormatSettings from './CurrencyFormatSettings';
 import DateSettings from './DateSettings';
 import DataSettings from './DataSettings';
+import ImportSettings from './ImportSettings';
 
 const Settings = () => {
   const { t } = useLanguage();
@@ -26,6 +27,12 @@ const Settings = () => {
       label: 'Data',
       icon: '📁',
       component: DataSettings
+    },
+    {
+      id: 'import',
+      label: 'Import',
+      icon: '📥',
+      component: ImportSettings
     }
   ];
 

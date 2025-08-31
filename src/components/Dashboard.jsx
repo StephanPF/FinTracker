@@ -12,6 +12,7 @@ import Architecture from './Architecture';
 import Test from './Test';
 import StressTest from './StressTest';
 import Settings from './Settings';
+import ImportTransactions from './ImportTransactions';
 import Logo from './Logo';
 
 const Dashboard = () => {
@@ -125,6 +126,12 @@ const Dashboard = () => {
           >
             <span>🗂️ {t('dataManagement')}</span>
           </button>
+          <button 
+            className={activeTab === 'import-transactions' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => handleTabNavigation('import-transactions')}
+          >
+            <span>📥 Import Transactions</span>
+          </button>
         </div>
         <div className="nav-actions">
           <div className="hamburger-menu" ref={hamburgerRef}>
@@ -222,6 +229,12 @@ const Dashboard = () => {
         {activeTab === 'settings' && (
           <div className="settings-tab">
             <Settings />
+          </div>
+        )}
+
+        {activeTab === 'import-transactions' && (
+          <div className="import-transactions-tab">
+            <ImportTransactions />
           </div>
         )}
       </div>
