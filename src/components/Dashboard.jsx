@@ -13,6 +13,7 @@ import Test from './Test';
 import StressTest from './StressTest';
 import Settings from './Settings';
 import ImportTransactions from './ImportTransactions';
+import ReconciliationPage from './ReconciliationPage';
 import Logo from './Logo';
 
 const Dashboard = () => {
@@ -132,6 +133,12 @@ const Dashboard = () => {
           >
             <span>📥 Import Transactions</span>
           </button>
+          <button 
+            className={activeTab === 'reconciliation' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => handleTabNavigation('reconciliation')}
+          >
+            <span>🔄 Reconciliation</span>
+          </button>
         </div>
         <div className="nav-actions">
           <div className="hamburger-menu" ref={hamburgerRef}>
@@ -235,6 +242,12 @@ const Dashboard = () => {
         {activeTab === 'import-transactions' && (
           <div className="import-transactions-tab">
             <ImportTransactions />
+          </div>
+        )}
+
+        {activeTab === 'reconciliation' && (
+          <div className="reconciliation-tab">
+            <ReconciliationPage />
           </div>
         )}
       </div>

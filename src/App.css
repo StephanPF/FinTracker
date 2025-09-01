@@ -1807,7 +1807,7 @@ input[type="number"] {
 .transaction-filters {
   background: white;
   border-radius: 6px;
-  padding: 0.75rem;
+  padding: 12px;
   margin-bottom: 0.5rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   border: 1px solid #e2e8f0;
@@ -1894,6 +1894,7 @@ input[type="number"] {
   grid-template-columns: 1.5fr 1.2fr 0.8fr 0.8fr 1fr 1fr auto;
   gap: 0.5rem;
   align-items: center;
+  align-content: center;
 }
 
 .filter-group {
@@ -1912,6 +1913,9 @@ input[type="number"] {
   display: flex;
   align-items: center;
   justify-content: center;
+  align-self: center;
+  margin-top: 0;
+  padding: 0;
 }
 
 .transaction-count-display {

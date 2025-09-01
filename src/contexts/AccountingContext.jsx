@@ -662,6 +662,55 @@ export const AccountingProvider = ({ children }) => {
     return rules.filter(rule => rule.active !== false);
   };
 
+  // Reconciliation functions
+  const reconcileTransaction = async (id, reconciliationReference) => {
+    try {
+      const updatedTransaction = database.reconcileTransaction(id, reconciliationReference);
+      updateStateFromDatabase();
+      
+      // Save to file storage
+      const buffers = { transactions: database.exportTableToBuffer('transactions') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return updatedTransaction;
+    } catch (error) {
+      console.error('Error reconciling transaction:', error);
+      throw error;
+    }
+  };
+
+  const unreconcileTransaction = async (id) => {
+    try {
+      const updatedTransaction = database.unreconcileTransaction(id);
+      updateStateFromDatabase();
+      
+      // Save to file storage
+      const buffers = { transactions: database.exportTableToBuffer('transactions') };
+      await fileStorage.saveAllTables(buffers);
+      
+      return updatedTransaction;
+    } catch (error) {
+      console.error('Error unreconciling transaction:', error);
+      throw error;
+    }
+  };
+
+  const getUnreconciledTransactions = (accountId = null) => {
+    return database.getUnreconciledTransactions(accountId);
+  };
+
+  const getReconciledTransactions = (reconciliationReference) => {
+    return database.getReconciledTransactions(reconciliationReference);
+  };
+
+  const getReconciliationSummary = (reconciliationReference) => {
+    return database.getReconciliationSummary(reconciliationReference);
+  };
+
+  const getAllReconciliationReferences = () => {
+    return database.getAllReconciliationReferences();
+  };
+
   const updateTransaction = async (id, transactionData) => {
     try {
       const processedData = {
@@ -1411,6 +1460,13 @@ export const AccountingProvider = ({ children }) => {
     updateProcessingRuleOrder,
     getProcessingRules,
     getActiveProcessingRules,
+    // Reconciliation functions
+    reconcileTransaction,
+    unreconcileTransaction,
+    getUnreconciledTransactions,
+    getReconciledTransactions,
+    getReconciliationSummary,
+    getAllReconciliationReferences,
     addTodo,
     updateTodo,
     deleteTodo,

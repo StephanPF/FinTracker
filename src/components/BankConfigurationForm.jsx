@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import ProcessingRulesSection from './ProcessingRulesSection';
 import RuleCreationModal from './RuleCreationModal';
+import Papa from 'papaparse';
 import './BankConfigurationForm.css';
 
 const PRESET_BANKS = [
@@ -33,27 +34,9 @@ const SYSTEM_FIELDS = [
   { key: 'notes', label: 'Notes', required: false, description: 'Additional transaction notes' }
 ];
 
-const CurrencySelect = ({ id, value, onChange }) => {
-  const { getActiveCurrencies } = useAccounting();
-  const activeCurrencies = getActiveCurrencies();
-
-  return (
-    <select
-      id={id}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {activeCurrencies.map((currency) => (
-        <option key={currency.id} value={currency.code}>
-          {currency.code} - {currency.name}
-        </option>
-      ))}
-    </select>
-  );
-};
 
 const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => {
-  const { addProcessingRule, updateProcessingRule } = useAccounting();
+  const { addProcessingRule, updateProcessingRule, getActiveCurrencies } = useAccounting();
   
   const [formData, setFormData] = useState(initialData || {
     name: '',
@@ -72,10 +55,27 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
   const [selectedPreset, setSelectedPreset] = useState('');
   const [csvSample, setCsvSample] = useState('');
   const [csvColumns, setCsvColumns] = useState([]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Parse CSV line using Papa Parse for consistency with transaction import
+  const parseCsvLine = (line, delimiter = ',', hasHeaders = true) => {
+    return new Promise((resolve) => {
+      Papa.parse(line, {
+        header: false, // Always parse as array since we're parsing a single line
+        delimiter: delimiter,
+        skipEmptyLines: false,
+        complete: (results) => {
+          resolve(results.data[0] || []);
+        },
+        error: (error) => {
+          console.warn('CSV parsing error:', error);
+          resolve([]);
+        }
+      });
+    });
+  };
 
   // Initialize form when editing - extract CSV columns from existing field mappings
   useEffect(() => {
@@ -110,19 +110,29 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
     }
   };
 
-  const handleSampleUpload = (e) => {
+  const handleSampleUpload = async (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'text/csv') {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const csv = event.target.result;
         const lines = csv.split('\n');
         const firstLine = lines[0];
         setCsvSample(firstLine);
         
-        const columns = firstLine.split(formData.settings.delimiter || ',').map(col => 
-          col.trim().replace(/"/g, '')
-        );
+        const rawColumns = await parseCsvLine(firstLine, formData.settings.delimiter || ',');
+        let columns;
+        
+        if (formData.settings.hasHeaders) {
+          // Use actual column headers from the CSV
+          columns = rawColumns.map(col => col.trim());
+        } else {
+          // Generate generic column names (Col A, Col B, etc.)
+          columns = rawColumns.map((_, index) => {
+            return `Col ${String.fromCharCode(65 + index)}`; // A, B, C, etc.
+          });
+        }
+        
         setCsvColumns(columns);
       };
       reader.readAsText(file);
@@ -139,7 +149,7 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
     }));
   };
 
-  const handleSettingChange = (setting, value) => {
+  const handleSettingChange = async (setting, value) => {
     setFormData(prev => ({
       ...prev,
       settings: {
@@ -147,6 +157,26 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
         [setting]: value
       }
     }));
+    
+    // If hasHeaders or delimiter setting changed and we have a CSV sample, re-parse the columns
+    if ((setting === 'hasHeaders' || setting === 'delimiter') && csvSample) {
+      const delimiter = setting === 'delimiter' ? value : formData.settings.delimiter || ',';
+      const hasHeaders = setting === 'hasHeaders' ? value : formData.settings.hasHeaders;
+      const rawColumns = await parseCsvLine(csvSample, delimiter);
+      let columns;
+      
+      if (hasHeaders) {
+        // Use actual column headers from the CSV
+        columns = rawColumns.map(col => col.trim());
+      } else {
+        // Generate generic column names (Col A, Col B, etc.)
+        columns = rawColumns.map((_, index) => {
+          return `Col ${String.fromCharCode(65 + index)}`; // A, B, C, etc.
+        });
+      }
+      
+      setCsvColumns(columns);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -273,10 +303,82 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
 
         {/* Step 3: CSV Sample */}
         <div className="form-section">
-          <h4>Step 3: CSV Sample (Optional but Recommended)</h4>
-          <p>Upload a sample CSV file to help with column mapping</p>
+          <h4>Step 3: CSV Sample</h4>
+          <p>Configure parsing settings and upload a sample CSV file</p>
           
-          <div className="file-upload-section">
+          <div className="csv-parsing-settings">
+            <div className="form-checkboxes">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.settings.hasHeaders}
+                  onChange={(e) => handleSettingChange('hasHeaders', e.target.checked)}
+                />
+                First row contains headers
+              </label>
+            </div>
+            
+            <div className="form-grid" style={{ marginTop: '15px' }}>
+              <div className="form-field">
+                <label htmlFor="date-format">Date Format</label>
+                <select
+                  id="date-format"
+                  value={formData.settings.dateFormat}
+                  onChange={(e) => handleSettingChange('dateFormat', e.target.value)}
+                >
+                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                  <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                  <option value="MM-DD-YYYY">MM-DD-YYYY</option>
+                  <option value="DD-MM-YYYY">DD-MM-YYYY</option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="currency">Default Currency</label>
+                <select
+                  id="currency"
+                  value={formData.settings.currency}
+                  onChange={(e) => handleSettingChange('currency', e.target.value)}
+                >
+                  {getActiveCurrencies().map((currency) => (
+                    <option key={currency.id} value={currency.code}>
+                      {currency.code} - {currency.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="delimiter">CSV Delimiter</label>
+                <select
+                  id="delimiter"
+                  value={formData.settings.delimiter}
+                  onChange={(e) => handleSettingChange('delimiter', e.target.value)}
+                >
+                  <option value=",">Comma (,)</option>
+                  <option value=";">Semicolon (;)</option>
+                  <option value="\t">Tab</option>
+                  <option value="|">Pipe (|)</option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="amount-handling">Amount Handling</label>
+                <select
+                  id="amount-handling"
+                  value={formData.settings.amountHandling}
+                  onChange={(e) => handleSettingChange('amountHandling', e.target.value)}
+                  style={{ minWidth: '200px' }}
+                >
+                  <option value="signed">Single signed amount column</option>
+                  <option value="separate">Separate debit/credit columns</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="file-upload-section" style={{ marginTop: '20px' }}>
             <input
               ref={fileInputRef}
               type="file"
@@ -394,85 +496,6 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
           </div>
         </div>
 
-        {/* Advanced Settings */}
-        <div className="form-section">
-          <div className="advanced-toggle">
-            <button
-              type="button"
-              className="toggle-btn"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              {showAdvanced ? '▼' : '▶'} Advanced Settings
-            </button>
-          </div>
-
-          {showAdvanced && (
-            <div className="advanced-settings">
-              <div className="form-grid">
-                <div className="form-field">
-                  <label htmlFor="date-format">Date Format</label>
-                  <select
-                    id="date-format"
-                    value={formData.settings.dateFormat}
-                    onChange={(e) => handleSettingChange('dateFormat', e.target.value)}
-                  >
-                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                    <option value="MM-DD-YYYY">MM-DD-YYYY</option>
-                    <option value="DD-MM-YYYY">DD-MM-YYYY</option>
-                  </select>
-                </div>
-
-                <div className="form-field">
-                  <label htmlFor="currency">Default Currency</label>
-                  <CurrencySelect
-                    id="currency"
-                    value={formData.settings.currency}
-                    onChange={(value) => handleSettingChange('currency', value)}
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label htmlFor="delimiter">CSV Delimiter</label>
-                  <select
-                    id="delimiter"
-                    value={formData.settings.delimiter}
-                    onChange={(e) => handleSettingChange('delimiter', e.target.value)}
-                  >
-                    <option value=",">Comma (,)</option>
-                    <option value=";">Semicolon (;)</option>
-                    <option value="\t">Tab</option>
-                    <option value="|">Pipe (|)</option>
-                  </select>
-                </div>
-
-                <div className="form-field">
-                  <label htmlFor="amount-handling">Amount Handling</label>
-                  <select
-                    id="amount-handling"
-                    value={formData.settings.amountHandling}
-                    onChange={(e) => handleSettingChange('amountHandling', e.target.value)}
-                  >
-                    <option value="signed">Single signed amount column</option>
-                    <option value="separate">Separate debit/credit columns</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-checkboxes">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.settings.hasHeaders}
-                    onChange={(e) => handleSettingChange('hasHeaders', e.target.checked)}
-                  />
-                  First row contains headers
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Processing Rules */}
         <div className="form-section">

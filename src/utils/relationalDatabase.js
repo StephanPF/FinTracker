@@ -26,7 +26,7 @@ class RelationalDatabase {
     // Define table schemas with headers for empty tables
     this.tableSchemas = {
       accounts: ['id', 'name', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'order', 'isActive', 'createdAt'],
-      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'createdAt'],
+      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'createdAt'],
       transaction_types: ['id', 'name', 'description', 'color', 'icon', 'defaultAccountId', 'destinationAccountId', 'isActive', 'createdAt'],
       currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
       exchange_rates: ['id', 'fromCurrencyId', 'toCurrencyId', 'rate', 'date', 'source', 'createdAt'],
@@ -309,7 +309,9 @@ class RelationalDatabase {
     };
     
     this.tables.transactions.push(newTransaction);
-    this.updateAccountBalances(newTransaction);
+    
+    // Recalculate all balances to ensure accuracy
+    this.recalculateAllAccountBalances();
     
     this.saveTableToWorkbook('transactions');
     this.saveTableToWorkbook('accounts');
@@ -392,9 +394,8 @@ class RelationalDatabase {
     this.tables.transactions.push(debitTransaction);
     this.tables.transactions.push(creditTransaction);
     
-    // Update account balances for both transactions
-    this.updateAccountBalances(debitTransaction);
-    this.updateAccountBalances(creditTransaction);
+    // Recalculate all balances to ensure accuracy
+    this.recalculateAllAccountBalances();
     
     this.saveTableToWorkbook('transactions');
     this.saveTableToWorkbook('accounts');
@@ -651,8 +652,8 @@ class RelationalDatabase {
 
     this.tables.transactions[transactionIndex] = updatedTransaction;
     
-    // Apply new transaction balance effects
-    this.updateAccountBalances(updatedTransaction);
+    // Recalculate all balances to ensure accuracy after transaction update
+    this.recalculateAllAccountBalances();
     
     this.saveTableToWorkbook('transactions');
     this.saveTableToWorkbook('accounts'); // Save accounts too due to balance changes
@@ -1126,6 +1127,85 @@ class RelationalDatabase {
     this.saveTableToWorkbook('accounts');
 
     return deletedTransaction;
+  }
+
+  // Reconciliation methods
+  reconcileTransaction(id, reconciliationReference) {
+    const transactionIndex = this.tables.transactions.findIndex(transaction => transaction.id === id);
+    if (transactionIndex === -1) {
+      throw new Error(`Transaction with id ${id} not found`);
+    }
+
+    const transaction = this.tables.transactions[transactionIndex];
+    const updatedTransaction = {
+      ...transaction,
+      reconciliationReference,
+      reconciledAt: new Date().toISOString()
+    };
+
+    this.tables.transactions[transactionIndex] = updatedTransaction;
+    this.saveTableToWorkbook('transactions');
+
+    return updatedTransaction;
+  }
+
+  unreconcileTransaction(id) {
+    const transactionIndex = this.tables.transactions.findIndex(transaction => transaction.id === id);
+    if (transactionIndex === -1) {
+      throw new Error(`Transaction with id ${id} not found`);
+    }
+
+    const transaction = this.tables.transactions[transactionIndex];
+    const updatedTransaction = {
+      ...transaction,
+      reconciliationReference: null,
+      reconciledAt: null
+    };
+
+    this.tables.transactions[transactionIndex] = updatedTransaction;
+    this.saveTableToWorkbook('transactions');
+
+    return updatedTransaction;
+  }
+
+  getUnreconciledTransactions(accountId = null) {
+    let transactions = this.tables.transactions.filter(t => !t.reconciliationReference);
+    
+    if (accountId) {
+      transactions = transactions.filter(t => t.accountId === accountId);
+    }
+
+    return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
+
+  getReconciledTransactions(reconciliationReference) {
+    return this.tables.transactions
+      .filter(t => t.reconciliationReference === reconciliationReference)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
+
+  getReconciliationSummary(reconciliationReference) {
+    const reconciledTransactions = this.getReconciledTransactions(reconciliationReference);
+    
+    const totalAmount = reconciledTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const transactionCount = reconciledTransactions.length;
+    
+    return {
+      reference: reconciliationReference,
+      totalAmount,
+      transactionCount,
+      transactions: reconciledTransactions
+    };
+  }
+
+  getAllReconciliationReferences() {
+    const references = [...new Set(
+      this.tables.transactions
+        .filter(t => t.reconciliationReference)
+        .map(t => t.reconciliationReference)
+    )];
+    
+    return references.sort().reverse(); // Most recent first
   }
 
   deleteProduct(id) {
@@ -2241,10 +2321,8 @@ class RelationalDatabase {
     // Add all transactions to the database
     this.tables.transactions.push(...transactions);
     
-    // Update account balances for all transactions
-    transactions.forEach(transaction => {
-      this.updateAccountBalances(transaction);
-    });
+    // Recalculate all account balances to ensure accuracy
+    this.recalculateAllAccountBalances();
     
     // Update workbooks
     this.saveTableToWorkbook('transactions');
@@ -2274,13 +2352,7 @@ class RelationalDatabase {
     const removed = initialCount - this.tables.transactions.length;
     
     // Recalculate all account balances
-    this.tables.accounts.forEach(account => {
-      account.balance = account.initialBalance || 0;
-    });
-    
-    this.tables.transactions.forEach(transaction => {
-      this.updateAccountBalances(transaction);
-    });
+    this.recalculateAllAccountBalances();
     
     this.saveTableToWorkbook('transactions');
     this.saveTableToWorkbook('accounts');

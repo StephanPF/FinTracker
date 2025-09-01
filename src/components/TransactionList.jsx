@@ -558,12 +558,18 @@ const TransactionList = ({ limit }) => {
               <th>Payee/Payer</th>
               <th>Reference</th>
               <th style={{ width: '100px', textAlign: 'right' }}>{t('amount')}</th>
+              <th style={{ width: '60px', textAlign: 'center' }}>RR</th>
               <th style={{ width: '50px', textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {displayTransactions.map(transaction => (
-              <tr key={transaction.id}>
+              <tr 
+                key={transaction.id}
+                style={{
+                  backgroundColor: transaction.reconciliationReference ? 'rgba(0, 123, 255, 0.1)' : 'transparent'
+                }}
+              >
                 <td>{formatDate(transaction.date)}</td>
                 <td>{getTransactionType(transaction)}</td>
                 <td>
@@ -586,6 +592,9 @@ const TransactionList = ({ limit }) => {
                   <div style={{ color: 'inherit' }}>
                     {formatAmountWithCurrency(transaction)}
                   </div>
+                </td>
+                <td style={{ textAlign: 'center', fontSize: '0.7rem', color: '#6c757d' }}>
+                  {transaction.reconciliationReference || '-'}
                 </td>
                 <td style={{ textAlign: 'center' }}>
                   <div className="transaction-actions">
