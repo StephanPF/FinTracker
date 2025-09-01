@@ -1,0 +1,283 @@
+/* Rule Item */
+.rule-item {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.rule-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rule-item.active {
+  border-left: 4px solid #28a745;
+}
+
+.rule-item.inactive {
+  border-left: 4px solid #6c757d;
+  opacity: 0.8;
+}
+
+/* Rule Header */
+.rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rule-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rule-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.rule-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.rule-name {
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rule-type {
+  font-size: 0.8rem;
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.rule-status {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.status-indicator {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.status-indicator.active {
+  color: #28a745;
+  background: #d4edda;
+}
+
+.status-indicator.inactive {
+  color: #6c757d;
+  background: #f8f9fa;
+}
+
+/* Rule Summary */
+.rule-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rule-order {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.rule-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.summary-when {
+  color: #495057;
+}
+
+.summary-then {
+  color: #007bff;
+}
+
+/* Rule Actions */
+.rule-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.rule-actions .btn {
+  white-space: nowrap;
+}
+
+.toggle-btn.btn-success {
+  background: #28a745;
+  border-color: #28a745;
+}
+
+.toggle-btn.btn-warning {
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.expand-btn {
+  background: transparent !important;
+  border: 1px solid #dee2e6 !important;
+  color: #6c757d !important;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-btn:hover {
+  background: #f8f9fa !important;
+  color: #495057 !important;
+}
+
+/* Rule Details (expanded state) */
+.rule-details {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 0 0 8px 8px;
+}
+
+.rule-section {
+  margin-bottom: 1.5rem;
+}
+
+.rule-section:last-child {
+  margin-bottom: 0;
+}
+
+.rule-section h6 {
+  margin: 0 0 0.75rem 0;
+  color: #495057;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Conditions and Actions Lists */
+.conditions-list,
+.actions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.condition-item,
+.action-item {
+  background: white;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.condition-item:last-child,
+.action-item:last-child {
+  margin-bottom: 0;
+}
+
+.condition-modifier {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-style: normal;
+  margin-left: 0.5rem;
+}
+
+.empty-list {
+  color: #6c757d;
+  font-style: italic;
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+}
+
+/* Rule Metadata */
+.rule-metadata {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.metadata-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metadata-label {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metadata-value {
+  font-size: 0.8rem;
+  color: #495057;
+  font-family: 'Courier New', monospace;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .rule-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .rule-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .rule-title-row {
+    flex-wrap: wrap;
+  }
+
+  .rule-summary {
+    margin-top: 0.5rem;
+  }
+
+  .rule-preview {
+    font-size: 0.8rem;
+  }
+
+  .rule-metadata {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

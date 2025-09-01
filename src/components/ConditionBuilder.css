@@ -1,0 +1,242 @@
+/* Condition Builder */
+.condition-builder {
+  margin-bottom: 1rem;
+}
+
+.conditions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.conditions-header h6 {
+  margin: 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Logic Selector */
+.logic-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.logic-selector label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #495057;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.logic-selector input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+
+/* Conditions List */
+.conditions-list {
+  margin-bottom: 1rem;
+}
+
+.empty-conditions {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+  background: #f8f9fa;
+  border: 1px dashed #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.empty-conditions p {
+  margin: 0;
+  font-style: italic;
+}
+
+/* Condition Item */
+.condition-item {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.condition-item:last-child {
+  margin-bottom: 0;
+}
+
+.condition-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Form Controls */
+.field-select,
+.operator-select,
+.value-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+  color: #495057;
+  transition: border-color 0.2s ease;
+}
+
+.field-select:focus,
+.operator-select:focus,
+.value-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.field-select:disabled,
+.operator-select:disabled,
+.value-input:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.value-input::placeholder {
+  color: #6c757d;
+}
+
+/* Remove Condition Button */
+.remove-condition {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.remove-condition:hover {
+  background: #c82333;
+}
+
+/* Condition Options */
+.condition-options {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.condition-options .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #495057;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.condition-options input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+/* Condition Connector */
+.condition-connector {
+  text-align: center;
+  margin: 0.75rem 0;
+  padding: 0.5rem;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Add Condition Button */
+.add-condition {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-condition:hover:not(:disabled) {
+  background: #218838;
+}
+
+.add-condition:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Warning Text */
+.warning-text {
+  color: #856404;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .conditions-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .logic-selector {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .condition-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .remove-condition {
+    width: 100%;
+    height: 40px;
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .condition-item {
+    padding: 0.75rem;
+  }
+
+  .logic-selector {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

@@ -45,6 +45,7 @@ export const AccountingProvider = ({ children }) => {
   const [payees, setPayees] = useState([]);
   const [payers, setPayers] = useState([]);
   const [bankConfigurations, setBankConfigurations] = useState([]);
+  const [processingRules, setProcessingRules] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -130,6 +131,18 @@ export const AccountingProvider = ({ children }) => {
     setPayees([...database.getTable('payees')]);
     setPayers([...database.getTable('payers')]);
     setBankConfigurations([...database.getBankConfigurations()]);
+    
+    // Load all processing rules for all bank configurations
+    const allBankConfigs = database.getBankConfigurations();
+    const allProcessingRules = {};
+    allBankConfigs.forEach(bankConfig => {
+      const rules = database.getProcessingRules(bankConfig.id);
+      if (rules.length > 0) {
+        allProcessingRules[bankConfig.id] = rules;
+      }
+    });
+    setProcessingRules(allProcessingRules);
+    
     setCategories([...database.getCategories()]);
     setTransactionGroups([...database.getTransactionGroups()]);
     setSubcategories([...database.getSubcategories()]);
@@ -513,6 +526,140 @@ export const AccountingProvider = ({ children }) => {
 
   const getBankConfigurations = () => {
     return database.getBankConfigurations();
+  };
+
+  // Processing Rules functions
+  const loadProcessingRules = async (bankConfigId) => {
+    try {
+      const rules = database.getProcessingRules(bankConfigId);
+      setProcessingRules(prev => ({
+        ...prev,
+        [bankConfigId]: rules
+      }));
+      return rules;
+    } catch (error) {
+      console.error('Error loading processing rules:', error);
+      return [];
+    }
+  };
+
+  const addProcessingRule = async (bankConfigId, rule) => {
+    try {
+      const newRule = database.addProcessingRule({ ...rule, bankConfigId });
+      
+      // Update local state
+      const updatedRules = database.getProcessingRules(bankConfigId);
+      setProcessingRules(prev => ({
+        ...prev,
+        [bankConfigId]: updatedRules
+      }));
+      
+      // Save to file storage
+      const buffer = database.exportTableToBuffer('processing_rules');
+      await fileStorage.saveTable('processing_rules', buffer);
+      
+      return newRule;
+    } catch (error) {
+      console.error('Error adding processing rule:', error);
+      throw error;
+    }
+  };
+
+  const updateProcessingRule = async (ruleId, ruleData, bankConfigId) => {
+    try {
+      const updatedRule = database.updateProcessingRule(ruleId, ruleData);
+      
+      // Update local state
+      const updatedRules = database.getProcessingRules(bankConfigId);
+      setProcessingRules(prev => ({
+        ...prev,
+        [bankConfigId]: updatedRules
+      }));
+      
+      // Save to file storage
+      const buffer = database.exportTableToBuffer('processing_rules');
+      await fileStorage.saveTable('processing_rules', buffer);
+      
+      return updatedRule;
+    } catch (error) {
+      console.error('Error updating processing rule:', error);
+      throw error;
+    }
+  };
+
+  const deleteProcessingRule = async (ruleId, bankConfigId) => {
+    try {
+      const deletedRule = database.deleteProcessingRule(ruleId);
+      
+      // Update local state
+      const updatedRules = database.getProcessingRules(bankConfigId);
+      setProcessingRules(prev => ({
+        ...prev,
+        [bankConfigId]: updatedRules
+      }));
+      
+      // Save to file storage
+      const buffer = database.exportTableToBuffer('processing_rules');
+      await fileStorage.saveTable('processing_rules', buffer);
+      
+      return deletedRule;
+    } catch (error) {
+      console.error('Error deleting processing rule:', error);
+      throw error;
+    }
+  };
+
+  const toggleProcessingRuleActive = async (ruleId, active, bankConfigId) => {
+    try {
+      const updatedRule = database.toggleProcessingRuleActive(ruleId, active);
+      
+      // Update local state
+      const updatedRules = database.getProcessingRules(bankConfigId);
+      setProcessingRules(prev => ({
+        ...prev,
+        [bankConfigId]: updatedRules
+      }));
+      
+      // Save to file storage
+      const buffer = database.exportTableToBuffer('processing_rules');
+      await fileStorage.saveTable('processing_rules', buffer);
+      
+      return updatedRule;
+    } catch (error) {
+      console.error('Error toggling processing rule:', error);
+      throw error;
+    }
+  };
+
+  const updateProcessingRuleOrder = async (ruleId, newOrder, bankConfigId) => {
+    try {
+      const updatedRule = database.updateProcessingRuleOrder(ruleId, newOrder);
+      
+      // Update local state
+      const updatedRules = database.getProcessingRules(bankConfigId);
+      setProcessingRules(prev => ({
+        ...prev,
+        [bankConfigId]: updatedRules
+      }));
+      
+      // Save to file storage
+      const buffer = database.exportTableToBuffer('processing_rules');
+      await fileStorage.saveTable('processing_rules', buffer);
+      
+      return updatedRule;
+    } catch (error) {
+      console.error('Error updating processing rule order:', error);
+      throw error;
+    }
+  };
+
+  const getProcessingRules = (bankConfigId) => {
+    return processingRules[bankConfigId] || [];
+  };
+
+  const getActiveProcessingRules = (bankConfigId) => {
+    const rules = getProcessingRules(bankConfigId);
+    return rules.filter(rule => rule.active !== false);
   };
 
   const updateTransaction = async (id, transactionData) => {
@@ -1254,6 +1401,16 @@ export const AccountingProvider = ({ children }) => {
     updateBankConfiguration,
     removeBankConfiguration,
     getBankConfigurations,
+    // Processing Rules functions
+    processingRules,
+    loadProcessingRules,
+    addProcessingRule,
+    updateProcessingRule,
+    deleteProcessingRule,
+    toggleProcessingRuleActive,
+    updateProcessingRuleOrder,
+    getProcessingRules,
+    getActiveProcessingRules,
     addTodo,
     updateTodo,
     deleteTodo,

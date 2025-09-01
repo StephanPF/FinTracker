@@ -1,0 +1,383 @@
+/* Rule Creation Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  /* Use CSS Grid for perfect centering */
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 1rem;
+  /* Ensure proper viewport centering */
+  margin: 0;
+  box-sizing: border-box;
+  /* Fallback properties */
+  --modal-overlay: 1;
+}
+
+/* Alternative centering approaches */
+.modal-overlay.force-center {
+  display: block;
+}
+
+.modal-overlay.force-center .modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+
+/* Modern viewport centering using CSS Grid as ultimate fallback */
+.modal-overlay.grid-center {
+  display: grid;
+  place-items: center;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.modal-overlay.grid-center .modal-content {
+  margin: 0;
+  width: min(100%, 900px);
+  max-height: 90vh;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: min(100vw - 2rem, 900px);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  /* Ensure content doesn't interfere with centering */
+  position: relative;
+  margin: 0;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  background: #f8f9fa;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.modal-close:hover {
+  color: #333;
+  background: #e9ecef;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa;
+}
+
+/* Error Alert */
+.error-alert {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  color: #721c24;
+}
+
+/* Rule Basic Info */
+.rule-basic-info {
+  margin-bottom: 2rem;
+}
+
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+  color: #495057;
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-input.error {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
+}
+
+.field-error {
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-field small {
+  color: #6c757d;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Rule Type Selector */
+.rule-type-selector {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.rule-type-option {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.rule-type-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rule-type-content {
+  border: 2px solid #007bff;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.2s ease;
+  background: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.rule-type-option input[type="radio"]:checked + .rule-type-content {
+  border-color: #0056b3;
+  background: #e3f2fd;
+  box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+}
+
+.rule-type-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rule-type-icon {
+  font-size: 1.2rem;
+}
+
+.rule-type-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.rule-type-description {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Checkbox Label */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+/* Rule Builder Sections */
+.rule-builder-sections {
+  margin-top: 2rem;
+}
+
+.builder-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: white;
+}
+
+.builder-section.error {
+  border-color: #dc3545;
+  background: #fff5f5;
+}
+
+.builder-section h6 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* Ignore Row Info */
+.ignore-row-info {
+  margin-top: 1rem;
+}
+
+.info-box {
+  background: #e7f3ff;
+  border: 1px solid #b3d7ff;
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.info-box h6 {
+  margin: 0 0 0.5rem 0;
+  color: #0056b3;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.info-box p {
+  margin: 0;
+  color: #0056b3;
+  line-height: 1.4;
+}
+
+/* Button Styles */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #545b62;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+  
+  .modal-content {
+    max-width: none;
+    margin: 0;
+  }
+  
+  .modal-header,
+  .modal-footer {
+    padding: 1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+  }
+  
+  .builder-section {
+    padding: 1rem;
+  }
+}

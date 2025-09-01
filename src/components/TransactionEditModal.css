@@ -5,27 +5,62 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* Use CSS Grid for perfect centering */
+  display: grid;
+  place-items: center;
   z-index: 1000;
+  /* Ensure proper viewport centering */
+  margin: 0;
+  padding: 1rem;
+  box-sizing: border-box;
+  /* Fallback properties */
+  --modal-overlay: 1;
+}
+
+/* Alternative centering approaches */
+.modal-overlay.force-center {
+  display: block;
+}
+
+.modal-overlay.force-center .modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+
+/* Modern viewport centering using CSS Grid as ultimate fallback */
+.modal-overlay.grid-center {
+  display: grid;
+  place-items: center;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.modal-overlay.grid-center .modal-content {
+  margin: 0;
+  width: min(95vw, 900px);
+  max-height: 90vh;
 }
 
 .modal-content {
   background: white;
   border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
+  width: min(95vw, 900px);
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  /* Ensure content doesn't interfere with centering */
+  position: relative;
+  margin: 0;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: 0.75rem;
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -53,30 +88,49 @@
   padding: 1.5rem;
 }
 
+.form-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+}
+
 .form-field {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .form-field label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
-  font-weight: 500;
-  font-size: 0.95rem;
+  display: none;
 }
 
 .form-field input,
 .form-field select,
 .form-field textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
   background: white;
   color: #333;
   transition: border-color 0.2s ease;
   box-sizing: border-box;
+  height: 36px;
+}
+
+.form-field textarea {
+  height: auto;
+  min-height: 60px;
+}
+
+.form-field input.optional,
+.form-field select.optional,
+.form-field textarea.optional {
+  border: 1px dashed #ccc !important;
 }
 
 .form-field input:focus,
@@ -87,9 +141,15 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+.form-field input.optional:focus,
+.form-field select.optional:focus,
+.form-field textarea.optional:focus {
+  border: 1px dashed #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
 .form-field textarea {
   resize: vertical;
-  min-height: 80px;
 }
 
 .form-field input.error,
@@ -133,8 +193,9 @@
 .modal-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 0.75rem;
-  padding: 1.5rem;
+  padding: 0.75rem;
   border-top: 1px solid #e0e0e0;
   background: #f8f9fa;
   border-radius: 0 0 8px 8px;
@@ -168,10 +229,16 @@
   background: #545b62;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .modal-content {
     width: 95%;
     margin: 1rem;
+    max-width: none;
+  }
+  
+  .form-columns {
+    grid-template-columns: 1fr;
+    gap: 0;
   }
   
   .modal-footer {
@@ -181,4 +248,37 @@
   .modal-footer .btn {
     width: 100%;
   }
+}
+
+/* Date picker styling */
+.form-field input.date-picker {
+  position: relative;
+  cursor: pointer;
+}
+
+.form-field input.date-picker::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0;
+  margin: 0;
+}
+
+.form-field input.date-picker::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Override for optional fields - must be at end for priority */
+.form-field input.optional,
+.form-field select.optional,
+.form-field textarea.optional {
+  border: 1px dashed #999 !important;
+  border-style: dashed !important;
+}
+
+.form-field input.optional:focus,
+.form-field select.optional:focus,
+.form-field textarea.optional:focus {
+  border: 1px dashed #007bff !important;
+  border-style: dashed !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
 }

@@ -1,0 +1,134 @@
+/* Processing Rules Section */
+.processing-rules-section {
+  margin-bottom: 2rem;
+}
+
+.rules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.rules-title h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.rules-title p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Loading state */
+.rules-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.rules-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.rules-empty h5 {
+  margin: 0 0 0.5rem 0;
+  color: #495057;
+}
+
+.rules-empty p {
+  margin: 0 0 1.5rem 0;
+  color: #6c757d;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Rules list */
+.rules-list {
+  margin-top: 1.5rem;
+}
+
+.rules-summary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.stat-value.active {
+  color: #28a745;
+}
+
+.stat-value.inactive {
+  color: #6c757d;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .rules-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .rules-summary {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .summary-stat {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}

@@ -68,6 +68,21 @@
   border-color: #99d6ff;
 }
 
+.stat-item.rules-applied {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.stat-item.transactions-processed {
+  border-color: #17a2b8;
+  background: rgba(23, 162, 184, 0.1);
+}
+
+.stat-item.skipped {
+  border-color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+}
+
 .stat-icon {
   font-size: 1.2rem;
 }
@@ -219,6 +234,15 @@
 .transaction-reference,
 .transaction-file {
   color: #888;
+}
+
+.transaction-rules-applied {
+  color: #28a745;
+  font-weight: 500;
+  background: rgba(40, 167, 69, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
 }
 
 /* Transaction Preview */

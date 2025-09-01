@@ -19,7 +19,8 @@ class RelationalFileStorage {
       database_info: 'database_info.xlsx',
       payees: 'payees.xlsx',
       payers: 'payers.xlsx',
-      bank_configurations: 'bank_configurations.xlsx'
+      bank_configurations: 'bank_configurations.xlsx',
+      processing_rules: 'processing_rules.xlsx'
     };
   }
 

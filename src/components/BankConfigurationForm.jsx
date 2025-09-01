@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import ProcessingRulesSection from './ProcessingRulesSection';
+import RuleCreationModal from './RuleCreationModal';
 import './BankConfigurationForm.css';
 
 const PRESET_BANKS = [
@@ -51,6 +53,8 @@ const CurrencySelect = ({ id, value, onChange }) => {
 };
 
 const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => {
+  const { addProcessingRule, updateProcessingRule } = useAccounting();
+  
   const [formData, setFormData] = useState(initialData || {
     name: '',
     type: '',
@@ -69,6 +73,8 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
   const [csvSample, setCsvSample] = useState('');
   const [csvColumns, setCsvColumns] = useState([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingRule, setEditingRule] = useState(null);
   const fileInputRef = useRef(null);
 
   // Initialize form when editing - extract CSV columns from existing field mappings
@@ -170,6 +176,46 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
 
     onSave(bankConfig);
   };
+
+  // Rule management handlers
+  const handleCreateRule = () => {
+    setEditingRule(null);
+    setShowCreateModal(true);
+  };
+
+  const handleEditRule = (rule) => {
+    setEditingRule(rule);
+    setShowCreateModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setEditingRule(null);
+  };
+
+  const handleSaveRule = async (ruleData) => {
+    try {
+      // Rules can only be created for existing bank configurations
+      if (!isEditing || !initialData?.id) {
+        throw new Error('Bank configuration must be saved before adding rules');
+      }
+      
+      const bankConfigId = initialData.id;
+      
+      if (editingRule) {
+        await updateProcessingRule(editingRule.id, ruleData, bankConfigId);
+      } else {
+        await addProcessingRule(bankConfigId, ruleData);
+      }
+      
+      handleCloseModal();
+      // Rules will auto-update via context state
+    } catch (error) {
+      console.error('Error saving rule:', error);
+      throw error;
+    }
+  };
+
 
   return (
     <div className="bank-configuration-form">
@@ -428,6 +474,16 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
           )}
         </div>
 
+        {/* Processing Rules */}
+        <div className="form-section">
+          <ProcessingRulesSection 
+            bankConfigId={isEditing ? initialData?.id : null}
+            fieldMappings={formData.fieldMapping}
+            onCreateRule={handleCreateRule}
+            onEditRule={handleEditRule}
+          />
+        </div>
+
         {/* Form Actions */}
         <div className="form-actions">
           <button type="button" className="btn btn-secondary" onClick={onCancel}>
@@ -438,6 +494,21 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
           </button>
         </div>
       </form>
+
+      {/* Rule Creation Modal - Outside form to prevent positioning constraints */}
+      <RuleCreationModal
+        isOpen={showCreateModal}
+        rule={editingRule}
+        onClose={handleCloseModal}
+        onSave={handleSaveRule}
+        availableFields={[
+          // CSV mapped fields (for conditions)
+          ...Object.keys(formData.fieldMapping).filter(key => formData.fieldMapping[key]),
+          // All system fields (for actions)
+          ...SYSTEM_FIELDS.map(f => f.key)
+        ].filter((value, index, self) => self.indexOf(value) === index)}
+        isEditing={!!editingRule}
+      />
     </div>
   );
 };

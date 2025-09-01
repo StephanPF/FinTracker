@@ -1,0 +1,280 @@
+/* Action Builder */
+.action-builder {
+  margin-bottom: 1rem;
+}
+
+.actions-header {
+  margin-bottom: 1rem;
+}
+
+.actions-header h6 {
+  margin: 0;
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Actions List */
+.actions-list {
+  margin-bottom: 1rem;
+}
+
+.empty-actions {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+  background: #f8f9fa;
+  border: 1px dashed #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.empty-actions p {
+  margin: 0;
+  font-style: italic;
+}
+
+/* Action Item */
+.action-item {
+  background: #f0f8ff;
+  border: 1px solid #b3d7ff;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.action-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Action Type Selector */
+.action-type-selector {
+  margin-bottom: 1rem;
+}
+
+.action-type-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+  font-weight: 600;
+  color: #007bff;
+}
+
+/* Set Field Action */
+.set-field-action {
+  /* Styling handled by action-row */
+}
+
+/* Transform Field Action */
+.transform-field-action {
+  /* Styling handled by action-row */
+}
+
+/* Action Row */
+.action-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.action-label {
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+/* Form Controls */
+.field-select,
+.value-select,
+.value-input,
+.transform-select {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+  color: #495057;
+  transition: border-color 0.2s ease;
+}
+
+.field-select:focus,
+.value-select:focus,
+.value-input:focus,
+.transform-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.field-select:disabled,
+.value-select:disabled,
+.value-input:disabled,
+.transform-select:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.value-input::placeholder {
+  color: #6c757d;
+}
+
+/* Remove Action Button */
+.remove-action {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.remove-action:hover {
+  background: #c82333;
+}
+
+/* Transform Options */
+.transform-options {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #b3d7ff;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.parameter-input,
+.target-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.parameter-input label,
+.target-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.parameter-field,
+.target-field-select {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+  color: #495057;
+}
+
+/* Transform Description */
+.transform-description {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: #e7f3ff;
+  border-left: 3px solid #007bff;
+  border-radius: 0 4px 4px 0;
+}
+
+.transform-description small {
+  color: #0056b3;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+/* Ignore Row Action */
+.ignore-row-action {
+  background: #fef5e7;
+  border: 1px solid #fbbf24;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.ignore-row-action .action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ignore-row-info {
+  color: #92400e;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+/* Add Action Button */
+.add-action {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-action:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.add-action:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .action-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .action-label {
+    text-align: center;
+    padding: 0.25rem 0;
+    background: #f8f9fa;
+    border-radius: 4px;
+    margin: 0.25rem 0;
+  }
+
+  .remove-action {
+    width: 100%;
+    height: 40px;
+    margin-top: 0.5rem;
+  }
+
+  .transform-options {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-item {
+    padding: 0.75rem;
+  }
+
+  .action-row {
+    gap: 0.4rem;
+  }
+}

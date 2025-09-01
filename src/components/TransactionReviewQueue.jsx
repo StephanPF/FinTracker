@@ -3,8 +3,8 @@ import { useAccounting } from '../contexts/AccountingContext';
 import TransactionEditModal from './TransactionEditModal';
 import './TransactionReviewQueue.css';
 
-const TransactionReviewQueue = ({ transactions, onBack, onReset }) => {
-  const { accounts, addTransaction, categories, currencies } = useAccounting();
+const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingStats }) => {
+  const { accounts, addTransaction, categories, currencies, transactionTypes, subcategories, transactionGroups } = useAccounting();
   const [transactionsList, setTransactionsList] = useState(transactions);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -93,7 +93,9 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset }) => {
   const validateTransactionForUpdate = (transaction) => {
     const errors = [];
     const warnings = [];
+    const selectedCategory = categories.find(c => c.id === transaction.categoryId);
 
+    // Always required fields
     if (!transaction.date) {
       errors.push('Missing or invalid date');
     }
@@ -106,8 +108,56 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset }) => {
       errors.push('Invalid amount');
     }
 
-    if (!transaction.fromAccountId && !transaction.toAccountId) {
-      warnings.push('No account mapping - will need manual assignment');
+    if (!transaction.subcategoryId) {
+      errors.push('Missing transaction category');
+    }
+
+    if (!transaction.categoryId) {
+      errors.push('Missing transaction type');
+    }
+
+    if (!transaction.transactionGroup) {
+      errors.push('Missing transaction group');
+    }
+
+    // Account validation
+    if (!transaction.fromAccountId) {
+      errors.push('Account is required');
+    }
+
+    // Transaction type specific validations
+    if (selectedCategory) {
+      const shouldShowDestinationAccount = selectedCategory.name === 'Transfer' || 
+                                           selectedCategory.name === 'Investment - SELL' || 
+                                           selectedCategory.name === 'Investment - BUY';
+      
+      const isInvestmentTransaction = selectedCategory.name === 'Investment - SELL' || 
+                                      selectedCategory.name === 'Investment - BUY';
+
+      if (shouldShowDestinationAccount && !transaction.destinationAccountId) {
+        errors.push('Destination account is required');
+      }
+
+      if (isInvestmentTransaction && (!transaction.destinationAmount || transaction.destinationAmount === 0)) {
+        errors.push('Destination amount is required');
+      }
+
+      if (selectedCategory.name === 'Income' && !transaction.payer) {
+        errors.push('Payer is required');
+      }
+
+      if (selectedCategory.name === 'Expenses' && !transaction.payee) {
+        errors.push('Payee is required');
+      }
+
+      // Investment broker validation
+      if (isInvestmentTransaction) {
+        if (selectedCategory.name === 'Investment - SELL' && !transaction.payer) {
+          errors.push('Payer (broker) is required');
+        } else if (selectedCategory.name === 'Investment - BUY' && !transaction.payee) {
+          errors.push('Payee (broker) is required');
+        }
+      }
     }
 
     return { errors, warnings };
@@ -176,12 +226,20 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset }) => {
           date: transaction.date,
           description: transaction.description,
           amount: transaction.amount,
+          accountId: transaction.fromAccountId, // Map fromAccountId to accountId for database
           fromAccountId: transaction.fromAccountId,
           toAccountId: transaction.toAccountId,
-          currencyId: transaction.currencyId || 'CUR_001',
-          reference: transaction.reference,
+          destinationAccountId: transaction.destinationAccountId,
+          destinationAmount: transaction.destinationAmount,
+          transactionType: transaction.transactionType,
+          transactionGroup: transaction.transactionGroup,
           categoryId: transaction.categoryId,
           subcategoryId: transaction.subcategoryId,
+          payee: transaction.payee,
+          payer: transaction.payer,
+          tag: transaction.tag,
+          currencyId: transaction.currencyId || 'CUR_001',
+          reference: transaction.reference,
           tags: transaction.tags || [],
           notes: transaction.notes || `Imported from ${transaction.fileName}`
         };
@@ -244,6 +302,25 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset }) => {
           <span className="stat-label">Duplicates:</span>
           <span className="stat-value">{statusCounts.duplicate}</span>
         </div>
+        {ruleProcessingStats && (
+          <>
+            <div className="stat-item rules-applied">
+              <span className="stat-icon">⚙️</span>
+              <span className="stat-label">Rules Applied:</span>
+              <span className="stat-value">{ruleProcessingStats.totalRulesApplied}</span>
+            </div>
+            <div className="stat-item transactions-processed">
+              <span className="stat-icon">🔄</span>
+              <span className="stat-label">Processed:</span>
+              <span className="stat-value">{ruleProcessingStats.transactionsWithRules}</span>
+            </div>
+            <div className="stat-item skipped">
+              <span className="stat-icon">🚫</span>
+              <span className="stat-label">Skipped:</span>
+              <span className="stat-value">{ruleProcessingStats.skippedTransactions}</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="review-controls">
@@ -308,6 +385,11 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset }) => {
                   <span className="transaction-status-text">{getStatusText(transaction)}</span>
                   {transaction.reference && (
                     <span className="transaction-reference">Ref: {transaction.reference}</span>
+                  )}
+                  {transaction.rulesApplied && transaction.rulesApplied.length > 0 && (
+                    <span className="transaction-rules-applied">
+                      ⚙️ {transaction.rulesApplied.length} rule{transaction.rulesApplied.length > 1 ? 's' : ''} applied
+                    </span>
                   )}
                   <span className="transaction-file">File: {transaction.fileName}</span>
                 </div>
@@ -424,6 +506,9 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset }) => {
           accounts={accounts}
           categories={categories}
           currencies={currencies}
+          transactionTypes={transactionTypes}
+          subcategories={subcategories}
+          transactionGroups={transactionGroups}
           onSave={handleUpdateTransaction}
           onClose={() => setEditingTransaction(null)}
         />

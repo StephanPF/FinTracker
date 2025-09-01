@@ -2,10 +2,11 @@ import React, { useState, useCallback } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
 import Papa from 'papaparse';
 import TransactionReviewQueue from './TransactionReviewQueue';
+import { applyProcessingRules } from '../utils/ruleProcessor';
 import './ImportTransactions.css';
 
 const ImportTransactions = () => {
-  const { bankConfigurations = [], transactions = [] } = useAccounting();
+  const { bankConfigurations = [], transactions = [], currencies = [], getActiveProcessingRules } = useAccounting();
   const [selectedBank, setSelectedBank] = useState(null);
   const [step, setStep] = useState(1);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -13,6 +14,7 @@ const ImportTransactions = () => {
   const [parsedTransactions, setParsedTransactions] = useState([]);
   const [processing, setProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
+  const [ruleProcessingStats, setRuleProcessingStats] = useState(null);
 
   const handleBankSelect = (bank) => {
     setSelectedBank(bank);
@@ -159,20 +161,101 @@ const ImportTransactions = () => {
     const errors = [];
     const warnings = [];
 
+    // ========== ALWAYS REQUIRED FIELDS (ERROR if missing) ==========
+    
     if (!transaction.date) {
-      errors.push('Missing or invalid date');
+      errors.push('Missing or invalid date - check date field mapping');
     }
 
     if (!transaction.description || transaction.description.trim() === '') {
-      errors.push('Missing description');
+      errors.push('Missing description - check description field mapping');
     }
 
     if (transaction.amount === 0 || isNaN(transaction.amount)) {
-      errors.push('Invalid amount');
+      errors.push('Invalid amount - check amount/debit/credit field mapping');
     }
 
-    if (!transaction.fromAccountId && !transaction.toAccountId) {
-      warnings.push('No account mapping - will need manual assignment');
+    // CRITICAL: subcategoryId is always required in Add Transaction form
+    if (!transaction.subcategoryId) {
+      errors.push('Missing subcategory - transaction classification required');
+    }
+
+    // ========== CONDITIONALLY REQUIRED FIELDS (WARNING if missing) ==========
+
+    // Account mapping - required for successful import but can be assigned during review
+    if (!transaction.fromAccountId && !transaction.toAccountId && !transaction.accountId) {
+      warnings.push('No account mapping - will need manual assignment during review');
+    }
+
+    // Transaction type-specific validations
+    const transactionType = transaction.transactionType?.toLowerCase();
+    
+    // Income transactions require payer
+    if (transactionType === 'income' && !transaction.payer) {
+      warnings.push('Income transaction missing payer - required for Add Transaction form');
+    }
+    
+    // Expenses transactions require payee
+    if (transactionType === 'expenses' && !transaction.payee) {
+      warnings.push('Expenses transaction missing payee - required for Add Transaction form');
+    }
+    
+    // Transfer transactions require destination account
+    if (transactionType === 'transfer') {
+      if (!transaction.destinationAccountId) {
+        warnings.push('Transfer transaction missing destination account');
+      }
+    }
+    
+    // Investment transactions require destination account and destination amount
+    if (transactionType?.includes('investment')) {
+      if (!transaction.destinationAccountId) {
+        warnings.push('Investment transaction missing destination account');
+      }
+      if (!transaction.destinationAmount || transaction.destinationAmount === 0) {
+        warnings.push('Investment transaction missing destination amount');
+      }
+      // Investment transactions need broker (via payee or payer)
+      if (!transaction.payee && !transaction.payer) {
+        warnings.push('Investment transaction missing broker information');
+      }
+    }
+
+    // ========== INFORMATIONAL WARNINGS (show mapped fields) ==========
+    
+    // Show successfully mapped classification fields
+    if (transaction.transactionType) {
+      warnings.push(`✓ Transaction type mapped: ${transaction.transactionType}`);
+    }
+    
+    if (transaction.transactionGroup) {
+      warnings.push(`✓ Transaction group mapped: ${transaction.transactionGroup}`);
+    }
+    
+    if (transaction.subcategoryId) {
+      warnings.push(`✓ Subcategory mapped`);
+    }
+    
+    // Show successfully mapped parties
+    if (transaction.payee) {
+      warnings.push(`✓ Payee mapped: ${transaction.payee}`);
+    }
+    
+    if (transaction.payer) {
+      warnings.push(`✓ Payer mapped: ${transaction.payer}`);
+    }
+    
+    // Show additional mapped fields
+    if (transaction.reference) {
+      warnings.push(`✓ Reference mapped: ${transaction.reference}`);
+    }
+    
+    if (transaction.tag) {
+      warnings.push(`✓ Tag mapped: ${transaction.tag}`);
+    }
+    
+    if (transaction.notes) {
+      warnings.push(`✓ Notes mapped`);
     }
 
     return { errors, warnings };
@@ -180,6 +263,9 @@ const ImportTransactions = () => {
 
   const processFiles = async () => {
     if (!selectedBank || uploadedFiles.length === 0) return;
+
+    // Initialize skipped transactions counter
+    window.totalSkippedTransactions = 0;
 
     setProcessing(true);
     setProcessingProgress(0);
@@ -200,32 +286,71 @@ const ImportTransactions = () => {
             complete: (results) => {
               try {
                 const fileTransactions = results.data.map((row, index) => {
-                  // Map CSV fields to transaction fields
+                  // Map CSV fields to transaction fields using persistent database field mappings
+                  // This includes all the new fields: transactionType, transactionGroup, subcategoryId,
+                  // payee, payer, tag, notes, destinationAccountId, etc.
+                  const fieldMapping = selectedBank.fieldMapping || {};
+                  
                   const mappedTransaction = {
                     id: `import_${Date.now()}_${fileIndex}_${index}`,
-                    date: parseDate(row[selectedBank.fieldMapping.date], selectedBank.settings.dateFormat),
-                    description: row[selectedBank.fieldMapping.description] || '',
+                    // Core required fields
+                    date: parseDate(row[fieldMapping.date], selectedBank.settings.dateFormat),
+                    description: row[fieldMapping.description] || '',
                     amount: parseAmount(row, selectedBank),
-                    reference: row[selectedBank.fieldMapping.reference] || '',
-                    category: row[selectedBank.fieldMapping.category] || '',
-                    checkNumber: row[selectedBank.fieldMapping.checkNumber] || '',
-                    merchant: row[selectedBank.fieldMapping.merchant] || '',
-                    balance: row[selectedBank.fieldMapping.balance] || '',
-                    // Default values
-                    fromAccountId: null,
-                    toAccountId: null,
-                    currencyId: 'CUR_001', // Default to base currency
-                    tags: [],
-                    notes: '',
+                    
+                    // Account mappings
+                    accountId: row[fieldMapping.account] || null, // Primary account from CSV
+                    fromAccountId: null, // Will be assigned during review
+                    toAccountId: null,   // Will be assigned during review
+                    destinationAccountId: row[fieldMapping.destinationAccountId] || null,
+                    destinationAmount: row[fieldMapping.destinationAmount] ? parseFloat(row[fieldMapping.destinationAmount]) : null,
+                    
+                    // Transaction classification
+                    transactionType: row[fieldMapping.transactionType] || '',
+                    transactionGroup: row[fieldMapping.transactionGroup] || '',
+                    categoryId: row[fieldMapping.category] || '', // Legacy support
+                    subcategoryId: row[fieldMapping.subcategoryId] || '',
+                    
+                    // Parties
+                    payee: row[fieldMapping.payee] || '',
+                    payer: row[fieldMapping.payer] || '',
+                    
+                    // Additional fields
+                    reference: row[fieldMapping.reference] || '',
+                    tag: row[fieldMapping.tag] || '',
+                    notes: row[fieldMapping.notes] || '',
+                    
+                    // System defaults (use bank's currency setting)
+                    currencyId: (() => {
+                      if (selectedBank.settings?.currency) {
+                        // Find the currency by code
+                        const currency = currencies.find(c => c.code === selectedBank.settings.currency);
+                        return currency ? currency.id : 'CUR_001';
+                      }
+                      return 'CUR_001'; // Default to base currency
+                    })(),
+                    tags: row[fieldMapping.tag] ? [row[fieldMapping.tag]] : [],
+                    
                     // Processing metadata
                     fileName: file.name,
                     rowIndex: index,
                     rawData: row
                   };
 
+                  // Apply processing rules
+                  const activeRules = getActiveProcessingRules(selectedBank.id);
+                  const ruleResult = applyProcessingRules(mappedTransaction, activeRules, selectedBank.fieldMapping);
+                  
+                  // If rule says to ignore this row, skip it
+                  if (ruleResult.ignored) {
+                    return null; // Will be filtered out later
+                  }
+                  
+                  const processedTransaction = ruleResult.transaction;
+
                   // Validate and detect duplicates
-                  const validation = validateTransaction(mappedTransaction);
-                  const isDuplicate = detectDuplicates(mappedTransaction);
+                  const validation = validateTransaction(processedTransaction);
+                  const isDuplicate = detectDuplicates(processedTransaction);
 
                   // Determine status
                   let status = 'ready';
@@ -236,15 +361,28 @@ const ImportTransactions = () => {
                   }
 
                   return {
-                    ...mappedTransaction,
+                    ...processedTransaction,
                     status,
                     isDuplicate,
                     validation,
-                    bankConfig: selectedBank
+                    bankConfig: selectedBank,
+                    // Add rule processing metadata
+                    rulesApplied: ruleResult.applied
                   };
                 });
 
-                allParsedTransactions.push(...fileTransactions);
+                // Count skipped (null) transactions before filtering
+                const skippedCount = fileTransactions.filter(t => t === null).length;
+                
+                // Filter out null results (ignored rows) and add to collection
+                const validFileTransactions = fileTransactions.filter(t => t !== null);
+                allParsedTransactions.push(...validFileTransactions);
+                
+                // Track total skipped count across all files
+                if (!window.totalSkippedTransactions) {
+                  window.totalSkippedTransactions = 0;
+                }
+                window.totalSkippedTransactions += skippedCount;
                 resolve();
               } catch (error) {
                 reject(error);
@@ -261,6 +399,18 @@ const ImportTransactions = () => {
       const validTransactions = allParsedTransactions.filter(t => 
         t.date && t.description && !isNaN(t.amount)
       );
+
+      // Calculate rule processing statistics
+      const totalRules = allParsedTransactions.reduce((sum, t) => sum + (t.rulesApplied?.length || 0), 0);
+      const transactionsWithRules = allParsedTransactions.filter(t => t.rulesApplied && t.rulesApplied.length > 0).length;
+      
+      setRuleProcessingStats({
+        totalTransactions: allParsedTransactions.length,
+        validTransactions: validTransactions.length,
+        transactionsWithRules,
+        totalRulesApplied: totalRules,
+        skippedTransactions: window.totalSkippedTransactions || 0
+      });
 
       setProcessingProgress(100);
       setParsedTransactions(validTransactions);
@@ -433,6 +583,7 @@ const ImportTransactions = () => {
           transactions={parsedTransactions}
           onBack={() => setStep(3)}
           onReset={resetImport}
+          ruleProcessingStats={ruleProcessingStats}
         />
       )}
     </div>

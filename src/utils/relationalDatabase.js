@@ -19,7 +19,8 @@ class RelationalDatabase {
       database_info: [],
       payees: [],
       payers: [],
-      bank_configurations: []
+      bank_configurations: [],
+      processing_rules: []
     };
     
     // Define table schemas with headers for empty tables
@@ -40,7 +41,8 @@ class RelationalDatabase {
       payers: ['id', 'name', 'description', 'isActive', 'createdAt'],
       api_usage: ['id', 'provider', 'endpoint', 'requestCount', 'date', 'createdAt'],
       api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt'],
-      bank_configurations: ['id', 'name', 'type', 'fieldMapping', 'settings', 'isActive', 'createdAt', 'updatedAt']
+      bank_configurations: ['id', 'name', 'type', 'fieldMapping', 'settings', 'isActive', 'createdAt', 'updatedAt'],
+      processing_rules: ['id', 'bankConfigId', 'name', 'type', 'active', 'ruleOrder', 'conditions', 'conditionLogic', 'actions', 'createdAt', 'updatedAt']
     };
     
     this.workbooks = {};
@@ -70,6 +72,9 @@ class RelationalDatabase {
       exchange_rates: {
         fromCurrencyId: { table: 'currencies', field: 'id' },
         toCurrencyId: { table: 'currencies', field: 'id' }
+      },
+      processing_rules: {
+        bankConfigId: { table: 'bank_configurations', field: 'id' }
       }
     };
   }
@@ -876,7 +881,7 @@ class RelationalDatabase {
       'accounts', 'transactions', 'tags', 'todos', 'transaction_types',
       'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
-      'database_info', 'payees', 'payers', 'bank_configurations'
+      'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules'
     ];
 
     for (const tableName of requiredTables) {
@@ -3078,6 +3083,158 @@ class RelationalDatabase {
       fieldMapping: typeof deletedConfig.fieldMapping === 'string' ? JSON.parse(deletedConfig.fieldMapping) : deletedConfig.fieldMapping,
       settings: typeof deletedConfig.settings === 'string' ? JSON.parse(deletedConfig.settings) : deletedConfig.settings
     };
+  }
+
+  // Processing Rules CRUD methods
+  addProcessingRule(ruleData) {
+    if (!this.tables.processing_rules) {
+      this.tables.processing_rules = [];
+    }
+
+    const id = ruleData.id || `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const newRule = {
+      id: id,
+      bankConfigId: ruleData.bankConfigId,
+      name: ruleData.name,
+      type: ruleData.type,
+      active: ruleData.active !== undefined ? ruleData.active : true,
+      ruleOrder: ruleData.ruleOrder || 0,
+      conditions: JSON.stringify(ruleData.conditions || []),
+      conditionLogic: ruleData.conditionLogic || 'ANY',
+      actions: JSON.stringify(ruleData.actions || []),
+      createdAt: ruleData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    this.tables.processing_rules.push(newRule);
+    this.saveTableToWorkbook('processing_rules');
+    
+    return {
+      ...newRule,
+      conditions: JSON.parse(newRule.conditions),
+      actions: JSON.parse(newRule.actions)
+    };
+  }
+
+  getProcessingRules(bankConfigId) {
+    const rules = this.tables.processing_rules || [];
+    const filteredRules = bankConfigId 
+      ? rules.filter(rule => rule.bankConfigId === bankConfigId)
+      : rules;
+    
+    return filteredRules
+      .map(rule => ({
+        ...rule,
+        conditions: typeof rule.conditions === 'string' ? JSON.parse(rule.conditions) : rule.conditions,
+        actions: typeof rule.actions === 'string' ? JSON.parse(rule.actions) : rule.actions
+      }))
+      .sort((a, b) => (a.ruleOrder || 0) - (b.ruleOrder || 0));
+  }
+
+  getActiveProcessingRules(bankConfigId) {
+    return this.getProcessingRules(bankConfigId).filter(rule => rule.active !== false);
+  }
+
+  updateProcessingRule(id, ruleData) {
+    const ruleIndex = this.tables.processing_rules.findIndex(rule => rule.id === id);
+    if (ruleIndex === -1) {
+      throw new Error(`Processing rule with id ${id} not found`);
+    }
+
+    const updatedRule = {
+      ...this.tables.processing_rules[ruleIndex],
+      name: ruleData.name,
+      type: ruleData.type,
+      active: ruleData.active !== undefined ? ruleData.active : true,
+      ruleOrder: ruleData.ruleOrder !== undefined ? ruleData.ruleOrder : 0,
+      conditions: JSON.stringify(ruleData.conditions || []),
+      conditionLogic: ruleData.conditionLogic || 'ANY',
+      actions: JSON.stringify(ruleData.actions || []),
+      updatedAt: new Date().toISOString()
+    };
+
+    this.tables.processing_rules[ruleIndex] = updatedRule;
+    this.saveTableToWorkbook('processing_rules');
+    
+    return {
+      ...updatedRule,
+      conditions: JSON.parse(updatedRule.conditions),
+      actions: JSON.parse(updatedRule.actions)
+    };
+  }
+
+  deleteProcessingRule(id) {
+    const ruleIndex = this.tables.processing_rules.findIndex(rule => rule.id === id);
+    if (ruleIndex === -1) {
+      throw new Error(`Processing rule with id ${id} not found`);
+    }
+
+    const deletedRule = this.tables.processing_rules[ruleIndex];
+    this.tables.processing_rules.splice(ruleIndex, 1);
+    this.saveTableToWorkbook('processing_rules');
+    
+    return {
+      ...deletedRule,
+      conditions: typeof deletedRule.conditions === 'string' ? JSON.parse(deletedRule.conditions) : deletedRule.conditions,
+      actions: typeof deletedRule.actions === 'string' ? JSON.parse(deletedRule.actions) : deletedRule.actions
+    };
+  }
+
+  toggleProcessingRuleActive(id, active) {
+    const ruleIndex = this.tables.processing_rules.findIndex(rule => rule.id === id);
+    if (ruleIndex === -1) {
+      throw new Error(`Processing rule with id ${id} not found`);
+    }
+
+    this.tables.processing_rules[ruleIndex] = {
+      ...this.tables.processing_rules[ruleIndex],
+      active: active,
+      updatedAt: new Date().toISOString()
+    };
+
+    this.saveTableToWorkbook('processing_rules');
+    
+    const updatedRule = this.tables.processing_rules[ruleIndex];
+    return {
+      ...updatedRule,
+      conditions: typeof updatedRule.conditions === 'string' ? JSON.parse(updatedRule.conditions) : updatedRule.conditions,
+      actions: typeof updatedRule.actions === 'string' ? JSON.parse(updatedRule.actions) : updatedRule.actions
+    };
+  }
+
+  updateProcessingRuleOrder(id, newOrder) {
+    const ruleIndex = this.tables.processing_rules.findIndex(rule => rule.id === id);
+    if (ruleIndex === -1) {
+      throw new Error(`Processing rule with id ${id} not found`);
+    }
+
+    this.tables.processing_rules[ruleIndex] = {
+      ...this.tables.processing_rules[ruleIndex],
+      ruleOrder: newOrder,
+      updatedAt: new Date().toISOString()
+    };
+
+    this.saveTableToWorkbook('processing_rules');
+    
+    const updatedRule = this.tables.processing_rules[ruleIndex];
+    return {
+      ...updatedRule,
+      conditions: typeof updatedRule.conditions === 'string' ? JSON.parse(updatedRule.conditions) : updatedRule.conditions,
+      actions: typeof updatedRule.actions === 'string' ? JSON.parse(updatedRule.actions) : updatedRule.actions
+    };
+  }
+
+  // Bulk operations for processing rules
+  deleteProcessingRulesByBankConfig(bankConfigId) {
+    const initialCount = this.tables.processing_rules.length;
+    this.tables.processing_rules = this.tables.processing_rules.filter(rule => rule.bankConfigId !== bankConfigId);
+    const deletedCount = initialCount - this.tables.processing_rules.length;
+    
+    if (deletedCount > 0) {
+      this.saveTableToWorkbook('processing_rules');
+    }
+    
+    return deletedCount;
   }
 }
 
