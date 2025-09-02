@@ -7,7 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import CashAllocationModal from './CashAllocationModal';
 
-const TransactionList = ({ limit }) => {
+const TransactionList = ({ limit, selectedAccountId }) => {
   const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database, getCashAllocationStatus } = useAccounting();
   const { t } = useLanguage();
   const { formatDate } = useDate();
@@ -26,6 +26,12 @@ const TransactionList = ({ limit }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
+  // Set account filter when selectedAccountId prop is provided
+  useEffect(() => {
+    if (selectedAccountId) {
+      setFilterAccount(selectedAccountId);
+    }
+  }, [selectedAccountId]);
 
   const getAccountName = (accountId) => {
     const account = accounts.find(acc => acc.id === accountId);

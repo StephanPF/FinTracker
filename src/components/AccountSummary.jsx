@@ -3,7 +3,7 @@ import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import TransactionList from './TransactionList';
 
-const AccountSummary = () => {
+const AccountSummary = ({ onAccountClick }) => {
   const { accounts, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService } = useAccounting();
   const { t } = useLanguage();
   const summary = getSummary();
@@ -365,7 +365,13 @@ const AccountSummary = () => {
                     : formatCurrencyAmount(account.balance, getBaseCurrency()?.id));
               
               return (
-                <div key={account.id} className={`account-item ${account.accountType ? account.accountType.type.toLowerCase() : 'unknown'} ${account.accountType?.subtype === 'Retirement account' ? 'retirement' : ''} ${account.accountType?.subtype === 'Business account' ? 'business' : ''}`}>
+                <div 
+                  key={account.id} 
+                  className={`account-item ${account.accountType ? account.accountType.type.toLowerCase() : 'unknown'} ${account.accountType?.subtype === 'Retirement account' ? 'retirement' : ''} ${account.accountType?.subtype === 'Business account' ? 'business' : ''} clickable`}
+                  onClick={() => onAccountClick && onAccountClick(account.id)}
+                  style={{ cursor: onAccountClick ? 'pointer' : 'default' }}
+                  title={onAccountClick ? `View transactions for ${account.name}` : ''}
+                >
                   <div className="account-info">
                     <span className="account-name">{account.name}</span>
                     <span className="account-type">

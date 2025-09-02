@@ -34,6 +34,7 @@ const Dashboard = () => {
   });
   const [helpPanelOpen, setHelpPanelOpen] = useState(false);
   const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState(null); // For account-filtered navigation
   const hamburgerRef = useRef(null);
 
   // Helper function to handle tab navigation with scroll-to-top
@@ -41,6 +42,12 @@ const Dashboard = () => {
     setActiveTab(tabName);
     window.location.hash = tabName;
     localStorage.setItem('activeTab', tabName);
+    
+    // Clear selected account when navigating away from transactions (unless coming from account click)
+    if (tabName !== 'transactions') {
+      setSelectedAccountId(null);
+    }
+    
     // Scroll to top of the page when navigating to any tab
     window.scrollTo({
       top: 0,
@@ -53,6 +60,12 @@ const Dashboard = () => {
   const handleMenuNavigation = (tabName) => {
     handleTabNavigation(tabName);
     setHamburgerMenuOpen(false);
+  };
+
+  // Handle account click from overview to transactions with account filter
+  const handleAccountClick = (accountId) => {
+    setSelectedAccountId(accountId);
+    handleTabNavigation('transactions');
   };
 
   // Scroll to top when activeTab changes to overview
@@ -220,13 +233,13 @@ const Dashboard = () => {
       <div className="dashboard-content">
         {activeTab === 'overview' && (
           <div className="overview-tab">
-            <AccountSummary />
+            <AccountSummary onAccountClick={handleAccountClick} />
           </div>
         )}
 
         {activeTab === 'transactions' && (
           <div className="transactions-tab">
-            <TransactionList />
+            <TransactionList selectedAccountId={selectedAccountId} />
           </div>
         )}
 
