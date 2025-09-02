@@ -3,13 +3,27 @@ import { useAccounting } from '../contexts/AccountingContext';
 import './ReconciliationSetup.css';
 
 const ReconciliationSetup = ({ onStart }) => {
-  const { getActiveAccountsWithTypes } = useAccounting();
+  const { getActiveAccountsWithTypes, currencies, numberFormatService } = useAccounting();
   const [formData, setFormData] = useState({
     reconciliationReference: '',
     bankStatementTotal: '',
     accountId: ''
   });
   const [errors, setErrors] = useState({});
+
+  // Format account balance in native currency for dropdown
+  const formatAccountBalance = (account) => {
+    const balance = account.balance || 0;
+    if (numberFormatService && account.currencyId) {
+      return numberFormatService.formatCurrency(balance, account.currencyId);
+    }
+    // Fallback formatting
+    const currency = currencies.find(c => c.id === account.currencyId);
+    if (currency) {
+      return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;
+    }
+    return balance.toFixed(2);
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -68,7 +82,7 @@ const ReconciliationSetup = ({ onStart }) => {
               <option value="">Select an account...</option>
               {getActiveAccountsWithTypes().map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.name} ({account.accountType?.name}) - {account.code}
+                  {account.name} ({account.accountType?.type}) ({formatAccountBalance(account)})
                 </option>
               ))}
             </select>

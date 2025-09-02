@@ -38,6 +38,20 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     return account ? account.name : t('unknownAccount');
   };
 
+  // Format account balance in native currency for dropdown
+  const formatAccountBalance = (account) => {
+    const balance = account.balance || 0;
+    if (numberFormatService && account.currencyId) {
+      return numberFormatService.formatCurrency(balance, account.currencyId);
+    }
+    // Fallback formatting
+    const currency = currencies.find(c => c.id === account.currencyId);
+    if (currency) {
+      return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;
+    }
+    return balance.toFixed(2);
+  };
+
   const getToAccountDisplay = (transaction) => {
     // For new linked transactions (transfers and investments), check if there's a linked transaction
     if (transaction.linkedTransactionId && (transaction.categoryId === 'CAT_003' || transaction.categoryId === 'CAT_004' || transaction.categoryId === 'CAT_005')) {
@@ -489,7 +503,7 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                   <option value="">📋 All Accounts</option>
                   {accountsWithTypes.map(account => (
                     <option key={account.id} value={account.id}>
-                      {account.name}
+                      {account.name} ({formatAccountBalance(account)})
                     </option>
                   ))}
                 </select>

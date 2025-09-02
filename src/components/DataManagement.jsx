@@ -70,6 +70,19 @@ const DataManagement = () => {
   const accountsWithTypes = getAccountsWithTypes();
   const accountTypes = getAccountTypes();
 
+  // Format account balance in native currency for dropdown
+  const formatAccountBalance = (account) => {
+    const balance = account.balance || 0;
+    if (numberFormatService && account.currencyId) {
+      return numberFormatService.formatCurrency(balance, account.currencyId);
+    }
+    // Fallback formatting
+    const currency = currencies.find(c => c.id === account.currencyId);
+    if (currency) {
+      return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;
+    }
+    return balance.toFixed(2);
+  };
   
   const [activeTab, setActiveTab] = useState('accounts');
   const [showForm, setShowForm] = useState(false);
@@ -529,7 +542,7 @@ const DataManagement = () => {
           <option value="">Select Account</option>
           {accountsWithTypes.map(account => (
             <option key={account.id} value={account.id}>
-              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'}) ({formatAccountBalance(account)})
             </option>
           ))}
         </select>
@@ -544,7 +557,7 @@ const DataManagement = () => {
           <option value="">Select Account</option>
           {accountsWithTypes.map(account => (
             <option key={account.id} value={account.id}>
-              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'}) ({formatAccountBalance(account)})
             </option>
           ))}
         </select>
