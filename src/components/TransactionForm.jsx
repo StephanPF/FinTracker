@@ -22,10 +22,25 @@ const TransactionForm = ({ onSuccess }) => {
     currencies,
     exchangeRateService,
     getActiveCurrencies,
-    database 
+    database,
+    numberFormatService
   } = useAccounting();
   const { t } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
+
+  // Format account balance in native currency for dropdown
+  const formatAccountBalance = (account) => {
+    const balance = account.balance || 0;
+    if (numberFormatService && account.currencyId) {
+      return numberFormatService.formatCurrency(balance, account.currencyId);
+    }
+    // Fallback formatting
+    const currency = currencies.find(c => c.id === account.currencyId);
+    if (currency) {
+      return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;
+    }
+    return balance.toFixed(2);
+  };
 
   // Helper function to determine if destination account should be shown
   const shouldShowDestinationAccount = (transactionType) => {
@@ -892,7 +907,7 @@ const TransactionForm = ({ onSuccess }) => {
                   <option value="">Select Account</option>
                   {accountsWithTypes.map(account => (
                     <option key={account.id} value={account.id}>
-                      {account.name}
+                      {account.name} ({formatAccountBalance(account)})
                     </option>
                   ))}
                 </select>
@@ -912,7 +927,7 @@ const TransactionForm = ({ onSuccess }) => {
                     <option value="">Select Destination Account</option>
                     {accountsWithTypes.map(account => (
                       <option key={account.id} value={account.id}>
-                        {account.name}
+                        {account.name} ({formatAccountBalance(account)})
                       </option>
                     ))}
                   </select>

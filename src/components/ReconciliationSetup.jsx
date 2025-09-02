@@ -3,13 +3,27 @@ import { useAccounting } from '../contexts/AccountingContext';
 import './ReconciliationSetup.css';
 
 const ReconciliationSetup = ({ onStart }) => {
-  const { getActiveAccountsWithTypes } = useAccounting();
+  const { getActiveAccountsWithTypes, currencies, numberFormatService } = useAccounting();
   const [formData, setFormData] = useState({
     reconciliationReference: '',
     bankStatementTotal: '',
     accountId: ''
   });
   const [errors, setErrors] = useState({});
+
+  // Format account balance in native currency for dropdown
+  const formatAccountBalance = (account) => {
+    const balance = account.balance || 0;
+    if (numberFormatService && account.currencyId) {
+      return numberFormatService.formatCurrency(balance, account.currencyId);
+    }
+    // Fallback formatting
+    const currency = currencies.find(c => c.id === account.currencyId);
+    if (currency) {
+      return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;
+    }
+    return balance.toFixed(2);
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -38,11 +52,35 @@ const ReconciliationSetup = ({ onStart }) => {
   };
 
   const generateReference = () => {
+    if (!formData.accountId) {
+      alert('Please select an account first before generating a reference.');
+      return;
+    }
+
+    const selectedAccount = getActiveAccountsWithTypes().find(acc => acc.id === formData.accountId);
+    if (!selectedAccount) {
+      alert('Selected account not found.');
+      return;
+    }
+
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const reference = `R${month}${year}`;
+    const year = String(now.getFullYear()).slice(-2); // Get last 2 digits of year
+    const accountCode = selectedAccount.accountCode || 'XX'; // Use XX as fallback if no account code
+    
+    const reference = `${accountCode}${year}${month}`;
     setFormData(prev => ({ ...prev, reconciliationReference: reference }));
+  };
+
+  // Get currency info for the selected account
+  const getSelectedAccountCurrency = () => {
+    if (!formData.accountId) return null;
+    
+    const selectedAccount = getActiveAccountsWithTypes().find(acc => acc.id === formData.accountId);
+    if (!selectedAccount) return null;
+    
+    const currency = currencies.find(c => c.id === selectedAccount.currencyId);
+    return currency;
   };
 
   return (
@@ -64,11 +102,12 @@ const ReconciliationSetup = ({ onStart }) => {
                 accountId: e.target.value 
               }))}
               className={errors.accountId ? 'error' : ''}
+              style={{ maxWidth: '600px' }}
             >
               <option value="">Select an account...</option>
               {getActiveAccountsWithTypes().map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.name} ({account.accountType?.name}) - {account.code}
+                  {account.name} ({account.accountType?.type}) ({formatAccountBalance(account)})
                 </option>
               ))}
             </select>
@@ -82,7 +121,7 @@ const ReconciliationSetup = ({ onStart }) => {
             <label htmlFor="reconciliationReference">
               Reconciliation Reference *
             </label>
-            <div className="reference-input-group">
+            <div className="reference-input-group" style={{ maxWidth: '400px' }}>
               <input
                 id="reconciliationReference"
                 type="text"
@@ -91,7 +130,7 @@ const ReconciliationSetup = ({ onStart }) => {
                   ...prev, 
                   reconciliationReference: e.target.value 
                 }))}
-                placeholder="e.g., R012025"
+                placeholder="e.g., DA2501"
                 className={errors.reconciliationReference ? 'error' : ''}
               />
               <button
@@ -113,18 +152,39 @@ const ReconciliationSetup = ({ onStart }) => {
             <label htmlFor="bankStatementTotal">
               Bank Statement Total *
             </label>
-            <input
-              id="bankStatementTotal"
-              type="number"
-              step="0.01"
-              value={formData.bankStatementTotal}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                bankStatementTotal: e.target.value 
-              }))}
-              placeholder="0.00"
-              className={errors.bankStatementTotal ? 'error' : ''}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', maxWidth: '200px' }}>
+              <input
+                id="bankStatementTotal"
+                type="number"
+                step="0.01"
+                value={formData.bankStatementTotal}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  bankStatementTotal: e.target.value 
+                }))}
+                placeholder="0.00"
+                className={errors.bankStatementTotal ? 'error' : ''}
+                style={{
+                  paddingRight: getSelectedAccountCurrency() ? '28px' : '12px',
+                  width: '100%'
+                }}
+              />
+              {(() => {
+                const currency = getSelectedAccountCurrency();
+                return currency ? (
+                  <span style={{
+                    position: 'absolute',
+                    right: '12px',
+                    zIndex: 1,
+                    color: '#6b7280',
+                    fontSize: '1rem',
+                    pointerEvents: 'none'
+                  }}>
+                    {currency.symbol}
+                  </span>
+                ) : null;
+              })()}
+            </div>
             {errors.bankStatementTotal && (
               <span className="field-error">{errors.bankStatementTotal}</span>
             )}
@@ -146,7 +206,7 @@ const ReconciliationSetup = ({ onStart }) => {
         <div className="info-card">
           <h4>📋 How Reconciliation Works</h4>
           <ol>
-            <li><strong>Setup:</strong> Enter a reference (e.g., R012025) and your bank statement total</li>
+            <li><strong>Setup:</strong> Enter a reference (e.g., DA2501) and your bank statement total</li>
             <li><strong>Select:</strong> Filter and tick transactions that appear on your bank statement</li>
             <li><strong>Match:</strong> Compare your running total with the bank statement total</li>
             <li><strong>Complete:</strong> When totals match, your reconciliation is complete</li>

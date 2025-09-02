@@ -70,6 +70,19 @@ const DataManagement = () => {
   const accountsWithTypes = getAccountsWithTypes();
   const accountTypes = getAccountTypes();
 
+  // Format account balance in native currency for dropdown
+  const formatAccountBalance = (account) => {
+    const balance = account.balance || 0;
+    if (numberFormatService && account.currencyId) {
+      return numberFormatService.formatCurrency(balance, account.currencyId);
+    }
+    // Fallback formatting
+    const currency = currencies.find(c => c.id === account.currencyId);
+    if (currency) {
+      return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;
+    }
+    return balance.toFixed(2);
+  };
   
   const [activeTab, setActiveTab] = useState('accounts');
   const [showForm, setShowForm] = useState(false);
@@ -446,6 +459,20 @@ const DataManagement = () => {
         />
       </div>
       <div className="form-group">
+        <label>Account Code</label>
+        <input
+          type="text"
+          value={formData.accountCode || ''}
+          onChange={(e) => handleInputChange('accountCode', e.target.value.toUpperCase())}
+          placeholder="e.g., BNK, CSH, REV"
+          maxLength="3"
+          style={{ textTransform: 'uppercase' }}
+        />
+        <small style={{ color: '#6b7280', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
+          Optional 2-3 character code to identify this account type
+        </small>
+      </div>
+      <div className="form-group">
         <label>Account Type</label>
         <select
           value={formData.accountTypeId || ''}
@@ -529,7 +556,7 @@ const DataManagement = () => {
           <option value="">Select Account</option>
           {accountsWithTypes.map(account => (
             <option key={account.id} value={account.id}>
-              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'}) ({formatAccountBalance(account)})
             </option>
           ))}
         </select>
@@ -544,7 +571,7 @@ const DataManagement = () => {
           <option value="">Select Account</option>
           {accountsWithTypes.map(account => (
             <option key={account.id} value={account.id}>
-              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'})
+              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'}) ({formatAccountBalance(account)})
             </option>
           ))}
         </select>
@@ -1046,6 +1073,7 @@ const DataManagement = () => {
               label: t('type'), 
               render: (accountType) => accountType ? `${accountType.type} - ${accountType.subtype}` : t('unknownAccount')
             },
+            { key: 'accountCode', label: 'Code', render: (value) => value || '-' },
             { 
               key: 'currencyId', 
               label: t('currency'), 
@@ -1891,7 +1919,7 @@ const DataManagement = () => {
           {(() => {
             // Check if this is a protected record
             const isProtectedAccount = activeTab === 'accounts' && openDropdownId === 'ACC001';
-            const isProtectedTransactionType = activeTab === 'transaction_types' && ['CAT_001', 'CAT_002', 'CAT_003', 'CAT_004'].includes(openDropdownId);
+            const isProtectedTransactionType = activeTab === 'transaction_types' && ['CAT_001', 'CAT_002', 'CAT_003', 'CAT_004', 'CAT_005'].includes(openDropdownId);
             const isProtectedTransactionGroup = activeTab === 'transaction_groups' && ['GRP_001', 'GRP_002', 'GRP_003', 'GRP_004', 'GRP_005', 'GRP_006'].includes(openDropdownId);
             const isProtectedCurrency = activeTab === 'currencies' && ['CUR_001', 'CUR_002', 'CUR_003', 'CUR_004', 'CUR_005', 'CUR_006', 'CUR_007', 'CUR_008'].includes(openDropdownId); // Protect EUR, USD, AED, GBP, AUD, BTC, ETH, CHF
             

@@ -26,7 +26,7 @@ class RelationalDatabase {
     
     // Define table schemas with headers for empty tables
     this.tableSchemas = {
-      accounts: ['id', 'name', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'order', 'isActive', 'createdAt'],
+      accounts: ['id', 'name', 'accountCode', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'order', 'isActive', 'createdAt'],
       transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'cashWithdrawal', 'createdAt'],
       transaction_types: ['id', 'name', 'description', 'color', 'icon', 'defaultAccountId', 'destinationAccountId', 'isActive', 'createdAt'],
       currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
@@ -495,6 +495,7 @@ class RelationalDatabase {
     const newAccount = {
       id: 'ACC' + Date.now(),
       name: accountData.name,
+      accountCode: accountData.accountCode || '',
       accountTypeId: accountData.accountTypeId,
       currencyId: accountData.currencyId || 'CUR_001', // Include currencyId with default fallback
       initialBalance: parseFloat(accountData.initialBalance || accountData.balance) || 0,
@@ -1524,6 +1525,7 @@ class RelationalDatabase {
         { 
           id: 'ACC001', 
           name: 'Default Account', 
+          accountCode: 'DA',
           accountTypeId: 'ACCT_TYPE_001',
           initialBalance: 0,
           balance: 0, // This will be calculated dynamically
@@ -1588,6 +1590,7 @@ class RelationalDatabase {
         { 
           id: 'ACC001', 
           name: 'Default Account', 
+          accountCode: 'DA',
           accountTypeId: 'ACCT_TYPE_001',
           initialBalance: 0,
           balance: 0, // This will be calculated dynamically
