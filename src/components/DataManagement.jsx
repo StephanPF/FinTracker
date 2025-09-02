@@ -786,6 +786,10 @@ const DataManagement = () => {
   const renderSubcategoryForm = () => {
     const activeTransactionGroupsData = getActiveTransactionGroups();
     
+    // Check if selected transaction group is linked to CAT_002 (Expenses)
+    const selectedGroup = activeTransactionGroupsData.find(group => group.id === formData.groupId);
+    const isExpenseGroup = selectedGroup?.transactionTypeId === 'CAT_002';
+    
     return (
       <form onSubmit={handleSubmit} className="data-form">
         <div className="form-group">
@@ -827,6 +831,18 @@ const DataManagement = () => {
             onChange={(e) => handleInputChange('color', e.target.value)}
           />
         </div>
+        {isExpenseGroup && (
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={formData.isCashWithdrawal || false}
+                onChange={(e) => handleInputChange('isCashWithdrawal', e.target.checked)}
+              />
+              Is this a cash withdrawal transaction
+            </label>
+          </div>
+        )}
         <div className="form-actions">
           <button type="submit" className="btn-primary">
             {editingId ? t('updateSubcategory') : t('addSubcategory')}

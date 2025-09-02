@@ -5,9 +5,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useDate } from '../hooks/useDate';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import CashAllocationModal from './CashAllocationModal';
 
 const TransactionList = ({ limit }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database } = useAccounting();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database, getCashAllocationStatus } = useAccounting();
   const { t } = useLanguage();
   const { formatDate } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
@@ -21,6 +22,7 @@ const TransactionList = ({ limit }) => {
   const [isRendering, setIsRendering] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showAllocationModal, setShowAllocationModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
@@ -74,6 +76,15 @@ const TransactionList = ({ limit }) => {
       return transaction.payer;
     }
     return '-';
+  };
+
+  const getCashAllocationCssClass = (transaction) => {
+    if (!transaction.cashWithdrawal) return '';
+    
+    const status = getCashAllocationStatus(transaction.id);
+    if (status === 'none') return 'transaction-row unallocated-cash';
+    if (status === 'partial') return 'transaction-row partially-allocated-cash';
+    return 'transaction-row'; // fully allocated - no special styling
   };
 
   const getTransactionTypeColor = (transaction) => {
@@ -566,14 +577,21 @@ const TransactionList = ({ limit }) => {
             {displayTransactions.map(transaction => (
               <tr 
                 key={transaction.id}
+                className={getCashAllocationCssClass(transaction)}
                 style={{
-                  backgroundColor: transaction.reconciliationReference ? 'rgba(0, 123, 255, 0.1)' : 'transparent'
+                  backgroundColor: 
+                    transaction.cashWithdrawal && getCashAllocationStatus(transaction.id) === 'none' 
+                      ? '' // Let CSS class handle unallocated cash color
+                      : transaction.reconciliationReference 
+                        ? 'rgba(0, 123, 255, 0.1)' 
+                        : 'transparent'
                 }}
               >
                 <td>{formatDate(transaction.date)}</td>
                 <td>{getTransactionType(transaction)}</td>
                 <td>
                   <div className="transaction-description">
+                    {transaction.cashWithdrawal && <span className="atm-icon">🏧 </span>}
                     {transaction.description}
                   </div>
                 </td>
@@ -796,9 +814,34 @@ const TransactionList = ({ limit }) => {
           >
             👁️ View details
           </button>
+          {(() => {
+            const transaction = transactions.find(t => t.id === activeDropdown);
+            return transaction?.cashWithdrawal && (
+              <button 
+                className="dropdown-item"
+                onClick={() => {
+                  setSelectedTransaction(transaction);
+                  setShowAllocationModal(true);
+                  setActiveDropdown(null);
+                }}
+              >
+                💰 Allocate
+              </button>
+            );
+          })()}
         </div>,
         document.body
       )}
+
+      {/* Cash Allocation Modal */}
+      <CashAllocationModal
+        isOpen={showAllocationModal}
+        onClose={() => {
+          setShowAllocationModal(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 };

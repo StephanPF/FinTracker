@@ -20,13 +20,14 @@ class RelationalDatabase {
       payees: [],
       payers: [],
       bank_configurations: [],
-      processing_rules: []
+      processing_rules: [],
+      cash_allocations: []
     };
     
     // Define table schemas with headers for empty tables
     this.tableSchemas = {
       accounts: ['id', 'name', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'order', 'isActive', 'createdAt'],
-      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'createdAt'],
+      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'cashWithdrawal', 'createdAt'],
       transaction_types: ['id', 'name', 'description', 'color', 'icon', 'defaultAccountId', 'destinationAccountId', 'isActive', 'createdAt'],
       currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
       exchange_rates: ['id', 'fromCurrencyId', 'toCurrencyId', 'rate', 'date', 'source', 'createdAt'],
@@ -36,13 +37,14 @@ class RelationalDatabase {
       tags: ['id', 'name', 'description', 'isActive', 'createdAt'],
       todos: ['id', 'title', 'description', 'category', 'status', 'priority', 'estimatedHours', 'completedAt', 'createdAt'],
       transaction_groups: ['id', 'name', 'description', 'color', 'order', 'isActive', 'transactionTypeId', 'createdAt'],
-      subcategories: ['id', 'name', 'description', 'groupId', 'isActive', 'createdAt'],
+      subcategories: ['id', 'name', 'description', 'groupId', 'isActive', 'isCashWithdrawal', 'createdAt'],
       payees: ['id', 'name', 'description', 'isActive', 'createdAt'],
       payers: ['id', 'name', 'description', 'isActive', 'createdAt'],
       api_usage: ['id', 'provider', 'endpoint', 'requestCount', 'date', 'createdAt'],
       api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt'],
       bank_configurations: ['id', 'name', 'type', 'fieldMapping', 'settings', 'isActive', 'createdAt', 'updatedAt'],
-      processing_rules: ['id', 'bankConfigId', 'name', 'type', 'active', 'ruleOrder', 'conditions', 'conditionLogic', 'actions', 'createdAt', 'updatedAt']
+      processing_rules: ['id', 'bankConfigId', 'name', 'type', 'active', 'ruleOrder', 'conditions', 'conditionLogic', 'actions', 'createdAt', 'updatedAt'],
+      cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'createdAt', 'updatedAt']
     };
     
     this.workbooks = {};
@@ -75,6 +77,12 @@ class RelationalDatabase {
       },
       processing_rules: {
         bankConfigId: { table: 'bank_configurations', field: 'id' }
+      },
+      cash_allocations: {
+        parentTransactionId: { table: 'transactions', field: 'id' },
+        categoryId: { table: 'transaction_types', field: 'id', optional: true },
+        transactionGroupId: { table: 'transaction_groups', field: 'id', optional: true },
+        subcategoryId: { table: 'subcategories', field: 'id', optional: true }
       }
     };
   }
@@ -263,6 +271,14 @@ class RelationalDatabase {
     }
   }
 
+  // Helper method to determine if transaction should be flagged as cash withdrawal
+  isCashWithdrawalTransaction(subcategoryId) {
+    if (!subcategoryId) return false;
+    
+    const subcategory = this.tables.subcategories.find(sub => sub.id === subcategoryId);
+    return subcategory ? (subcategory.isCashWithdrawal || false) : false;
+  }
+
   addTransaction(transactionData) {
     if (!this.validateForeignKeys('transactions', transactionData)) {
       throw new Error('Invalid foreign key references in transaction');
@@ -305,6 +321,7 @@ class RelationalDatabase {
       broker: transactionData.broker || null,
       linkedTransactionId: null,
       transactionType: this.getTransactionType(transactionData.categoryId),
+      cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
       createdAt: new Date().toISOString()
     };
     
@@ -363,6 +380,7 @@ class RelationalDatabase {
       broker: transactionData.broker || null,
       linkedTransactionId: creditTxnId,
       transactionType: 'DEBIT', // Money/asset going out
+      cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
       createdAt: new Date().toISOString()
     };
     
@@ -387,6 +405,7 @@ class RelationalDatabase {
       broker: transactionData.broker || null,
       linkedTransactionId: debitTxnId,
       transactionType: 'CREDIT', // Money/asset coming in
+      cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
       createdAt: new Date().toISOString()
     };
     
@@ -639,6 +658,7 @@ class RelationalDatabase {
       payerId: transactionData.payerId || null,
       payeeId: transactionData.payeeId || null,
       linkedTransactionId: oldTransaction.linkedTransactionId, // Preserve linked transaction ID
+      cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
       // Remove unwanted fields if they exist
       productId: undefined,
       customerId: undefined,
@@ -1807,6 +1827,7 @@ class RelationalDatabase {
       description: subcategoryData.description || '',
       order: subcategoryData.order !== undefined ? subcategoryData.order : maxOrder + 1,
       isActive: subcategoryData.isActive !== undefined ? subcategoryData.isActive : true,
+      isCashWithdrawal: subcategoryData.isCashWithdrawal || false,
       createdAt: new Date().toISOString()
     };
 
@@ -3304,6 +3325,135 @@ class RelationalDatabase {
     
     if (deletedCount > 0) {
       this.saveTableToWorkbook('processing_rules');
+    }
+    
+    return deletedCount;
+  }
+
+  // Cash Allocation Methods
+  addCashAllocation(allocationData) {
+    // Initialize cash_allocations table if it doesn't exist
+    if (!this.tables.cash_allocations) {
+      this.tables.cash_allocations = [];
+    }
+    
+    if (!this.validateForeignKeys('cash_allocations', allocationData)) {
+      throw new Error('Invalid foreign key references in cash allocation');
+    }
+
+    const newAllocation = {
+      id: 'ALLOC_' + Date.now(),
+      parentTransactionId: allocationData.parentTransactionId,
+      categoryId: allocationData.categoryId || null,
+      transactionGroupId: allocationData.transactionGroupId || null,
+      subcategoryId: allocationData.subcategoryId || null,
+      amount: parseFloat(allocationData.amount),
+      description: allocationData.description || '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    this.tables.cash_allocations.push(newAllocation);
+    this.saveTableToWorkbook('cash_allocations');
+    return newAllocation;
+  }
+
+  getCashWithdrawalAllocations(transactionId) {
+    // Initialize cash_allocations table if it doesn't exist
+    if (!this.tables.cash_allocations) {
+      this.tables.cash_allocations = [];
+    }
+    
+    return this.tables.cash_allocations.filter(allocation => 
+      allocation.parentTransactionId === transactionId
+    );
+  }
+
+  getTotalAllocatedAmount(transactionId) {
+    const allocations = this.getCashWithdrawalAllocations(transactionId);
+    return allocations.reduce((total, allocation) => total + Math.abs(allocation.amount), 0);
+  }
+
+  getCashAllocationStatus(transactionId) {
+    // Initialize cash_allocations table if it doesn't exist
+    if (!this.tables.cash_allocations) {
+      this.tables.cash_allocations = [];
+    }
+    
+    const transaction = this.tables.transactions.find(t => t.id === transactionId);
+    if (!transaction) return 'none';
+    
+    const allocations = this.getCashWithdrawalAllocations(transactionId);
+    if (allocations.length === 0) return 'none';
+    
+    const totalAllocated = allocations.reduce((total, allocation) => 
+      total + Math.abs(allocation.amount), 0
+    );
+    
+    const originalAmount = Math.abs(transaction.amount);
+    
+    if (totalAllocated === 0) return 'none';
+    if (totalAllocated >= originalAmount) return 'full';
+    return 'partial';
+  }
+
+  getUnallocatedAmount(transactionId) {
+    const transaction = this.tables.transactions.find(t => t.id === transactionId);
+    if (!transaction) return 0;
+    
+    const originalAmount = Math.abs(transaction.amount);
+    const allocatedAmount = this.getTotalAllocatedAmount(transactionId);
+    return originalAmount - allocatedAmount;
+  }
+
+  updateCashAllocation(id, allocationData) {
+    const allocationIndex = this.tables.cash_allocations.findIndex(allocation => allocation.id === id);
+    if (allocationIndex === -1) {
+      throw new Error(`Cash allocation with id ${id} not found`);
+    }
+
+    if (!this.validateForeignKeys('cash_allocations', allocationData)) {
+      throw new Error('Invalid foreign key references in cash allocation');
+    }
+
+    const updatedAllocation = {
+      ...this.tables.cash_allocations[allocationIndex],
+      ...allocationData,
+      id: id, // Ensure ID doesn't change
+      updatedAt: new Date().toISOString()
+    };
+
+    this.tables.cash_allocations[allocationIndex] = updatedAllocation;
+    this.saveTableToWorkbook('cash_allocations');
+    return updatedAllocation;
+  }
+
+  deleteCashAllocation(id) {
+    const allocationIndex = this.tables.cash_allocations.findIndex(allocation => allocation.id === id);
+    if (allocationIndex === -1) {
+      throw new Error(`Cash allocation with id ${id} not found`);
+    }
+
+    const deletedAllocation = this.tables.cash_allocations[allocationIndex];
+    this.tables.cash_allocations.splice(allocationIndex, 1);
+    this.saveTableToWorkbook('cash_allocations');
+    return deletedAllocation;
+  }
+
+  deleteCashAllocationsByTransaction(transactionId) {
+    // Initialize cash_allocations table if it doesn't exist
+    if (!this.tables.cash_allocations) {
+      this.tables.cash_allocations = [];
+    }
+    
+    const initialCount = this.tables.cash_allocations.length;
+    this.tables.cash_allocations = this.tables.cash_allocations.filter(allocation => 
+      allocation.parentTransactionId !== transactionId
+    );
+    const deletedCount = initialCount - this.tables.cash_allocations.length;
+    
+    if (deletedCount > 0) {
+      this.saveTableToWorkbook('cash_allocations');
     }
     
     return deletedCount;

@@ -68,7 +68,11 @@ this.tableSchemas = {
 ensureAllTablesExist() {
   const requiredTables = [
     'accounts', 'transactions', 'tags', 'todos',
-    // ... existing tables ...
+    'transaction_types', 'transaction_groups', 'subcategories',
+    'currencies', 'exchange_rates', 'currency_settings',
+    'user_preferences', 'api_usage', 'api_settings', 'database_info',
+    'payees', 'payers', 'bank_configurations', 'processing_rules',
+    'cash_allocations',  // ← Recently added for cash withdrawal tracking
     'your_new_table'  // ← Add here for backwards compatibility
   ];
 }
@@ -354,7 +358,8 @@ const resetDatabase = async (language = 'en') => {
       'transaction_types', 'transaction_groups', 'subcategories',
       'currencies', 'exchange_rates', 'currency_settings',
       'user_preferences', 'api_usage', 'api_settings', 'database_info',
-      'payees', 'payers',
+      'payees', 'payers', 'bank_configurations', 'processing_rules',
+      'cash_allocations',  // ← Recently added for cash withdrawal tracking
       'your_new_table'  // ← Add here for backups
     ];
     

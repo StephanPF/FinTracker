@@ -1538,7 +1538,41 @@ export const AccountingProvider = ({ children }) => {
     // Date Format Service
     dateFormatService,
     fileStorage,
-    saveExchangeRatesToFile
+    saveExchangeRatesToFile,
+    // Cash Allocation methods
+    addCashAllocation: async (allocationData) => {
+      try {
+        const newAllocation = database.addCashAllocation(allocationData);
+        
+        // Save to file
+        const buffer = database.exportTableToBuffer('cash_allocations');
+        await fileStorage.saveTable('cash_allocations', buffer);
+        
+        return newAllocation;
+      } catch (error) {
+        console.error('Error adding cash allocation:', error);
+        throw error;
+      }
+    },
+    getCashWithdrawalAllocations: (transactionId) => database.getCashWithdrawalAllocations(transactionId),
+    getTotalAllocatedAmount: (transactionId) => database.getTotalAllocatedAmount(transactionId),
+    getCashAllocationStatus: (transactionId) => database.getCashAllocationStatus(transactionId),
+    deleteCashAllocationsByTransaction: async (transactionId) => {
+      try {
+        const result = database.deleteCashAllocationsByTransaction(transactionId);
+        
+        // Save to file if any deletions occurred
+        if (result > 0) {
+          const buffer = database.exportTableToBuffer('cash_allocations');
+          await fileStorage.saveTable('cash_allocations', buffer);
+        }
+        
+        return result;
+      } catch (error) {
+        console.error('Error deleting cash allocations:', error);
+        throw error;
+      }
+    }
   };
 
   return (

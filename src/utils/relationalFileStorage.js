@@ -20,7 +20,8 @@ class RelationalFileStorage {
       payees: 'payees.xlsx',
       payers: 'payers.xlsx',
       bank_configurations: 'bank_configurations.xlsx',
-      processing_rules: 'processing_rules.xlsx'
+      processing_rules: 'processing_rules.xlsx',
+      cash_allocations: 'cash_allocations.xlsx'
     };
   }
 
