@@ -11,6 +11,7 @@ const DatabaseSetup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+
   const handleCreateNew = async () => {
     try {
       setLoading(true);

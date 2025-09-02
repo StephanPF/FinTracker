@@ -83,6 +83,20 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
+  // Helper function to restore saved tab after database loads
+  const restoreSavedTab = () => {
+    // Small delay to ensure Dashboard component has mounted
+    setTimeout(() => {
+      const savedTab = localStorage.getItem('activeTab');
+      if (savedTab && savedTab !== 'overview') {
+        console.log('Restoring saved tab after database load:', savedTab);
+        window.location.hash = savedTab;
+        // Dispatch hashchange event to trigger navigation
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+    }, 100);
+  };
+
   const initializeDatabase = async () => {
     try {
       setLoading(true);
@@ -192,6 +206,9 @@ export const AccountingProvider = ({ children }) => {
       // Load bank configurations after database is created
       loadBankConfigurations();
       
+      // Restore saved tab after database loads
+      restoreSavedTab();
+      
       const buffers = database.exportAllTablesToBuffers();
       await fileStorage.saveAllTables(buffers);
       
@@ -223,6 +240,9 @@ export const AccountingProvider = ({ children }) => {
         
         // Load bank configurations after database is loaded
         loadBankConfigurations();
+        
+        // Restore saved tab after database loads
+        restoreSavedTab();
         
         setIsLoaded(true);
         return true;
@@ -860,6 +880,9 @@ export const AccountingProvider = ({ children }) => {
         
         // Load bank configurations after database is loaded
         loadBankConfigurations();
+        
+        // Restore saved tab after database loads
+        restoreSavedTab();
         
         setIsLoaded(true);
         return true;

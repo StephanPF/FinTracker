@@ -19,7 +19,19 @@ import Logo from './Logo';
 const Dashboard = () => {
   const { isLoaded, loading, resetToSetup } = useAccounting();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Initialize activeTab from URL hash first, then localStorage as fallback
+    const hash = window.location.hash.slice(1);
+    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'settings', 'import-transactions', 'reconciliation'];
+    
+    if (validTabs.includes(hash)) {
+      return hash;
+    }
+    
+    // Fallback to localStorage if no valid hash
+    const savedTab = localStorage.getItem('activeTab');
+    return (savedTab && validTabs.includes(savedTab)) ? savedTab : 'overview';
+  });
   const [helpPanelOpen, setHelpPanelOpen] = useState(false);
   const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false);
   const hamburgerRef = useRef(null);
@@ -27,6 +39,8 @@ const Dashboard = () => {
   // Helper function to handle tab navigation with scroll-to-top
   const handleTabNavigation = (tabName) => {
     setActiveTab(tabName);
+    window.location.hash = tabName;
+    localStorage.setItem('activeTab', tabName);
     // Scroll to top of the page when navigating to any tab
     window.scrollTo({
       top: 0,
@@ -41,7 +55,7 @@ const Dashboard = () => {
     setHamburgerMenuOpen(false);
   };
 
-  // Scroll to top when activeTab changes to overview (handles database load scenario)
+  // Scroll to top when activeTab changes to overview
   useEffect(() => {
     if (activeTab === 'overview' && isLoaded) {
       window.scrollTo({
@@ -51,6 +65,21 @@ const Dashboard = () => {
       });
     }
   }, [activeTab, isLoaded]);
+
+  // Handle browser back/forward button navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'settings', 'import-transactions', 'reconciliation'];
+      if (validTabs.includes(hash)) {
+        setActiveTab(hash);
+        localStorage.setItem('activeTab', hash);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Close hamburger menu when clicking outside
   useEffect(() => {

@@ -341,9 +341,17 @@ class RelationalFileStorage {
         }
       }
       
-      // For different database or when handles are expired, directly open file picker
-      // Note: We skip confirm() to preserve user gesture for File System Access API
+      // For different database or when handles are expired, ask user to reselect files
+      // We need user interaction due to browser security - cannot recreate handles from paths alone
+      const databaseName = databaseInfo.name || databaseInfo.path || 'Unknown Database';
+      
       if (databaseInfo.type === 'directory' && databaseInfo.path) {
+        // Show confirmation before opening file picker for directory
+        const userConfirmed = confirm(`To reload "${databaseName}", please select the database folder again. This is required due to browser security restrictions.\n\nClick OK to select the folder, or Cancel to abort.`);
+        if (!userConfirmed) {
+          return null;
+        }
+        
         try {
           return await this.selectDatabaseFolder();
         } catch (error) {
@@ -353,6 +361,12 @@ class RelationalFileStorage {
           return null;
         }
       } else if (databaseInfo.files && Array.isArray(databaseInfo.files)) {
+        // Show confirmation before opening file picker for individual files
+        const userConfirmed = confirm(`To reload "${databaseName}", please select the database files again. This is required due to browser security restrictions.\n\nExpected files: ${databaseInfo.files.join(', ')}\n\nClick OK to select files, or Cancel to abort.`);
+        if (!userConfirmed) {
+          return null;
+        }
+        
         try {
           return await this.selectIndividualFiles();
         } catch (error) {
