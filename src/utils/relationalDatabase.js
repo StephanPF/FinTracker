@@ -1033,21 +1033,20 @@ class RelationalDatabase {
   }
 
   getAccountsWithTypes() {
-    const accountBalances = this.calculateIndividualAccountBalances();
     const accountTypes = this.getAccountTypes();
     
     const accountsWithTypes = this.tables.accounts.map(account => {
       const accountType = accountTypes.find(type => type.id === account.accountTypeId);
-      let calculatedBalance = accountBalances[account.id] || 0;
+      let storedBalance = parseFloat(account.balance) || 0;
       
       // For liability accounts, display the credit balance as positive
       if (accountType && accountType.type === 'Liability') {
-        calculatedBalance = -calculatedBalance;
+        storedBalance = -storedBalance;
       }
       
       return {
         ...account,
-        balance: calculatedBalance,
+        balance: storedBalance,
         accountType: accountType
       };
     });

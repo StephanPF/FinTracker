@@ -6,7 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import './ReconciliationTransactionList.css';
 
 const ReconciliationTransactionList = ({ selectedTransactions, onTransactionToggle, accountId, selectedAccount }) => {
-  const { getUnreconciledTransactions, accounts, categories, getActiveTransactionGroups, getActiveSubcategories, tags } = useAccounting();
+  const { getUnreconciledTransactions, transactions, accounts, categories, getActiveTransactionGroups, getActiveSubcategories, tags } = useAccounting();
   const { formatDate } = useDate();
   
   // Filter state (reuse similar logic to TransactionList)
@@ -23,7 +23,8 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
     amountMax: '',
     reconciliationReference: '',
     tagId: '',
-    reference: ''
+    reference: '',
+    showReconciled: 'hide'  // New filter: 'hide' or 'show' reconciled transactions
   });
 
   // Date picker states
@@ -52,12 +53,20 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
     }));
   };
 
-  // Get unreconciled transactions for the selected account
-  const unreconciled = getUnreconciledTransactions(accountId);
+  // Get transactions for the selected account based on reconciliation filter
+  const accountTransactions = useMemo(() => {
+    if (filters.showReconciled === 'show') {
+      // Show all transactions for this account (both reconciled and unreconciled)
+      return transactions.filter(t => t.accountId === accountId);
+    } else {
+      // Show only unreconciled transactions (existing behavior)
+      return getUnreconciledTransactions(accountId);
+    }
+  }, [transactions, accountId, filters.showReconciled, getUnreconciledTransactions]);
 
   // Filter transactions
   const filteredTransactions = useMemo(() => {
-    return unreconciled.filter(transaction => {
+    return accountTransactions.filter(transaction => {
       // Search filter
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
@@ -130,7 +139,7 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
 
       return true;
     });
-  }, [unreconciled, filters]);
+  }, [accountTransactions, filters]);
 
   const formatCurrency = (amount) => {
     // Use the selected account's currency, fallback to USD if not available
@@ -202,6 +211,17 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               className="filter-input"
             />
+          </div>
+          
+          <div className="filter-field">
+            <select
+              value={filters.showReconciled}
+              onChange={(e) => setFilters(prev => ({ ...prev, showReconciled: e.target.value }))}
+              className="filter-select"
+            >
+              <option value="hide">Hide Reconciled Transactions</option>
+              <option value="show">Show Reconciled Transactions</option>
+            </select>
           </div>
           
           <div className="filter-field">
@@ -361,7 +381,7 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
       <div className="transactions-table">
         {filteredTransactions.length === 0 ? (
           <div className="no-transactions">
-            <p>No unreconciled transactions found with the current filters.</p>
+            <p>No {filters.showReconciled === 'show' ? '' : 'unreconciled '}transactions found with the current filters.</p>
           </div>
         ) : (
           <table>
@@ -374,19 +394,28 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
                 <th>Category</th>
                 <th>Amount</th>
                 <th>Reference</th>
+                <th>Reconciled</th>
               </tr>
             </thead>
             <tbody>
               {filteredTransactions.map(transaction => (
                 <tr 
                   key={transaction.id} 
-                  className={selectedTransactions.has(transaction.id) ? 'selected' : ''}
+                  className={`
+                    ${selectedTransactions.has(transaction.id) ? 'selected' : ''}
+                    ${transaction.reconciliationReference ? 'reconciled-row' : ''}
+                  `.trim()}
                 >
                   <td>
                     <input
                       type="checkbox"
                       checked={selectedTransactions.has(transaction.id)}
                       onChange={() => onTransactionToggle(transaction)}
+                      disabled={!!transaction.reconciliationReference}
+                      style={{
+                        cursor: transaction.reconciliationReference ? 'not-allowed' : 'pointer',
+                        opacity: transaction.reconciliationReference ? 0.5 : 1
+                      }}
                     />
                   </td>
                   <td>{formatDate(transaction.date)}</td>
@@ -405,6 +434,17 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
                     {formatCurrency(transaction.amount)}
                   </td>
                   <td>{transaction.reference || '—'}</td>
+                  <td>
+                    {transaction.reconciliationReference ? (
+                      <span className="reconciled-status reconciled">
+                        ✓ {transaction.reconciliationReference}
+                      </span>
+                    ) : (
+                      <span className="reconciled-status unreconciled">
+                        — Not Reconciled
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
