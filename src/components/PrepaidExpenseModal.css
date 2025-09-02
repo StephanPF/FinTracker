@@ -1,0 +1,466 @@
+/* PrepaidExpenseModal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.prepaid-modal {
+  background: white;
+  border-radius: 8px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem !important;
+  border-bottom: 1px solid #e5e5e5;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.modal-content {
+  padding: 0 !important;
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+  width: 100% !important;
+  max-width: 900px !important;
+}
+
+/* Transaction Info Section */
+.transaction-info {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  padding: 1rem 1.5rem;
+  margin: 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-row .label {
+  font-weight: 600;
+  color: #666;
+}
+
+.info-row .value {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Form Sections */
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+/* Main content layout - two columns */
+.modal-main-content {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 12px 1.5rem 30px 1.5rem;
+  margin: 0;
+}
+
+.modal-left-column {
+  flex: 0 0 33.33%;
+  min-width: 33.33%;
+}
+
+.modal-right-column {
+  flex: 0 0 66.67%;
+  min-width: 66.67%;
+  overflow: visible;
+}
+
+.dates-section {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dates-section h4 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Side-by-side date fields for defer_and_amortize */
+.date-fields-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.date-field {
+  flex: 1;
+}
+
+.section-label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.form-section label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.form-section input[type="date"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white;
+  color: #374151;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-section input[type="date"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* DatePicker Styling */
+.form-datepicker {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white;
+  color: #374151;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-datepicker:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* DatePicker Calendar Portal */
+.react-datepicker-popper {
+  z-index: 20000 !important;
+}
+
+.react-datepicker {
+  z-index: 20000 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.react-datepicker__triangle {
+  z-index: 20000 !important;
+}
+
+/* Recognition Method Dropdown */
+.recognition-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white;
+  color: #374151;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.recognition-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.recognition-select option {
+  background-color: white;
+  color: #374151;
+}
+
+/* Method Explanation */
+.method-explanation {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-left: 4px solid #007bff;
+  border-radius: 4px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.explanation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.explanation-title {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 0.875rem;
+}
+
+.explanation-text {
+  color: #6b7280;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.explanation-text strong {
+  color: #007bff;
+  font-weight: 600;
+}
+
+
+/* Error Section */
+.error-section {
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-section h4 {
+  color: #c53030;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.error-section ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #c53030;
+}
+
+.error-section li {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Preview Section */
+.preview-section {
+  background: #f0f8ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.preview-section h4 {
+  color: #0066cc;
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.preview-description {
+  color: #333;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.preview-details {
+  display: flex;
+  gap: 2rem;
+}
+
+.preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.preview-label {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.preview-value {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid #e5e5e5;
+  background: #f8f9fa;
+  border-radius: 0 0 8px 8px;
+  margin: 0;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #545b62;
+}
+
+.btn-outline {
+  background: white;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #dc3545;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .prepaid-modal {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .modal-header {
+    padding: 0.5rem 1rem;
+  }
+  
+  .modal-actions {
+    padding: 0.5rem 1rem;
+  }
+  
+  .modal-content {
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* Stack columns on mobile */
+  .modal-main-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .modal-right-column {
+    flex: 1;
+    min-width: unset;
+  }
+  
+  .preview-details {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+  
+  /* Stack date fields on mobile */
+  .date-fields-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

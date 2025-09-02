@@ -27,7 +27,7 @@ class RelationalDatabase {
     // Define table schemas with headers for empty tables
     this.tableSchemas = {
       accounts: ['id', 'name', 'accountCode', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'order', 'isActive', 'createdAt'],
-      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'cashWithdrawal', 'createdAt'],
+      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'cashWithdrawal', 'isPrepaid', 'recognitionMethod', 'serviceStartDate', 'serviceEndDate', 'recognitionStatus', 'recognizedToDate', 'remainingToRecognize', 'createdAt'],
       transaction_types: ['id', 'name', 'description', 'color', 'icon', 'defaultAccountId', 'destinationAccountId', 'isActive', 'createdAt'],
       currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
       exchange_rates: ['id', 'fromCurrencyId', 'toCurrencyId', 'rate', 'date', 'source', 'createdAt'],
@@ -322,6 +322,14 @@ class RelationalDatabase {
       linkedTransactionId: null,
       transactionType: this.getTransactionType(transactionData.categoryId),
       cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
+      // Prepaid expense fields
+      isPrepaid: transactionData.isPrepaid || false,
+      recognitionMethod: transactionData.recognitionMethod || null,
+      serviceStartDate: transactionData.serviceStartDate || null,
+      serviceEndDate: transactionData.serviceEndDate || null,
+      recognitionStatus: transactionData.recognitionStatus || null,
+      recognizedToDate: transactionData.recognizedToDate || 0,
+      remainingToRecognize: transactionData.remainingToRecognize || null,
       createdAt: new Date().toISOString()
     };
     
@@ -381,6 +389,14 @@ class RelationalDatabase {
       linkedTransactionId: creditTxnId,
       transactionType: 'DEBIT', // Money/asset going out
       cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
+      // Prepaid expense fields (transfers cannot be prepaid)
+      isPrepaid: false,
+      recognitionMethod: null,
+      serviceStartDate: null,
+      serviceEndDate: null,
+      recognitionStatus: null,
+      recognizedToDate: 0,
+      remainingToRecognize: null,
       createdAt: new Date().toISOString()
     };
     
@@ -406,6 +422,14 @@ class RelationalDatabase {
       linkedTransactionId: debitTxnId,
       transactionType: 'CREDIT', // Money/asset coming in
       cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
+      // Prepaid expense fields (transfers cannot be prepaid)
+      isPrepaid: false,
+      recognitionMethod: null,
+      serviceStartDate: null,
+      serviceEndDate: null,
+      recognitionStatus: null,
+      recognizedToDate: 0,
+      remainingToRecognize: null,
       createdAt: new Date().toISOString()
     };
     
@@ -3459,6 +3483,148 @@ class RelationalDatabase {
     }
     
     return deletedCount;
+  }
+
+  // Prepaid Expense Methods
+  updateTransactionPrepaidSettings(transactionId, prepaidData) {
+    const transactionIndex = this.tables.transactions.findIndex(t => t.id === transactionId);
+    if (transactionIndex === -1) {
+      throw new Error(`Transaction with id ${transactionId} not found`);
+    }
+
+    const updatedTransaction = {
+      ...this.tables.transactions[transactionIndex],
+      ...prepaidData,
+      updatedAt: new Date().toISOString()
+    };
+
+    this.tables.transactions[transactionIndex] = updatedTransaction;
+    this.saveTableToWorkbook('transactions');
+    
+    return updatedTransaction;
+  }
+
+  getPrepaidTransactions() {
+    return this.tables.transactions.filter(transaction => transaction.isPrepaid);
+  }
+
+  updateAllPrepaidStatuses() {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const prepaidTransactions = this.getPrepaidTransactions();
+    let updatedCount = 0;
+
+    prepaidTransactions.forEach(transaction => {
+      const { recognizedToDate, remainingToRecognize, recognitionStatus } = 
+        this.calculateRecognitionStatus(transaction, currentDate);
+
+      // Only update if status has changed
+      if (
+        transaction.recognizedToDate !== recognizedToDate ||
+        transaction.remainingToRecognize !== remainingToRecognize ||
+        transaction.recognitionStatus !== recognitionStatus
+      ) {
+        const transactionIndex = this.tables.transactions.findIndex(t => t.id === transaction.id);
+        if (transactionIndex !== -1) {
+          this.tables.transactions[transactionIndex] = {
+            ...transaction,
+            recognizedToDate,
+            remainingToRecognize,
+            recognitionStatus,
+            updatedAt: new Date().toISOString()
+          };
+          updatedCount++;
+        }
+      }
+    });
+
+    if (updatedCount > 0) {
+      this.saveTableToWorkbook('transactions');
+    }
+
+    return updatedCount;
+  }
+
+  calculateRecognitionStatus(transaction, currentDate) {
+    if (!transaction.isPrepaid || !transaction.recognitionMethod) {
+      return {
+        recognizedToDate: 0,
+        remainingToRecognize: null,
+        recognitionStatus: null
+      };
+    }
+
+    const amount = Math.abs(transaction.amount);
+    const current = new Date(currentDate);
+    let recognizedToDate = 0;
+
+    switch (transaction.recognitionMethod) {
+      case 'defer':
+        if (transaction.serviceStartDate && current >= new Date(transaction.serviceStartDate)) {
+          recognizedToDate = amount;
+        }
+        break;
+      
+      case 'amortize':
+        if (transaction.serviceEndDate) {
+          const transactionDate = new Date(transaction.date);
+          const serviceEnd = new Date(transaction.serviceEndDate);
+          
+          if (current >= transactionDate) {
+            if (current >= serviceEnd) {
+              recognizedToDate = amount;
+            } else {
+              const totalMonths = this.getMonthsBetween(transaction.date, transaction.serviceEndDate);
+              const elapsedMonths = this.getMonthsBetween(transaction.date, currentDate);
+              const monthlyAmount = amount / totalMonths;
+              recognizedToDate = Math.min(monthlyAmount * elapsedMonths, amount);
+            }
+          }
+        }
+        break;
+      
+      case 'defer_and_amortize':
+        if (transaction.serviceStartDate && transaction.serviceEndDate) {
+          const serviceStart = new Date(transaction.serviceStartDate);
+          const serviceEnd = new Date(transaction.serviceEndDate);
+          
+          if (current >= serviceStart) {
+            if (current >= serviceEnd) {
+              recognizedToDate = amount;
+            } else {
+              const totalMonths = this.getMonthsBetween(transaction.serviceStartDate, transaction.serviceEndDate);
+              const elapsedMonths = this.getMonthsBetween(transaction.serviceStartDate, currentDate);
+              const monthlyAmount = amount / totalMonths;
+              recognizedToDate = Math.min(monthlyAmount * elapsedMonths, amount);
+            }
+          }
+        }
+        break;
+    }
+
+    // Determine status
+    let status = 'pending';
+    const effectiveStartDate = transaction.serviceStartDate || transaction.date;
+    
+    if (current < new Date(effectiveStartDate)) {
+      status = 'pending';
+    } else if (recognizedToDate < amount) {
+      status = 'active';
+    } else {
+      status = 'completed';
+    }
+
+    return {
+      recognizedToDate,
+      remainingToRecognize: amount - recognizedToDate,
+      recognitionStatus: status
+    };
+  }
+
+  getMonthsBetween(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    return Math.max(1, months);
   }
 }
 

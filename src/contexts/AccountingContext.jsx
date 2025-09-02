@@ -1427,6 +1427,45 @@ export const AccountingProvider = ({ children }) => {
     }));
   };
 
+  // Prepaid Expense methods
+  const updateTransactionPrepaidSettings = async (transactionId, prepaidData) => {
+    try {
+      const updatedTransaction = database.updateTransactionPrepaidSettings(transactionId, prepaidData);
+      updateStateFromDatabase();
+      
+      // Save to file
+      const buffer = database.exportTableToBuffer('transactions');
+      await fileStorage.saveTable('transactions', buffer);
+      
+      return updatedTransaction;
+    } catch (error) {
+      console.error('Error updating prepaid settings:', error);
+      throw error;
+    }
+  };
+
+  const getPrepaidTransactions = () => {
+    return database.getPrepaidTransactions();
+  };
+
+  const updateAllPrepaidStatuses = async () => {
+    try {
+      const updatedCount = database.updateAllPrepaidStatuses();
+      if (updatedCount > 0) {
+        updateStateFromDatabase();
+        
+        // Save to file
+        const buffer = database.exportTableToBuffer('transactions');
+        await fileStorage.saveTable('transactions', buffer);
+      }
+      
+      return updatedCount;
+    } catch (error) {
+      console.error('Error updating prepaid statuses:', error);
+      throw error;
+    }
+  };
+
   const value = {
     database,
     accounts,
@@ -1595,7 +1634,11 @@ export const AccountingProvider = ({ children }) => {
         console.error('Error deleting cash allocations:', error);
         throw error;
       }
-    }
+    },
+    // Prepaid Expense methods
+    updateTransactionPrepaidSettings,
+    getPrepaidTransactions,
+    updateAllPrepaidStatuses
   };
 
   return (

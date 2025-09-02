@@ -6,9 +6,10 @@ import { useDate } from '../hooks/useDate';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import CashAllocationModal from './CashAllocationModal';
+import PrepaidExpenseModal from './PrepaidExpenseModal';
 
 const TransactionList = ({ limit, selectedAccountId }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database, getCashAllocationStatus } = useAccounting();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database, getCashAllocationStatus, updateTransactionPrepaidSettings } = useAccounting();
   const { t } = useLanguage();
   const { formatDate } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
@@ -23,6 +24,7 @@ const TransactionList = ({ limit, selectedAccountId }) => {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showAllocationModal, setShowAllocationModal] = useState(false);
+  const [showPrepaidModal, setShowPrepaidModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
@@ -430,6 +432,18 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     };
   }, [activeDropdown]);
 
+  // Handle prepaid expense save
+  const handlePrepaidSave = async (transactionId, prepaidData) => {
+    try {
+      await updateTransactionPrepaidSettings(transactionId, prepaidData);
+      setShowPrepaidModal(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('Error saving prepaid settings:', error);
+      alert('Error saving prepaid settings: ' + error.message);
+    }
+  };
+
   if (transactions.length === 0) {
     return (
       <div className="transaction-list empty">
@@ -592,7 +606,12 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                         : 'transparent'
                 }}
               >
-                <td>{formatDate(transaction.date)}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {formatDate(transaction.date)}
+                    {transaction.isPrepaid && <span className="prepaid-icon">🕐</span>}
+                  </div>
+                </td>
                 <td>{getTransactionType(transaction)}</td>
                 <td>
                   <div className="transaction-description">
@@ -615,6 +634,20 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                   <div style={{ color: 'inherit' }}>
                     {formatAmountWithCurrency(transaction)}
                   </div>
+                  {transaction.isPrepaid && (
+                    <div style={{ fontSize: '0.7rem', marginTop: '2px' }}>
+                      <span className={`prepaid-status status-${transaction.recognitionStatus || 'pending'}`}>
+                        {(() => {
+                          switch(transaction.recognitionStatus) {
+                            case 'pending': return 'Pending';
+                            case 'active': return 'Active';
+                            case 'completed': return 'Completed';
+                            default: return 'Pending';
+                          }
+                        })()}
+                      </span>
+                    </div>
+                  )}
                 </td>
                 <td style={{ textAlign: 'center', fontSize: '0.7rem', color: '#6c757d' }}>
                   {transaction.reconciliationReference || '-'}
@@ -834,6 +867,24 @@ const TransactionList = ({ limit, selectedAccountId }) => {
               </button>
             );
           })()}
+          {(() => {
+            const transaction = transactions.find(t => t.id === activeDropdown);
+            // Don't show prepaid option for transfers (CAT_003)
+            if (transaction?.categoryId === 'CAT_003') return null;
+            
+            return (
+              <button 
+                className="dropdown-item"
+                onClick={() => {
+                  setSelectedTransaction(transaction);
+                  setShowPrepaidModal(true);
+                  setActiveDropdown(null);
+                }}
+              >
+                {transaction?.isPrepaid ? '🕐 Edit Prepaid' : '🕐 Mark as Prepaid'}
+              </button>
+            );
+          })()}
         </div>,
         document.body
       )}
@@ -846,6 +897,17 @@ const TransactionList = ({ limit, selectedAccountId }) => {
           setSelectedTransaction(null);
         }}
         transaction={selectedTransaction}
+      />
+
+      {/* Prepaid Expense Modal */}
+      <PrepaidExpenseModal
+        isOpen={showPrepaidModal}
+        transaction={selectedTransaction}
+        onClose={() => {
+          setShowPrepaidModal(false);
+          setSelectedTransaction(null);
+        }}
+        onSave={handlePrepaidSave}
       />
     </div>
   );
