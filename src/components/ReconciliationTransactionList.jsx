@@ -6,7 +6,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import './ReconciliationTransactionList.css';
 
 const ReconciliationTransactionList = ({ selectedTransactions, onTransactionToggle, accountId, selectedAccount }) => {
-  const { getUnreconciledTransactions, transactions, accounts, categories, getActiveTransactionGroups, getActiveSubcategories, tags } = useAccounting();
+  const { getUnreconciledTransactions, transactions, accounts, categories, getActiveTransactionGroups, getActiveSubcategories, tags, numberFormatService } = useAccounting();
   const { formatDate } = useDate();
   
   // Filter state (reuse similar logic to TransactionList)
@@ -142,7 +142,12 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
   }, [accountTransactions, filters]);
 
   const formatCurrency = (amount) => {
-    // Use the selected account's currency, fallback to USD if not available
+    // Use the application's number format service with the selected account's currency
+    if (numberFormatService && selectedAccount?.currencyId) {
+      return numberFormatService.formatCurrency(amount, selectedAccount.currencyId);
+    }
+    
+    // Fallback to Intl.NumberFormat if services not available
     const currencyCode = selectedAccount?.currency?.code || 'USD';
     const locale = selectedAccount?.currency?.locale || 'en-US';
     

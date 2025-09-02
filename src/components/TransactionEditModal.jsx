@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useAccounting } from '../contexts/AccountingContext';
 import './TransactionEditModal.css';
 
 const TransactionEditModal = ({ transaction, accounts, categories = [], currencies = [], transactionTypes = [], subcategories = [], transactionGroups = [], onSave, onClose }) => {
+  const { numberFormatService } = useAccounting();
   const [formData, setFormData] = useState({
     date: transaction.date || '',
     description: transaction.description || '',
@@ -26,6 +28,10 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
   // Format account balance in native currency for dropdown
   const formatAccountBalance = (account) => {
     const balance = account.balance || 0;
+    if (numberFormatService && account.currencyId) {
+      return numberFormatService.formatCurrency(balance, account.currencyId);
+    }
+    // Fallback formatting
     const currency = currencies.find(c => c.id === account.currencyId);
     if (currency) {
       return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;

@@ -6,7 +6,7 @@ import { useAccounting } from '../contexts/AccountingContext';
 import './ReconciliationPage.css';
 
 const ReconciliationPage = () => {
-  const { getUnreconciledTransactions, reconcileTransaction, unreconcileTransaction, accounts, currencies } = useAccounting();
+  const { getUnreconciledTransactions, reconcileTransaction, unreconcileTransaction, accounts, currencies, numberFormatService } = useAccounting();
   
   // Helper function to get selected account with currency
   const getSelectedAccountWithCurrency = () => {
@@ -87,10 +87,14 @@ const ReconciliationPage = () => {
     // If not balanced, ask for confirmation
     if (!isBalanced) {
       const selectedAccount = getSelectedAccountWithCurrency();
-      const currencyCode = selectedAccount?.currency?.code || 'USD';
-      const locale = selectedAccount?.currency?.locale || 'en-US';
       
       const formatCurrency = (amount) => {
+        if (numberFormatService && selectedAccount?.currencyId) {
+          return numberFormatService.formatCurrency(amount, selectedAccount.currencyId);
+        }
+        // Fallback to simple formatting
+        const currencyCode = selectedAccount?.currency?.code || 'USD';
+        const locale = selectedAccount?.currency?.locale || 'en-US';
         return new Intl.NumberFormat(locale, {
           style: 'currency',
           currency: currencyCode

@@ -4,7 +4,7 @@ import TransactionEditModal from './TransactionEditModal';
 import './TransactionReviewQueue.css';
 
 const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingStats }) => {
-  const { accounts, addTransaction, categories, currencies, transactionTypes, subcategories, transactionGroups } = useAccounting();
+  const { accounts, addTransaction, categories, currencies, transactionTypes, subcategories, transactionGroups, numberFormatService } = useAccounting();
   const [transactionsList, setTransactionsList] = useState(transactions);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -54,10 +54,19 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
     return 'Ready';
   };
 
-  const formatAmount = (amount, currency = 'USD') => {
+  const formatAmount = (amount, currencyId = 'CUR_002') => {
+    // Use the application's number format service
+    if (numberFormatService && currencyId) {
+      return numberFormatService.formatCurrency(amount, currencyId);
+    }
+    
+    // Fallback to Intl.NumberFormat
+    const currency = currencies.find(c => c.id === currencyId);
+    const currencyCode = currency?.code || 'USD';
+    
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency
+      currency: currencyCode
     }).format(amount);
   };
 

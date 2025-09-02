@@ -179,12 +179,9 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     const shouldShowNegative = transaction.transactionType === 'DEBIT';
     
     if (currency && exchangeRateService) {
-      let primaryAmount = exchangeRateService.formatAmount(transaction.amount || 0, currency.id);
-      
-      // Add minus sign for expenses and transfer debits
-      if (shouldShowNegative) {
-        primaryAmount = primaryAmount.startsWith('-') ? primaryAmount : '-' + primaryAmount;
-      }
+      // Pass negative amount directly to the formatting service
+      const displayAmount = shouldShowNegative ? -(transaction.amount || 0) : (transaction.amount || 0);
+      let primaryAmount = exchangeRateService.formatAmount(displayAmount, currency.id);
       
       // If not in base currency, also show converted amount in brackets
       if (transaction.currencyId !== exchangeRateService.getBaseCurrencyId()) {
@@ -200,15 +197,12 @@ const TransactionList = ({ limit, selectedAccountId }) => {
           baseCurrencyAmount = (transaction.amount || 0) * rate;
         }
         
+        // Apply negative sign if needed before formatting
+        const displayBaseCurrencyAmount = shouldShowNegative ? -baseCurrencyAmount : baseCurrencyAmount;
         let convertedAmount = exchangeRateService.formatAmount(
-          baseCurrencyAmount, 
+          displayBaseCurrencyAmount, 
           baseCurrency?.id
         );
-        
-        // Add minus sign for expenses and transfer debits in converted amount too
-        if (shouldShowNegative) {
-          convertedAmount = convertedAmount.startsWith('-') ? convertedAmount : '-' + convertedAmount;
-        }
         
         return `${primaryAmount} (≈ ${convertedAmount})`;
       }
@@ -228,12 +222,9 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     const shouldShowNegative = transaction.transactionType === 'DEBIT';
     
     if (currency && exchangeRateService) {
-      let primaryAmount = exchangeRateService.formatAmount(transaction.amount || 0, currency.id);
-      
-      // Add minus sign for expenses and transfer debits
-      if (shouldShowNegative) {
-        primaryAmount = primaryAmount.startsWith('-') ? primaryAmount : '-' + primaryAmount;
-      }
+      // Pass negative amount directly to the formatting service
+      const displayAmount = shouldShowNegative ? -(transaction.amount || 0) : (transaction.amount || 0);
+      let primaryAmount = exchangeRateService.formatAmount(displayAmount, currency.id);
       
       // If not in base currency, also show converted amount using stored exchange rate
       if (transaction.currencyId !== exchangeRateService.getBaseCurrencyId()) {
@@ -249,15 +240,12 @@ const TransactionList = ({ limit, selectedAccountId }) => {
           baseCurrencyAmount = (transaction.amount || 0) * rate;
         }
         
+        // Apply negative sign if needed before formatting
+        const displayBaseCurrencyAmount = shouldShowNegative ? -baseCurrencyAmount : baseCurrencyAmount;
         let convertedAmount = exchangeRateService.formatAmount(
-          baseCurrencyAmount, 
+          displayBaseCurrencyAmount, 
           baseCurrency?.id
         );
-        
-        // Add minus sign for expenses and transfer debits in converted amount too
-        if (shouldShowNegative) {
-          convertedAmount = convertedAmount.startsWith('-') ? convertedAmount : '-' + convertedAmount;
-        }
         
         return (
           <div className="amount-with-conversion" style={{ color: 'inherit' }}>
@@ -271,19 +259,16 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     
     // Use numberFormatService with the transaction's currency if available
     if (numberFormatService && transaction.currencyId) {
-      let formatted = numberFormatService.formatCurrency(transaction.amount || 0, transaction.currencyId);
-      
-      // Add minus sign for expenses and transfer debits
-      if (shouldShowNegative) {
-        formatted = formatted.startsWith('-') ? formatted : '-' + formatted;
-      }
+      // Pass negative amount directly to the formatting service
+      const displayAmount = shouldShowNegative ? -(transaction.amount || 0) : (transaction.amount || 0);
+      let formatted = numberFormatService.formatCurrency(displayAmount, transaction.currencyId);
       
       return formatted;
     }
     
     // Fallback: basic formatting without currency symbol
-    const basicAmount = (transaction.amount || 0).toFixed(2);
-    return shouldShowNegative ? (basicAmount.startsWith('-') ? basicAmount : '-' + basicAmount) : basicAmount;
+    const displayAmount = shouldShowNegative ? -(transaction.amount || 0) : (transaction.amount || 0);
+    return displayAmount.toFixed(2);
   };
 
   const filteredTransactions = useMemo(() => {

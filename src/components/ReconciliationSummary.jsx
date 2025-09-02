@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAccounting } from '../contexts/AccountingContext';
 import './ReconciliationSummary.css';
 
 const ReconciliationSummary = ({ 
@@ -10,11 +11,17 @@ const ReconciliationSummary = ({
   onComplete,
   selectedAccount
 }) => {
+  const { numberFormatService } = useAccounting();
   const difference = runningTotal - bankStatementTotal;
   const isBalanced = Math.abs(difference) < 0.01; // Account for floating point precision
 
   const formatCurrency = (amount) => {
-    // Use the selected account's currency, fallback to USD if not available
+    // Use the application's number format service with the selected account's currency
+    if (numberFormatService && selectedAccount?.currencyId) {
+      return numberFormatService.formatCurrency(amount, selectedAccount.currencyId);
+    }
+    
+    // Fallback to Intl.NumberFormat if services not available
     const currencyCode = selectedAccount?.currency?.code || 'USD';
     const locale = selectedAccount?.currency?.locale || 'en-US';
     

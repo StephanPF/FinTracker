@@ -149,9 +149,19 @@ class NumberFormatService {
         decimalPlaces = currency.decimalPlaces || 2;
     }
 
-    // Format the number part
-    const fixedAmount = parseFloat(amount).toFixed(decimalPlaces);
-    const formattedAmount = this.formatNumber(parseFloat(fixedAmount), formatOptions);
+    // Store if amount is negative and work with absolute value for number formatting
+    const isNegative = amount < 0;
+    const absAmount = Math.abs(amount);
+
+    // Format the absolute number part first
+    const fixedAmount = parseFloat(absAmount).toFixed(decimalPlaces);
+    const absFormatOptions = { ...formatOptions };
+    let formattedAbsAmount = this.formatNumber(parseFloat(fixedAmount), absFormatOptions);
+
+    // Apply negative formatting to just the number part if needed
+    if (isNegative) {
+      formattedAbsAmount = this.applyNegativeFormatting(formattedAbsAmount, formatOptions.negativeDisplay);
+    }
 
     // Use the symbol position from preferences (no auto-detection needed)
     const symbolPosition = formatOptions.currencySymbolPosition;
@@ -178,15 +188,19 @@ class NumberFormatService {
     }
 
     // Combine amount with currency display
+    let result;
     if (symbolPosition === 'after') {
-      return `${formattedAmount} ${currencyDisplay}`;
+      result = `${formattedAbsAmount} ${currencyDisplay}`;
     } else {
       // Special case for AED and CHF - always include space after symbol when positioned before
       if (currency.code === 'AED' || currency.code === 'CHF') {
-        return `${currencyDisplay} ${formattedAmount}`;
+        result = `${currencyDisplay} ${formattedAbsAmount}`;
+      } else {
+        result = `${currencyDisplay}${formattedAbsAmount}`;
       }
-      return `${currencyDisplay}${formattedAmount}`;
     }
+
+    return result;
   }
 
   // Get smart decimal places based on amount magnitude
