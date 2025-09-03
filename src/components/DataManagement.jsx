@@ -6,6 +6,7 @@ import { useDate } from '../hooks/useDate';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import CurrencyManager from './CurrencyManager';
+import Autocomplete from './Autocomplete';
 
 const DataManagement = () => {
   const { 
@@ -124,6 +125,82 @@ const DataManagement = () => {
     const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
+
+  // Helper functions for conditional field visibility
+  const shouldShowDestinationAccount = (transactionGroupId) => {
+    if (!transactionGroupId) return false;
+    const transactionGroups = getActiveTransactionGroups();
+    const group = transactionGroups.find(g => g.id === transactionGroupId);
+    if (!group) return false;
+    
+    const activeCategories = getActiveCategories();
+    const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
+    if (!transactionType) return false;
+    
+    return transactionType.name === 'Transfer' || 
+           transactionType.name === 'Investment - SELL' || 
+           transactionType.name === 'Investment - BUY' ||
+           transactionType.name === 'Investissement - VENTE' || 
+           transactionType.name === 'Investissement - ACHAT';
+  };
+
+  const shouldShowPayee = (transactionGroupId) => {
+    if (!transactionGroupId) return false;
+    const transactionGroups = getActiveTransactionGroups();
+    const group = transactionGroups.find(g => g.id === transactionGroupId);
+    if (!group) return false;
+    
+    const activeCategories = getActiveCategories();
+    const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
+    if (!transactionType) return false;
+    
+    return transactionType.name === 'Expenses' || transactionType.name === 'Investment - BUY';
+  };
+
+  const shouldShowPayer = (transactionGroupId) => {
+    if (!transactionGroupId) return false;
+    const transactionGroups = getActiveTransactionGroups();
+    const group = transactionGroups.find(g => g.id === transactionGroupId);
+    if (!group) return false;
+    
+    const activeCategories = getActiveCategories();
+    const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
+    if (!transactionType) return false;
+    
+    return transactionType.name === 'Income' || transactionType.name === 'Investment - SELL';
+  };
+
+  const isInvestmentTransaction = (transactionGroupId) => {
+    if (!transactionGroupId) return false;
+    const transactionGroups = getActiveTransactionGroups();
+    const group = transactionGroups.find(g => g.id === transactionGroupId);
+    if (!group) return false;
+    
+    const activeCategories = getActiveCategories();
+    const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
+    if (!transactionType) return false;
+    
+    return transactionType.name === 'Investment - SELL' || 
+           transactionType.name === 'Investment - BUY' ||
+           transactionType.name === 'Investissement - VENTE' || 
+           transactionType.name === 'Investissement - ACHAT';
+  };
+
+  // Helper function to get transaction groups filtered by selected transaction type
+  const getFilteredTransactionGroups = (selectedCategoryId) => {
+    if (!selectedCategoryId) return getActiveTransactionGroups();
+    
+    const transactionGroups = getActiveTransactionGroups();
+    return transactionGroups.filter(group => group.transactionTypeId === selectedCategoryId);
+  };
+
+  // Helper function to get subcategories filtered by selected transaction group
+  const getFilteredSubcategories = (selectedTransactionGroupId) => {
+    if (!selectedTransactionGroupId) return subcategories;
+    
+    const subcategoriesWithCategories = getSubcategoriesWithCategories();
+    return subcategoriesWithCategories.filter(subcategory => subcategory.groupId === selectedTransactionGroupId);
+  };
   
   const [activeTab, setActiveTab] = useState('accounts');
   const [showForm, setShowForm] = useState(false);
@@ -187,10 +264,34 @@ const DataManagement = () => {
   const handleEdit = (record) => {
     // Map transaction data to form field names
     if (activeTab === 'transactions') {
+      // Get transaction group from subcategory if available
+      let transactionGroupId = record.transactionGroupId;
+      if (!transactionGroupId && record.subcategoryId) {
+        const subcategoriesWithCategories = getSubcategoriesWithCategories();
+        const subcategory = subcategoriesWithCategories.find(sub => sub.id === record.subcategoryId);
+        if (subcategory && subcategory.groupId) {
+          transactionGroupId = subcategory.groupId;
+        }
+      }
+
       const mappedData = {
         ...record,
-        debitAccount: record.debitAccountId,
-        creditAccount: record.creditAccountId
+        // Map the database fields to form field names
+        transactionGroupId: transactionGroupId,
+        payerId: record.payerId,
+        payeeId: record.payeeId,
+        accountId: record.accountId,
+        destinationAccountId: record.destinationAccountId,
+        destinationAmount: record.destinationAmount,
+        categoryId: record.categoryId,
+        subcategoryId: record.subcategoryId,
+        productId: record.productId,
+        reference: record.reference,
+        reconciliationReference: record.reconciliationReference,
+        notes: record.notes,
+        description: record.description,
+        amount: record.amount,
+        date: record.date
       };
       setFormData(mappedData);
     } else {
@@ -564,55 +665,7 @@ const DataManagement = () => {
 
   const renderTransactionForm = () => (
     <form onSubmit={handleSubmit} className="data-form">
-      <div className="form-group">
-        <label>Description</label>
-        <input
-          type="text"
-          value={formData.description || ''}
-          onChange={(e) => handleInputChange('description', e.target.value)}
-          required
-        />
-      </div>
-      <div className="form-group">
-        <label>Amount</label>
-        <input
-          type="number"
-          step="0.01"
-          value={formData.amount || ''}
-          onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
-          required
-        />
-      </div>
-      <div className="form-group">
-        <label>Debit Account</label>
-        <select
-          value={formData.debitAccount || ''}
-          onChange={(e) => handleInputChange('debitAccount', e.target.value)}
-          required
-        >
-          <option value="">Select Account</option>
-          {accountsWithTypes.map(account => (
-            <option key={account.id} value={account.id}>
-              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'}) ({formatAccountBalance(account)})
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>Credit Account</label>
-        <select
-          value={formData.creditAccount || ''}
-          onChange={(e) => handleInputChange('creditAccount', e.target.value)}
-          required
-        >
-          <option value="">Select Account</option>
-          {accountsWithTypes.map(account => (
-            <option key={account.id} value={account.id}>
-              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'}) ({formatAccountBalance(account)})
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* 1. Date */}
       <div className="form-group">
         <label>Date *</label>
         <DatePicker
@@ -631,13 +684,22 @@ const DataManagement = () => {
           required
         />
       </div>
+
+      {/* 2. Transaction Type (Category) */}
       <div className="form-group">
-        <label>{t('category')}</label>
+        <label>Transaction Type</label>
         <select
           value={formData.categoryId || ''}
-          onChange={(e) => handleInputChange('categoryId', e.target.value)}
+          onChange={(e) => {
+            handleInputChange('categoryId', e.target.value);
+            // Clear transaction group when transaction type changes
+            if (formData.transactionGroupId) {
+              handleInputChange('transactionGroupId', '');
+            }
+          }}
+          style={{ backgroundColor: '#f5f5f5', color: '#666' }}
         >
-          <option value="">{t('selectCategory')}</option>
+          <option value="">Select Transaction Type</option>
           {categories.map(category => (
             <option key={category.id} value={category.id}>
               {category.icon} {category.name}
@@ -645,57 +707,244 @@ const DataManagement = () => {
           ))}
         </select>
       </div>
+
+      {/* 3. Transaction Group */}
       <div className="form-group">
-        <label>{t('subcategory')}</label>
+        <label>Transaction Group</label>
+        <select
+          value={formData.transactionGroupId || ''}
+          onChange={(e) => {
+            handleInputChange('transactionGroupId', e.target.value);
+            // Clear subcategory when transaction group changes
+            if (formData.subcategoryId) {
+              handleInputChange('subcategoryId', '');
+            }
+          }}
+          disabled={!formData.categoryId}
+        >
+          <option value="">
+            {formData.categoryId ? 'Select Transaction Group' : 'Select Transaction Type first'}
+          </option>
+          {getFilteredTransactionGroups(formData.categoryId).map(group => (
+            <option key={group.id} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* 4. Transaction Category (Subcategory) */}
+      <div className="form-group">
+        <label>Transaction Category</label>
         <select
           value={formData.subcategoryId || ''}
           onChange={(e) => handleInputChange('subcategoryId', e.target.value)}
+          disabled={!formData.transactionGroupId}
         >
-          <option value="">{t('selectSubcategory')}</option>
-          {subcategories.map(subcategory => (
+          <option value="">
+            {formData.transactionGroupId ? 'Select Transaction Category' : 'Select Transaction Group first'}
+          </option>
+          {getFilteredSubcategories(formData.transactionGroupId).map(subcategory => (
             <option key={subcategory.id} value={subcategory.id}>
               {subcategory.name}
             </option>
           ))}
         </select>
       </div>
+
+      {/* 5. Description */}
       <div className="form-group">
-        <label>{t('productService')}</label>
+        <label>Description</label>
+        <input
+          type="text"
+          value={formData.description || ''}
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          required
+        />
+      </div>
+
+      {/* 6. Account */}
+      <div className="form-group">
+        <label>Account</label>
         <select
-          value={formData.productId || ''}
-          onChange={(e) => handleInputChange('productId', e.target.value)}
+          value={formData.accountId || ''}
+          onChange={(e) => handleInputChange('accountId', e.target.value)}
+          required
         >
-          <option value="">{t('selectProductService')}</option>
-          {tags.map(tag => (
-            <option key={tag.id} value={tag.id}>
-              {tag.name}
+          <option value="">Select Account</option>
+          {accountsWithTypes.map(account => (
+            <option key={account.id} value={account.id}>
+              {account.name} ({account.accountType ? account.accountType.type : 'Unknown'}) ({formatAccountBalance(account)})
             </option>
           ))}
         </select>
       </div>
+
+      {/* 7. Amount */}
       <div className="form-group">
-        <label>{t('reference')}</label>
+        <label>Amount</label>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <span style={{ 
+            position: 'absolute', 
+            left: '8px', 
+            color: '#666', 
+            fontSize: '14px',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }}>
+            {(() => {
+              if (formData.accountId) {
+                const selectedAccount = accountsWithTypes.find(acc => acc.id === formData.accountId);
+                if (selectedAccount && selectedAccount.currencyId) {
+                  const accountCurrency = currencies.find(c => c.id === selectedAccount.currencyId);
+                  return accountCurrency ? accountCurrency.symbol : '€';
+                }
+              }
+              // Fallback to base currency if no account selected
+              if (exchangeRateService) {
+                const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+                const baseCurrency = currencies.find(c => c.id === baseCurrencyId);
+                return baseCurrency ? baseCurrency.symbol : '€';
+              }
+              return '€';
+            })()}
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            value={formData.amount || ''}
+            onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
+            required
+            style={{ paddingLeft: '24px', width: '100%' }}
+          />
+        </div>
+      </div>
+
+      {/* 8. Tag */}
+      <div className="form-group">
+        <Autocomplete
+          label="Tag"
+          value={(() => {
+            if (formData.productId) {
+              const selectedTag = tags.find(tag => tag.id === formData.productId);
+              return selectedTag ? selectedTag.name : '';
+            }
+            return '';
+          })()}
+          onChange={(value) => {
+            // Handle freetext input - store as string in formData
+            handleInputChange('productId', value);
+          }}
+          onSelect={(option, value, label) => {
+            // Handle selection from dropdown - store ID
+            handleInputChange('productId', value);
+          }}
+          options={tags.filter(tag => tag.isActive !== false)}
+          placeholder="Select or enter tag"
+          getOptionLabel={(option) => option.name}
+          getOptionValue={(option) => option.id}
+        />
+      </div>
+
+      {/* 9. Reference */}
+      <div className="form-group">
+        <label>Reference</label>
         <input
           type="text"
           value={formData.reference || ''}
           onChange={(e) => handleInputChange('reference', e.target.value)}
-          placeholder={t('referencePlaceholder')}
+          placeholder="Enter reference"
+          style={{ width: '100%' }}
         />
       </div>
+
+      {/* 10. Reconciliation Reference */}
       <div className="form-group">
-        <label>{t('notes')}</label>
-        <textarea
+        <label>Reconciliation Reference</label>
+        <input
+          type="text"
+          value={formData.reconciliationReference || ''}
+          onChange={(e) => handleInputChange('reconciliationReference', e.target.value)}
+          placeholder="Enter reconciliation reference"
+          style={{ width: '100%' }}
+        />
+      </div>
+
+      {/* 11. Notes */}
+      <div className="form-group" style={{ 
+        width: '200%',
+        maxWidth: 'none'
+      }}>
+        <label>Notes</label>
+        <input
+          type="text"
           value={formData.notes || ''}
           onChange={(e) => handleInputChange('notes', e.target.value)}
-          placeholder={t('notesPlaceholder')}
-          rows="3"
+          placeholder="Enter notes"
+          style={{ width: '100%', boxSizing: 'border-box' }}
         />
       </div>
+
+
+      {/* Payer/Payee fields (conditional) */}
+      {shouldShowPayer(formData.transactionGroupId) && (
+        <div className="form-group">
+          <Autocomplete
+            label={isInvestmentTransaction(formData.transactionGroupId) ? 'Broker/Exchange' : 'Payer'}
+            value={(() => {
+              if (formData.payerId) {
+                const selectedPayer = getActivePayers().find(payer => payer.id === formData.payerId);
+                return selectedPayer ? selectedPayer.name : '';
+              }
+              return '';
+            })()}
+            onChange={(value) => {
+              // Handle freetext input - store as string in formData
+              handleInputChange('payerId', value);
+            }}
+            onSelect={(option, value, label) => {
+              // Handle selection from dropdown - store ID
+              handleInputChange('payerId', value);
+            }}
+            options={getActivePayers()}
+            placeholder={`Select or enter ${isInvestmentTransaction(formData.transactionGroupId) ? 'broker/exchange' : 'payer'}`}
+            getOptionLabel={(option) => option.name}
+            getOptionValue={(option) => option.id}
+          />
+        </div>
+      )}
+      {shouldShowPayee(formData.transactionGroupId) && (
+        <div className="form-group">
+          <Autocomplete
+            label={isInvestmentTransaction(formData.transactionGroupId) ? 'Broker/Exchange' : 'Payee'}
+            value={(() => {
+              if (formData.payeeId) {
+                const selectedPayee = getActivePayees().find(payee => payee.id === formData.payeeId);
+                return selectedPayee ? selectedPayee.name : '';
+              }
+              return '';
+            })()}
+            onChange={(value) => {
+              // Handle freetext input - store as string in formData
+              handleInputChange('payeeId', value);
+            }}
+            onSelect={(option, value, label) => {
+              // Handle selection from dropdown - store ID
+              handleInputChange('payeeId', value);
+            }}
+            options={getActivePayees()}
+            placeholder={`Select or enter ${isInvestmentTransaction(formData.transactionGroupId) ? 'broker/exchange' : 'payee'}`}
+            getOptionLabel={(option) => option.name}
+            getOptionValue={(option) => option.id}
+          />
+        </div>
+      )}
+
+
       <div className="form-actions">
         <button type="submit" className="btn-primary">
           {editingId ? t('updateTransaction') : t('addTransactionButton')}
         </button>
-        <button type="button" onClick={resetForm} className="btn-secondary">{t('cancel')}</button>
       </div>
     </form>
   );
@@ -1202,60 +1451,133 @@ const DataManagement = () => {
               label: t('date'),
               render: (value) => formatDate(value)
             },
-            { key: 'description', label: t('description') },
-            { 
-              key: 'debitAccountId', 
-              label: t('debitAccount'),
-              render: (value) => {
-                const account = accountsWithTypes.find(acc => acc.id === value);
-                return account ? account.name : t('unknownAccount');
-              }
-            },
-            { 
-              key: 'creditAccountId', 
-              label: t('creditAccount'),
-              render: (value) => {
-                const account = accountsWithTypes.find(acc => acc.id === value);
-                return account ? account.name : t('unknownAccount');
-              }
-            },
             { 
               key: 'categoryId', 
-              label: t('category'),
+              label: 'Type',
               render: (value, row) => {
-                const categoryName = row.categoryId ? 
-                  (categories.find(c => c.id === row.categoryId)?.name || '') : '';
-                const subcategoryName = row.subcategoryId ? 
-                  (subcategories.find(s => s.id === row.subcategoryId)?.name || '') : '';
-                
-                if (categoryName && subcategoryName) {
-                  return `${categoryName} - ${subcategoryName}`;
-                } else if (categoryName) {
-                  return categoryName;
-                } else if (subcategoryName) {
-                  return `- ${subcategoryName}`;
+                // Get transaction type similar to main TransactionList
+                if (row.subcategoryId) {
+                  const subcategoriesWithCategories = getSubcategoriesWithCategories();
+                  const subcategory = subcategoriesWithCategories.find(sub => sub.id === row.subcategoryId);
+                  
+                  if (subcategory && subcategory.groupId) {
+                    const transactionGroups = getActiveTransactionGroups();
+                    const group = transactionGroups.find(g => g.id === subcategory.groupId);
+                    
+                    if (group && group.transactionTypeId) {
+                      const activeCategories = getActiveCategories();
+                      const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
+                      if (transactionType) {
+                        return `${transactionType.icon} ${transactionType.name}`;
+                      }
+                    }
+                  }
                 }
+                
+                if (row.categoryId) {
+                  const category = categories.find(cat => cat.id === row.categoryId);
+                  if (category) {
+                    return `${category.icon} ${category.name}`;
+                  }
+                }
+                
+                return '❓ Unknown';
+              }
+            },
+            { key: 'description', label: t('description') },
+            { 
+              key: 'accountId', 
+              label: 'Account',
+              render: (value) => {
+                const account = accountsWithTypes.find(acc => acc.id === value);
+                return account ? account.name : t('unknownAccount');
+              }
+            },
+            { 
+              key: 'destinationAccountId', 
+              label: 'From/To Account',
+              render: (value, row) => {
+                if (row.linkedTransactionId && (row.categoryId === 'CAT_003' || row.categoryId === 'CAT_004' || row.categoryId === 'CAT_005')) {
+                  const linkedTransaction = transactions.find(t => t.id === row.linkedTransactionId);
+                  if (linkedTransaction) {
+                    const account = accountsWithTypes.find(acc => acc.id === linkedTransaction.accountId);
+                    return account ? account.name : t('unknownAccount');
+                  }
+                }
+                
+                if (value) {
+                  const account = accountsWithTypes.find(acc => acc.id === value);
+                  return account ? account.name : t('unknownAccount');
+                }
+                
                 return '-';
               }
             },
             { 
-              key: 'productId', 
-              label: t('productService'),
-              render: (value) => {
-                if (!value) return '-';
-                const tag = tags.find(t => t.id === value);
-                return tag ? tag.name : t('unknownAccount');
+              key: 'payee', 
+              label: 'Payee/Payer',
+              render: (value, row) => {
+                // For investment transactions, use broker field
+                if ((row.categoryId === 'CAT_004' || row.categoryId === 'CAT_005') && row.broker) {
+                  return row.broker;
+                }
+                
+                // Get transaction type to determine if it's expenses or income
+                let transactionType = '';
+                if (row.subcategoryId) {
+                  const subcategoriesWithCategories = getSubcategoriesWithCategories();
+                  const subcategory = subcategoriesWithCategories.find(sub => sub.id === row.subcategoryId);
+                  
+                  if (subcategory && subcategory.groupId) {
+                    const transactionGroups = getActiveTransactionGroups();
+                    const group = transactionGroups.find(g => g.id === subcategory.groupId);
+                    
+                    if (group && group.transactionTypeId) {
+                      const activeCategories = getActiveCategories();
+                      const transactionTypeObj = activeCategories.find(type => type.id === group.transactionTypeId);
+                      if (transactionTypeObj) {
+                        transactionType = transactionTypeObj.name;
+                      }
+                    }
+                  }
+                }
+                
+                if (transactionType.includes('Expenses') && row.payee) {
+                  return row.payee;
+                } else if (transactionType.includes('Income') && row.payer) {
+                  return row.payer;
+                }
+                return '-';
               }
             },
-            { key: 'reference', label: t('reference'), render: (value) => value || '-' },
-            { key: 'notes', label: t('notes'), render: (value) => value || '-' },
-            { key: 'amount', label: t('amount'), render: (value, row) => {
-              // For transactions, use the currency-aware formatting
-              if (numberFormatService && row.currencyId) {
-                return numberFormatService.formatCurrency(value || 0, row.currencyId);
+            { key: 'reference', label: 'Reference', render: (value) => value || '-' },
+            { 
+              key: 'amount', 
+              label: t('amount'), 
+              render: (value, row) => {
+                // Currency-aware formatting similar to main TransactionList
+                const currency = currencies.find(c => c.id === row.currencyId);
+                const shouldShowNegative = row.transactionType === 'DEBIT';
+                
+                if (currency && exchangeRateService) {
+                  const displayAmount = shouldShowNegative ? -(value || 0) : (value || 0);
+                  return exchangeRateService.formatAmount(displayAmount, currency.id);
+                }
+                
+                if (numberFormatService && row.currencyId) {
+                  const displayAmount = shouldShowNegative ? -(value || 0) : (value || 0);
+                  return numberFormatService.formatCurrency(displayAmount, row.currencyId);
+                }
+                
+                const displayAmount = shouldShowNegative ? -(value || 0) : (value || 0);
+                return displayAmount.toFixed(2);
               }
-              return (value || 0).toFixed(2);
-            }}
+            },
+            { 
+              key: 'reconciliationReference', 
+              label: 'RR', 
+              render: (value) => value || '-' 
+            }
           ]
         };
       case 'products':

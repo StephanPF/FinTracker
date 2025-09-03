@@ -511,6 +511,11 @@ class RelationalDatabase {
   }
 
   addAccount(accountData) {
+    // Validate required fields
+    if (!accountData.name || accountData.name.trim() === '') {
+      throw new Error('Account name is required');
+    }
+    
     if (!this.validateForeignKeys('accounts', accountData)) {
       throw new Error('Invalid foreign key references in account');
     }
@@ -2770,6 +2775,11 @@ class RelationalDatabase {
 
   // Exchange rate management methods
   addExchangeRate(rateData) {
+    // Validate required fields and rate value
+    if (!rateData.rate || rateData.rate <= 0) {
+      throw new Error('Exchange rate must be a positive number');
+    }
+    
     const id = this.generateId('ER');
     const newRate = {
       id,

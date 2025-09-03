@@ -4,6 +4,7 @@ import { useDate } from '../hooks/useDate';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import './ReconciliationTransactionList.css';
+import Autocomplete from './Autocomplete';
 
 const ReconciliationTransactionList = ({ selectedTransactions, onTransactionToggle, accountId, selectedAccount }) => {
   const { getUnreconciledTransactions, transactions, accounts, categories, getActiveTransactionGroups, getActiveSubcategories, tags, numberFormatService, database } = useAccounting();
@@ -393,18 +394,34 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
           </div>
 
           <div className="filter-field">
-            <select
-              value={filters.tagId}
-              onChange={(e) => setFilters(prev => ({ ...prev, tagId: e.target.value }))}
+            <Autocomplete
+              value={(() => {
+                if (filters.tagId) {
+                  const selectedTag = tags.find(tag => tag.id === filters.tagId);
+                  return selectedTag ? selectedTag.name : '';
+                }
+                return '';
+              })()}
+              onChange={(value) => {
+                // If empty string, clear filter
+                if (value === '') {
+                  setFilters(prev => ({ ...prev, tagId: '' }));
+                } else {
+                  // For freetext, we could implement partial matching logic
+                  // For now, just clear if not found in options
+                  const matchedTag = tags.find(tag => tag.name.toLowerCase() === value.toLowerCase());
+                  setFilters(prev => ({ ...prev, tagId: matchedTag ? matchedTag.id : '' }));
+                }
+              }}
+              onSelect={(option, value, label) => {
+                setFilters(prev => ({ ...prev, tagId: value }));
+              }}
+              options={[{ id: '', name: 'All Tags' }, ...tags.filter(tag => tag.isActive !== false)]}
+              placeholder="Filter by tag"
+              getOptionLabel={(option) => option.name}
+              getOptionValue={(option) => option.id}
               className="filter-select"
-            >
-              <option value="">All Tags</option>
-              {tags.map(tag => (
-                <option key={tag.id} value={tag.id}>
-                  {tag.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="filter-field">

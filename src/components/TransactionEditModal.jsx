@@ -4,9 +4,10 @@ import { useAccounting } from '../contexts/AccountingContext';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import './TransactionEditModal.css';
+import Autocomplete from './Autocomplete';
 
 const TransactionEditModal = ({ transaction, accounts, categories = [], currencies = [], transactionTypes = [], subcategories = [], transactionGroups = [], onSave, onClose }) => {
-  const { numberFormatService, database } = useAccounting();
+  const { numberFormatService, database, tags, getActivePayees, getActivePayers } = useAccounting();
   const [formData, setFormData] = useState({
     date: transaction.date || '',
     description: transaction.description || '',
@@ -537,12 +538,15 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     <>
                       {shouldShowPayee && (
                         <div className="form-field">
-                          <input
-                            type="text"
+                          <Autocomplete
                             value={formData.payee}
-                            onChange={(e) => handleChange('payee', e.target.value)}
-                            className={errors.payee ? 'error' : ''}
+                            onChange={(value) => handleChange('payee', value)}
+                            onSelect={(option, value, label) => handleChange('payee', label)}
+                            options={getActivePayees()}
                             placeholder="Payee *"
+                            getOptionLabel={(option) => option.name}
+                            getOptionValue={(option) => option.id}
+                            isError={errors.payee}
                           />
                           {errors.payee && <span className="field-error">{errors.payee}</span>}
                         </div>
@@ -550,12 +554,15 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                       
                       {shouldShowPayer && (
                         <div className="form-field">
-                          <input
-                            type="text"
+                          <Autocomplete
                             value={formData.payer}
-                            onChange={(e) => handleChange('payer', e.target.value)}
-                            className={errors.payer ? 'error' : ''}
+                            onChange={(value) => handleChange('payer', value)}
+                            onSelect={(option, value, label) => handleChange('payer', label)}
+                            options={getActivePayers()}
                             placeholder="Payer *"
+                            getOptionLabel={(option) => option.name}
+                            getOptionValue={(option) => option.id}
+                            isError={errors.payer}
                           />
                           {errors.payer && <span className="field-error">{errors.payer}</span>}
                         </div>
@@ -565,12 +572,15 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                 })()}
                 
                 <div className="form-field">
-                  <input
-                    type="text"
+                  <Autocomplete
                     value={formData.tag}
-                    onChange={(e) => handleChange('tag', e.target.value)}
-                    className="optional"
+                    onChange={(value) => handleChange('tag', value)}
+                    onSelect={(option, value, label) => handleChange('tag', label)}
+                    options={tags.filter(tag => tag.isActive !== false)}
                     placeholder="Tag"
+                    getOptionLabel={(option) => option.name}
+                    getOptionValue={(option) => option.id}
+                    className="optional"
                   />
                 </div>
 
