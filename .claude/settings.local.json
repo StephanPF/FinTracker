@@ -43,7 +43,9 @@
       "Read(c:\\Users\\steph\\Desktop/**)",
       "Read(c:\\Users\\steph\\Desktop/**)",
       "Read(c:\\Users\\steph\\Desktop/**)",
-      "Read(c:\\Users\\steph\\Desktop/**)"
+      "Read(c:\\Users\\steph\\Desktop/**)",
+      "Bash(dir:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

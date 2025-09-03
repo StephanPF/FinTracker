@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import './CashAllocationModal.css';
 
 const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
@@ -11,6 +13,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
     database,
     currencies,
     numberFormatService,
+    dateFormatService,
     addCashAllocation,
     getCashWithdrawalAllocations,
     deleteCashAllocationsByTransaction
@@ -19,6 +22,35 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Get user's date format from database
+  const getUserDateFormat = () => {
+    if (database) {
+      const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
+      if (datePrefs && datePrefs.settings && datePrefs.settings.dateFormat) {
+        return datePrefs.settings.dateFormat;
+      }
+    }
+    return 'DD/MM/YYYY'; // Default format
+  };
+
+  // Convert settings date format to react-datepicker format
+  const convertToDatePickerFormat = (settingsFormat) => {
+    const formatMap = {
+      'DD/MM/YYYY': 'dd/MM/yyyy',
+      'MM/DD/YYYY': 'MM/dd/yyyy',
+      'YYYY-MM-DD': 'yyyy-MM-dd',
+      'DD.MM.YYYY': 'dd.MM.yyyy',
+      'DD-MM-YYYY': 'dd-MM-yyyy',
+      'MMM DD, YYYY': 'MMM dd, yyyy',
+      'DD MMM YYYY': 'dd MMM yyyy',
+      'MMMM DD, YYYY': 'MMMM dd, yyyy'
+    };
+    return formatMap[settingsFormat] || 'dd/MM/yyyy';
+  };
+
+  const userDateFormat = getUserDateFormat();
+  const datePickerFormat = convertToDatePickerFormat(userDateFormat);
 
   // Initialize with existing allocations when modal opens
   useEffect(() => {
@@ -32,14 +64,18 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
     
     try {
       const existingAllocations = getCashWithdrawalAllocations(transaction.id);
-      if (existingAllocations.length > 0) {
-        setAllocations(existingAllocations.map(allocation => ({
+      // Filter out automatic allocations - only show manual allocations in the UI
+      const manualAllocations = existingAllocations.filter(allocation => !allocation.isAutomatic);
+      
+      if (manualAllocations.length > 0) {
+        setAllocations(manualAllocations.map(allocation => ({
           id: allocation.id,
           categoryId: allocation.categoryId || 'CAT_002', // Default to Expenses
           transactionGroupId: allocation.transactionGroupId,
           subcategoryId: allocation.subcategoryId,
           amount: Math.abs(allocation.amount),
-          description: allocation.description
+          description: allocation.description,
+          dateSpent: allocation.dateSpent || ''
         })));
       } else {
         // Start with one empty allocation row
@@ -58,7 +94,8 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
       transactionGroupId: '',
       subcategoryId: '',
       amount: '',
-      description: ''
+      description: '',
+      dateSpent: ''
     }]);
   };
 
@@ -222,12 +259,47 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
           transactionGroupId: allocation.transactionGroupId,
           subcategoryId: allocation.subcategoryId,
           amount: -Math.abs(parseFloat(allocation.amount)), // Negative for expenses
-          description: allocation.description
+          description: allocation.description,
+          dateSpent: allocation.dateSpent,
+          isAutomatic: false // Manual allocation
         };
         
         console.log('Saving allocation:', allocationData);
         const result = await addCashAllocation(allocationData);
         console.log('Allocation saved:', result);
+      }
+      
+      // Create automatic allocation for any remaining unallocated amount
+      const originalAmount = Math.abs(transaction.amount);
+      const totalManuallyAllocated = validAllocations.reduce((total, allocation) => 
+        total + Math.abs(parseFloat(allocation.amount)), 0
+      );
+      const unallocatedAmount = originalAmount - totalManuallyAllocated;
+      
+      if (unallocatedAmount > 0) {
+        console.log('Creating automatic allocation for unallocated amount:', unallocatedAmount);
+        
+        // Get transactionGroupId from the subcategory of the parent transaction
+        let transactionGroupId = null;
+        if (transaction.subcategoryId) {
+          const subcategory = getActiveSubcategories().find(sub => sub.id === transaction.subcategoryId);
+          transactionGroupId = subcategory ? subcategory.groupId : null;
+        }
+        
+        const automaticAllocationData = {
+          parentTransactionId: transaction.id,
+          categoryId: transaction.categoryId, // Inherit from parent transaction
+          transactionGroupId: transactionGroupId, // Get from parent transaction's subcategory
+          subcategoryId: transaction.subcategoryId, // Inherit from parent transaction
+          amount: -Math.abs(unallocatedAmount), // Negative for expenses
+          description: 'Automatic allocation for unallocated cash',
+          dateSpent: transaction.date, // Use parent transaction date
+          isAutomatic: true // Flag as automatic
+        };
+        
+        console.log('Saving automatic allocation:', automaticAllocationData);
+        const automaticResult = await addCashAllocation(automaticAllocationData);
+        console.log('Automatic allocation saved:', automaticResult);
       }
       
       // Check what's in the database now
@@ -279,6 +351,28 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
             {allocations.map((allocation, index) => (
               <div key={index} className="allocation-row">
                 <div className="allocation-fields">
+                  <div className="field-group date-field">
+                    <DatePicker
+                      selected={allocation.dateSpent ? new Date(allocation.dateSpent + 'T12:00:00') : null}
+                      onChange={(date) => {
+                        if (date) {
+                          // Use local date to avoid timezone issues
+                          const year = date.getFullYear();
+                          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                          const day = date.getDate().toString().padStart(2, '0');
+                          const isoString = `${year}-${month}-${day}`;
+                          updateAllocation(index, 'dateSpent', isoString);
+                        } else {
+                          updateAllocation(index, 'dateSpent', '');
+                        }
+                      }}
+                      dateFormat={datePickerFormat}
+                      className="date-picker-input"
+                      placeholderText="When"
+                      showPopperArrow={false}
+                    />
+                  </div>
+
                   <div className="field-group transaction-category">
                     <label>Transaction Category</label>
                     <select

@@ -6,16 +6,54 @@ import { useAccounting } from '../contexts/AccountingContext';
 import './PrepaidExpenseModal.css';
 
 const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
-  const { currencies, numberFormatService } = useAccounting();
+  const { currencies, numberFormatService, database } = useAccounting();
   const [selectedMethod, setSelectedMethod] = useState(transaction?.recognitionMethod || '');
   const [serviceStartDate, setServiceStartDate] = useState(
-    transaction?.serviceStartDate ? new Date(transaction.serviceStartDate) : null
+    transaction?.serviceStartDate ? new Date(transaction.serviceStartDate + 'T12:00:00') : null
   );
   const [serviceEndDate, setServiceEndDate] = useState(
-    transaction?.serviceEndDate ? new Date(transaction.serviceEndDate) : null
+    transaction?.serviceEndDate ? new Date(transaction.serviceEndDate + 'T12:00:00') : null
   );
   const [preview, setPreview] = useState(null);
   const [errors, setErrors] = useState([]);
+
+  // Get user's date format from database
+  const getUserDateFormat = () => {
+    if (database) {
+      const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
+      if (datePrefs && datePrefs.settings && datePrefs.settings.dateFormat) {
+        return datePrefs.settings.dateFormat;
+      }
+    }
+    return 'DD/MM/YYYY'; // Default format
+  };
+
+  // Convert settings date format to react-datepicker format
+  const convertToDatePickerFormat = (settingsFormat) => {
+    const formatMap = {
+      'DD/MM/YYYY': 'dd/MM/yyyy',
+      'MM/DD/YYYY': 'MM/dd/yyyy',
+      'YYYY-MM-DD': 'yyyy-MM-dd',
+      'DD.MM.YYYY': 'dd.MM.yyyy',
+      'DD-MM-YYYY': 'dd-MM-yyyy',
+      'MMM DD, YYYY': 'MMM dd, yyyy',
+      'DD MMM YYYY': 'dd MMM yyyy',
+      'MMMM DD, YYYY': 'MMMM dd, yyyy'
+    };
+    return formatMap[settingsFormat] || 'dd/MM/yyyy';
+  };
+
+  const userDateFormat = getUserDateFormat();
+  const datePickerFormat = convertToDatePickerFormat(userDateFormat);
+
+  // Helper function to convert Date object to YYYY-MM-DD string (timezone-safe)
+  const dateToISOString = (date) => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   // Initialize or reset state based on modal open/close and transaction
   useEffect(() => {
@@ -23,10 +61,10 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
       // Populate with existing prepaid data when opening
       setSelectedMethod(transaction.recognitionMethod || '');
       setServiceStartDate(
-        transaction.serviceStartDate ? new Date(transaction.serviceStartDate) : null
+        transaction.serviceStartDate ? new Date(transaction.serviceStartDate + 'T12:00:00') : null
       );
       setServiceEndDate(
-        transaction.serviceEndDate ? new Date(transaction.serviceEndDate) : null
+        transaction.serviceEndDate ? new Date(transaction.serviceEndDate + 'T12:00:00') : null
       );
       setPreview(null);
       setErrors([]);
@@ -88,7 +126,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
     switch (selectedMethod) {
       case 'defer':
         if (serviceStartDate) {
-          const startDateStr = serviceStartDate.toISOString().split('T')[0];
+          const startDateStr = dateToISOString(serviceStartDate);
           description = `Full ${formatCurrency(amount, transaction.currencyId)} will be recognized on ${formatDate(startDateStr)} (1 month)`;
           monthlyAmount = amount;
           months = 1;
@@ -97,7 +135,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
       
       case 'amortize':
         if (serviceEndDate) {
-          const endDateStr = serviceEndDate.toISOString().split('T')[0];
+          const endDateStr = dateToISOString(serviceEndDate);
           months = getMonthsBetween(transactionDate, endDateStr);
           monthlyAmount = amount / months;
           description = `${formatCurrency(monthlyAmount, transaction.currencyId)}/month from ${formatDate(transactionDate)} to ${formatDate(endDateStr)} (${months} months)`;
@@ -106,8 +144,8 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
       
       case 'defer_and_amortize':
         if (serviceStartDate && serviceEndDate) {
-          const startDateStr = serviceStartDate.toISOString().split('T')[0];
-          const endDateStr = serviceEndDate.toISOString().split('T')[0];
+          const startDateStr = dateToISOString(serviceStartDate);
+          const endDateStr = dateToISOString(serviceEndDate);
           months = getMonthsBetween(startDateStr, endDateStr);
           monthlyAmount = amount / months;
           description = `${formatCurrency(monthlyAmount, transaction.currencyId)}/month from ${formatDate(startDateStr)} to ${formatDate(endDateStr)} (${months} months)`;
@@ -188,7 +226,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
       case 'amortize':
         if (currentDate >= new Date(transaction.date)) {
           const totalMonths = getMonthsBetween(transaction.date, serviceEndDate);
-          const elapsedMonths = getMonthsBetween(transaction.date, currentDate.toISOString().split('T')[0]);
+          const elapsedMonths = getMonthsBetween(transaction.date, dateToISOString(currentDate));
           const monthlyAmount = Math.abs(transaction.amount) / totalMonths;
           recognizedToDate = Math.min(monthlyAmount * elapsedMonths, Math.abs(transaction.amount));
           
@@ -202,7 +240,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
       case 'defer_and_amortize':
         if (currentDate >= new Date(serviceStartDate)) {
           const totalMonths = getMonthsBetween(serviceStartDate, serviceEndDate);
-          const elapsedMonths = getMonthsBetween(serviceStartDate, currentDate.toISOString().split('T')[0]);
+          const elapsedMonths = getMonthsBetween(serviceStartDate, dateToISOString(currentDate));
           const monthlyAmount = Math.abs(transaction.amount) / totalMonths;
           recognizedToDate = Math.min(monthlyAmount * elapsedMonths, Math.abs(transaction.amount));
           
@@ -218,8 +256,8 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
     const prepaidData = {
       isPrepaid: true,
       recognitionMethod: selectedMethod,
-      serviceStartDate: serviceStartDate ? serviceStartDate.toISOString().split('T')[0] : null,
-      serviceEndDate: serviceEndDate ? serviceEndDate.toISOString().split('T')[0] : null,
+      serviceStartDate: dateToISOString(serviceStartDate),
+      serviceEndDate: dateToISOString(serviceEndDate),
       recognitionStatus,
       recognizedToDate,
       remainingToRecognize: Math.abs(transaction.amount) - recognizedToDate
@@ -363,10 +401,17 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                       <label>Service Date</label>
                       <DatePicker
                         selected={serviceStartDate}
-                        onChange={(date) => setServiceStartDate(date)}
-                        minDate={new Date(transaction.date)}
-                        placeholderText="Select service date"
-                        dateFormat="dd/MM/yyyy"
+                        onChange={(date) => {
+                          if (date) {
+                            // Timezone-safe date handling - store as Date object for now
+                            setServiceStartDate(date);
+                          } else {
+                            setServiceStartDate(null);
+                          }
+                        }}
+                        minDate={new Date(transaction.date + 'T12:00:00')}
+                        placeholderText={`Select service date (${userDateFormat})`}
+                        dateFormat={datePickerFormat}
                         className="form-datepicker"
                         popperPlacement="bottom"
                         popperModifiers={[
@@ -393,10 +438,17 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                       <label>Service End Date</label>
                       <DatePicker
                         selected={serviceEndDate}
-                        onChange={(date) => setServiceEndDate(date)}
-                        minDate={new Date(transaction.date)}
-                        placeholderText="Select service end date"
-                        dateFormat="dd/MM/yyyy"
+                        onChange={(date) => {
+                          if (date) {
+                            // Timezone-safe date handling - store as Date object for now
+                            setServiceEndDate(date);
+                          } else {
+                            setServiceEndDate(null);
+                          }
+                        }}
+                        minDate={new Date(transaction.date + 'T12:00:00')}
+                        placeholderText={`Select service end date (${userDateFormat})`}
+                        dateFormat={datePickerFormat}
                         className="form-datepicker"
                         popperPlacement="bottom"
                         popperModifiers={[
@@ -424,10 +476,17 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                         <label>Service Start Date</label>
                         <DatePicker
                           selected={serviceStartDate}
-                          onChange={(date) => setServiceStartDate(date)}
-                          minDate={new Date(transaction.date)}
-                          placeholderText="Select service start date"
-                          dateFormat="dd/MM/yyyy"
+                          onChange={(date) => {
+                            if (date) {
+                              // Timezone-safe date handling - store as Date object for now
+                              setServiceStartDate(date);
+                            } else {
+                              setServiceStartDate(null);
+                            }
+                          }}
+                          minDate={new Date(transaction.date + 'T12:00:00')}
+                          placeholderText={`Select service start date (${userDateFormat})`}
+                          dateFormat={datePickerFormat}
                           className="form-datepicker"
                           popperPlacement="bottom"
                           popperModifiers={[
@@ -451,10 +510,17 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                         <label>Service End Date</label>
                         <DatePicker
                           selected={serviceEndDate}
-                          onChange={(date) => setServiceEndDate(date)}
-                          minDate={serviceStartDate || new Date(transaction.date)}
-                          placeholderText="Select service end date"
-                          dateFormat="dd/MM/yyyy"
+                          onChange={(date) => {
+                            if (date) {
+                              // Timezone-safe date handling - store as Date object for now
+                              setServiceEndDate(date);
+                            } else {
+                              setServiceEndDate(null);
+                            }
+                          }}
+                          minDate={serviceStartDate || new Date(transaction.date + 'T12:00:00')}
+                          placeholderText={`Select service end date (${userDateFormat})`}
+                          dateFormat={datePickerFormat}
                           className="form-datepicker"
                           popperPlacement="bottom"
                           popperModifiers={[

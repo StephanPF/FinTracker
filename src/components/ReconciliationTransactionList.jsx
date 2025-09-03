@@ -6,8 +6,46 @@ import "react-datepicker/dist/react-datepicker.css";
 import './ReconciliationTransactionList.css';
 
 const ReconciliationTransactionList = ({ selectedTransactions, onTransactionToggle, accountId, selectedAccount }) => {
-  const { getUnreconciledTransactions, transactions, accounts, categories, getActiveTransactionGroups, getActiveSubcategories, tags, numberFormatService } = useAccounting();
+  const { getUnreconciledTransactions, transactions, accounts, categories, getActiveTransactionGroups, getActiveSubcategories, tags, numberFormatService, database } = useAccounting();
   const { formatDate } = useDate();
+
+  // Get user's date format from database
+  const getUserDateFormat = () => {
+    if (database) {
+      const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
+      if (datePrefs && datePrefs.settings && datePrefs.settings.dateFormat) {
+        return datePrefs.settings.dateFormat;
+      }
+    }
+    return 'DD/MM/YYYY'; // Default format
+  };
+
+  // Convert settings date format to react-datepicker format
+  const convertToDatePickerFormat = (settingsFormat) => {
+    const formatMap = {
+      'DD/MM/YYYY': 'dd/MM/yyyy',
+      'MM/DD/YYYY': 'MM/dd/yyyy',
+      'YYYY-MM-DD': 'yyyy-MM-dd',
+      'DD.MM.YYYY': 'dd.MM.yyyy',
+      'DD-MM-YYYY': 'dd-MM-yyyy',
+      'MMM DD, YYYY': 'MMM dd, yyyy',
+      'DD MMM YYYY': 'dd MMM yyyy',
+      'MMMM DD, YYYY': 'MMMM dd, yyyy'
+    };
+    return formatMap[settingsFormat] || 'dd/MM/yyyy';
+  };
+
+  // Helper function to convert Date object to YYYY-MM-DD string (timezone-safe)
+  const dateToISOString = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const userDateFormat = getUserDateFormat();
+  const datePickerFormat = convertToDatePickerFormat(userDateFormat);
   
   // Filter state (reuse similar logic to TransactionList)
   // Pre-select the account filter with the selected account and make it non-editable
@@ -36,12 +74,12 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
     setFilters(prev => ({ ...prev, accountId: accountId || '' }));
   }, [accountId]);
 
-  // Handle date picker changes
+  // Handle date picker changes (timezone-safe)
   const handleDateFromChange = (date) => {
     setSelectedDateFrom(date);
     setFilters(prev => ({ 
       ...prev, 
-      dateFrom: date ? date.toISOString().split('T')[0] : '' 
+      dateFrom: dateToISOString(date)
     }));
   };
 
@@ -49,7 +87,7 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
     setSelectedDateTo(date);
     setFilters(prev => ({ 
       ...prev, 
-      dateTo: date ? date.toISOString().split('T')[0] : '' 
+      dateTo: dateToISOString(date)
     }));
   };
 
@@ -302,9 +340,9 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
             <DatePicker
               selected={selectedDateFrom}
               onChange={handleDateFromChange}
-              dateFormat="MM/dd/yyyy"
+              dateFormat={datePickerFormat}
               className="filter-input"
-              placeholderText="From Date"
+              placeholderText={`From Date (${userDateFormat})`}
               isClearable={true}
               showPopperArrow={false}
             />
@@ -314,9 +352,9 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
             <DatePicker
               selected={selectedDateTo}
               onChange={handleDateToChange}
-              dateFormat="MM/dd/yyyy"
+              dateFormat={datePickerFormat}
               className="filter-input"
-              placeholderText="To Date"
+              placeholderText={`To Date (${userDateFormat})`}
               isClearable={true}
               showPopperArrow={false}
             />

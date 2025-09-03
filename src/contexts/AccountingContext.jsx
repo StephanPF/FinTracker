@@ -1592,7 +1592,15 @@ export const AccountingProvider = ({ children }) => {
     // Number Format Service
     numberFormatService,
     getUserPreferences: () => database.getUserPreferences(),
-    updateUserPreferences: (category, settings) => database.updateUserPreferences(category, settings),
+    updateUserPreferences: async (category, settings) => {
+      const result = database.updateUserPreferences(category, settings);
+      
+      // Save the user_preferences table to file storage
+      const buffer = database.exportTableToBuffer('user_preferences');
+      await fileStorage.saveTable('user_preferences', buffer);
+      
+      return result;
+    },
     getCurrencyFormatPreferences: (currencyId) => database.getCurrencyFormatPreferences(currencyId),
     getAllCurrencyFormatPreferences: () => database.getAllCurrencyFormatPreferences(),
     updateCurrencyFormatPreferences: (currencyId, settings) => database.updateCurrencyFormatPreferences(currencyId, settings),

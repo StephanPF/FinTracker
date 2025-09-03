@@ -6,7 +6,13 @@ class DateFormatService {
   // Get user's date formatting preferences
   getPreferences(userId = 'default') {
     const prefs = this.database.getUserPreferences().find(p => p.userId === userId && p.category === 'date_formatting');
-    return prefs ? prefs.settings : {
+    if (prefs) {
+      // Parse JSON string back to object
+      return typeof prefs.settings === 'string' 
+        ? JSON.parse(prefs.settings) 
+        : prefs.settings;
+    }
+    return {
       dateFormat: 'DD/MM/YYYY',
       timeFormat: '24h',
       firstDayOfWeek: 'monday',

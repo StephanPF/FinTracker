@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDate } from '../hooks/useDate';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import CurrencyManager from './CurrencyManager';
 
 const DataManagement = () => {
@@ -63,7 +65,8 @@ const DataManagement = () => {
     updateCurrency,
     deleteCurrency,
     addExchangeRate,
-    numberFormatService
+    numberFormatService,
+    database
   } = useAccounting();
   const { t } = useLanguage();
   const { formatDate, formatForInput } = useDate();
@@ -82,6 +85,44 @@ const DataManagement = () => {
       return `${currency.symbol}${balance.toFixed(currency.decimalPlaces || 2)}`;
     }
     return balance.toFixed(2);
+  };
+
+  // Get user's date format from database
+  const getUserDateFormat = () => {
+    if (database) {
+      const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
+      if (datePrefs && datePrefs.settings && datePrefs.settings.dateFormat) {
+        return datePrefs.settings.dateFormat;
+      }
+    }
+    return 'DD/MM/YYYY'; // Default format
+  };
+
+  // Convert settings date format to react-datepicker format
+  const convertToDatePickerFormat = (settingsFormat) => {
+    const formatMap = {
+      'DD/MM/YYYY': 'dd/MM/yyyy',
+      'MM/DD/YYYY': 'MM/dd/yyyy',
+      'YYYY-MM-DD': 'yyyy-MM-dd',
+      'DD.MM.YYYY': 'dd.MM.yyyy',
+      'DD-MM-YYYY': 'dd-MM-yyyy',
+      'MMM DD, YYYY': 'MMM dd, yyyy',
+      'DD MMM YYYY': 'dd MMM yyyy',
+      'MMMM DD, YYYY': 'MMMM dd, yyyy'
+    };
+    return formatMap[settingsFormat] || 'dd/MM/yyyy';
+  };
+
+  const userDateFormat = getUserDateFormat();
+  const datePickerFormat = convertToDatePickerFormat(userDateFormat);
+
+  // Helper function to convert Date object to YYYY-MM-DD string (timezone-safe)
+  const dateToISOString = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
   
   const [activeTab, setActiveTab] = useState('accounts');
@@ -109,7 +150,7 @@ const DataManagement = () => {
   const resetForm = () => {
     // Initialize formData with default values for transactions
     if (activeTab === 'transactions' && !editingId) {
-      setFormData({ date: new Date().toISOString().split('T')[0] });
+      setFormData({ date: dateToISOString(new Date()) });
     } else {
       setFormData({});
     }
@@ -577,11 +618,20 @@ const DataManagement = () => {
         </select>
       </div>
       <div className="form-group">
-        <label>Date</label>
-        <input
-          type="date"
-          value={formData.date ? formatForInput(formData.date) : new Date().toISOString().split('T')[0]}
-          onChange={(e) => handleInputChange('date', e.target.value)}
+        <label>Date *</label>
+        <DatePicker
+          selected={formData.date ? new Date(formData.date + 'T12:00:00') : new Date()}
+          onChange={(date) => {
+            if (date) {
+              // Timezone-safe date handling
+              const isoString = dateToISOString(date);
+              handleInputChange('date', isoString);
+            }
+          }}
+          dateFormat={datePickerFormat}
+          className="form-control"
+          placeholderText={`Select date (${userDateFormat}) *`}
+          showPopperArrow={false}
           required
         />
       </div>

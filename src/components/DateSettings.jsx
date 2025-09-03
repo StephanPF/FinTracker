@@ -20,7 +20,11 @@ const DateSettings = () => {
     if (database) {
       const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
       if (datePrefs) {
-        setPreferences(datePrefs.settings);
+        // Parse JSON string back to object
+        const settings = typeof datePrefs.settings === 'string' 
+          ? JSON.parse(datePrefs.settings) 
+          : datePrefs.settings;
+        setPreferences(settings);
       }
     }
   }, [database]);

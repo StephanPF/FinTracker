@@ -51,9 +51,17 @@
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 12px !important;
   flex: 1;
   overflow-y: auto;
+}
+
+.cash-allocation-modal .modal-body {
+  padding: 12px !important;
+}
+
+.modal-overlay .cash-allocation-modal .modal-body {
+  padding: 12px !important;
 }
 
 .withdrawal-summary {
@@ -134,7 +142,7 @@
 
 .allocation-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 120px 200px 40px;
+  grid-template-columns: 130px 210px 210px 80px 200px 40px;
   gap: 12px;
   align-items: end;
 }
@@ -143,9 +151,93 @@
   display: none;
 }
 
+.field-group.date-field {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+}
+
+/* React DatePicker styling */
+.field-group.date-field .react-datepicker-wrapper {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+}
+
+.field-group.date-field .date-picker-input {
+  width: 130px !important;
+  min-width: 130px;
+  max-width: 130px;
+  background-color: #ffffff !important;
+  color: #495057 !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  cursor: text;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.field-group.date-field .date-picker-input:focus {
+  outline: none;
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+}
+
+.field-group.date-field .date-picker-input::placeholder {
+  color: #999999;
+  opacity: 1;
+}
+
+
 .field-group {
   display: flex;
   flex-direction: column;
+}
+
+/* Fixed width dropdown fields to prevent layout shifts */
+.allocation-fields .field-group:nth-child(3) select,
+.allocation-fields .field-group:nth-child(4) select {
+  width: 210px;
+  min-width: 210px;
+  max-width: 210px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.allocation-fields .field-group:nth-child(3),
+.allocation-fields .field-group:nth-child(4) {
+  width: 210px;
+  min-width: 210px;
+  max-width: 210px;
+}
+
+/* Fixed width for amount field */
+.allocation-fields .field-group:nth-child(5) {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.allocation-fields .field-group:nth-child(5) input {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+/* Fixed width for description field */
+.allocation-fields .field-group:nth-child(6) {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+}
+
+.allocation-fields .field-group:nth-child(6) input {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
 }
 
 .field-group label {
@@ -304,8 +396,35 @@ select[disabled] {
     gap: 8px;
   }
   
-  .field-group {
+  .field-group.date-field {
     width: 100%;
+    min-width: unset;
+    max-width: unset;
+  }
+  
+  .field-group.date-field input[type="date"] {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+  }
+  
+  .field-group,
+  .allocation-fields .field-group:nth-child(3),
+  .allocation-fields .field-group:nth-child(4),
+  .allocation-fields .field-group:nth-child(5),
+  .allocation-fields .field-group:nth-child(6) {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+  }
+  
+  .allocation-fields .field-group:nth-child(3) select,
+  .allocation-fields .field-group:nth-child(4) select,
+  .allocation-fields .field-group:nth-child(5) input,
+  .allocation-fields .field-group:nth-child(6) input {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
   }
   
   .remove-btn {

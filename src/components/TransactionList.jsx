@@ -28,6 +28,35 @@ const TransactionList = ({ limit, selectedAccountId }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
+  // Get user's date format from database
+  const getUserDateFormat = () => {
+    if (database) {
+      const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
+      if (datePrefs && datePrefs.settings && datePrefs.settings.dateFormat) {
+        return datePrefs.settings.dateFormat;
+      }
+    }
+    return 'DD/MM/YYYY'; // Default format
+  };
+
+  // Convert settings date format to react-datepicker format
+  const convertToDatePickerFormat = (settingsFormat) => {
+    const formatMap = {
+      'DD/MM/YYYY': 'dd/MM/yyyy',
+      'MM/DD/YYYY': 'MM/dd/yyyy',
+      'YYYY-MM-DD': 'yyyy-MM-dd',
+      'DD.MM.YYYY': 'dd.MM.yyyy',
+      'DD-MM-YYYY': 'dd-MM-yyyy',
+      'MMM DD, YYYY': 'MMM dd, yyyy',
+      'DD MMM YYYY': 'dd MMM yyyy',
+      'MMMM DD, YYYY': 'MMMM dd, yyyy'
+    };
+    return formatMap[settingsFormat] || 'dd/MM/yyyy';
+  };
+
+  const userDateFormat = getUserDateFormat();
+  const datePickerFormat = convertToDatePickerFormat(userDateFormat);
+
   // Set account filter when selectedAccountId prop is provided
   useEffect(() => {
     if (selectedAccountId) {
@@ -512,10 +541,11 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                 <DatePicker
                   selected={filterDateFrom}
                   onChange={(date) => setFilterDateFrom(date)}
-                  placeholderText="📅 From"
+                  placeholderText={`📅 From (${userDateFormat})`}
                   className="filter-input date-picker-filter"
-                  dateFormat="dd/MM/yyyy"
+                  dateFormat={datePickerFormat}
                   isClearable
+                  showPopperArrow={false}
                 />
               </div>
               
@@ -523,10 +553,11 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                 <DatePicker
                   selected={filterDateTo}
                   onChange={(date) => setFilterDateTo(date)}
-                  placeholderText="📅 To"
+                  placeholderText={`📅 To (${userDateFormat})`}
                   className="filter-input date-picker-filter"
-                  dateFormat="dd/MM/yyyy"
+                  dateFormat={datePickerFormat}
                   isClearable
+                  showPopperArrow={false}
                 />
               </div>
               

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import './TransactionEditModal.css';
 
 const TransactionEditModal = ({ transaction, accounts, categories = [], currencies = [], transactionTypes = [], subcategories = [], transactionGroups = [], onSave, onClose }) => {
-  const { numberFormatService } = useAccounting();
+  const { numberFormatService, database } = useAccounting();
   const [formData, setFormData] = useState({
     date: transaction.date || '',
     description: transaction.description || '',
@@ -38,6 +40,35 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
     }
     return balance.toFixed(2);
   };
+
+  // Get user's date format from database
+  const getUserDateFormat = () => {
+    if (database) {
+      const datePrefs = database.getUserPreferences().find(p => p.category === 'date_formatting');
+      if (datePrefs && datePrefs.settings && datePrefs.settings.dateFormat) {
+        return datePrefs.settings.dateFormat;
+      }
+    }
+    return 'DD/MM/YYYY'; // Default format
+  };
+
+  // Convert settings date format to react-datepicker format
+  const convertToDatePickerFormat = (settingsFormat) => {
+    const formatMap = {
+      'DD/MM/YYYY': 'dd/MM/yyyy',
+      'MM/DD/YYYY': 'MM/dd/yyyy',
+      'YYYY-MM-DD': 'yyyy-MM-dd',
+      'DD.MM.YYYY': 'dd.MM.yyyy',
+      'DD-MM-YYYY': 'dd-MM-yyyy',
+      'MMM DD, YYYY': 'MMM dd, yyyy',
+      'DD MMM YYYY': 'dd MMM yyyy',
+      'MMMM DD, YYYY': 'MMMM dd, yyyy'
+    };
+    return formatMap[settingsFormat] || 'dd/MM/yyyy';
+  };
+
+  const userDateFormat = getUserDateFormat();
+  const datePickerFormat = convertToDatePickerFormat(userDateFormat);
   
   const [errors, setErrors] = useState({});
 
@@ -335,14 +366,25 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
               <div className="form-column">
                 
                 <div className="form-field">
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleChange('date', e.target.value)}
+                  <DatePicker
+                    selected={formData.date ? new Date(formData.date + 'T12:00:00') : null}
+                    onChange={(date) => {
+                      if (date) {
+                        // Use timezone-safe date handling
+                        const year = date.getFullYear();
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        const day = date.getDate().toString().padStart(2, '0');
+                        const isoString = `${year}-${month}-${day}`;
+                        handleChange('date', isoString);
+                      } else {
+                        handleChange('date', '');
+                      }
+                    }}
+                    dateFormat={datePickerFormat}
                     className={errors.date ? 'error' : 'date-picker'}
-                    title="Date *"
+                    placeholderText={`Select date (${userDateFormat}) *`}
+                    showPopperArrow={false}
                     required
-                    placeholder="Select date"
                   />
                   {errors.date && <span className="field-error">{errors.date}</span>}
                 </div>

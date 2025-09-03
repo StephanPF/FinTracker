@@ -44,7 +44,7 @@ class RelationalDatabase {
       api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt'],
       bank_configurations: ['id', 'name', 'type', 'fieldMapping', 'settings', 'isActive', 'createdAt', 'updatedAt'],
       processing_rules: ['id', 'bankConfigId', 'name', 'type', 'active', 'ruleOrder', 'conditions', 'conditionLogic', 'actions', 'createdAt', 'updatedAt'],
-      cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'createdAt', 'updatedAt']
+      cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'dateSpent', 'isAutomatic', 'createdAt', 'updatedAt']
     };
     
     this.workbooks = {};
@@ -135,6 +135,8 @@ class RelationalDatabase {
       payees: [],
       payers: [],
       bank_configurations: [],
+      processing_rules: [],
+      cash_allocations: [],
       
       database_info: [
         {
@@ -3375,6 +3377,8 @@ class RelationalDatabase {
       subcategoryId: allocationData.subcategoryId || null,
       amount: parseFloat(allocationData.amount),
       description: allocationData.description || '',
+      dateSpent: allocationData.dateSpent || null,
+      isAutomatic: allocationData.isAutomatic || false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -3412,14 +3416,17 @@ class RelationalDatabase {
     const allocations = this.getCashWithdrawalAllocations(transactionId);
     if (allocations.length === 0) return 'none';
     
-    const totalAllocated = allocations.reduce((total, allocation) => 
+    // Only count manual allocations (those that are not automatic)
+    const manualAllocations = allocations.filter(allocation => !allocation.isAutomatic);
+    
+    const totalManuallyAllocated = manualAllocations.reduce((total, allocation) => 
       total + Math.abs(allocation.amount), 0
     );
     
     const originalAmount = Math.abs(transaction.amount);
     
-    if (totalAllocated === 0) return 'none';
-    if (totalAllocated >= originalAmount) return 'full';
+    if (totalManuallyAllocated === 0) return 'none';
+    if (totalManuallyAllocated >= originalAmount) return 'full';
     return 'partial';
   }
 
