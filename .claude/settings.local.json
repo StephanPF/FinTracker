@@ -45,7 +45,8 @@
       "Read(c:\\Users\\steph\\Desktop/**)",
       "Read(c:\\Users\\steph\\Desktop/**)",
       "Bash(dir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(start http://localhost:5176)"
     ],
     "deny": [],
     "ask": []

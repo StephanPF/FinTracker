@@ -76,11 +76,19 @@ const CurrencyManager = () => {
     }
   }, [openDropdownId]);
 
+  const dateToISOString = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [exchangeRateForm, setExchangeRateForm] = useState({
     fromCurrencyId: '',
     toCurrencyId: '',
     rate: '',
-    date: new Date().toISOString().split('T')[0]
+    date: dateToISOString(new Date())
   });
 
   // Currency form handling
@@ -169,7 +177,7 @@ const CurrencyManager = () => {
       fromCurrencyId: '',
       toCurrencyId: '',
       rate: '',
-      date: new Date().toISOString().split('T')[0]
+      date: dateToISOString(new Date())
     });
   };
 

@@ -121,6 +121,10 @@ export class LiveExchangeRateService extends ExchangeRateService {
     console.log(`💾 Storing rates for base currency: ${baseCurrency}`, fromCurrency);
     const currentDate = new Date().toISOString().split('T')[0];
     const timestamp = new Date().toISOString();
+    
+    // Remove ALL existing exchange rates for complete refresh
+    await this.removeAllExchangeRates();
+    
     let ratesStored = 0;
 
     for (const [currencyCode, rate] of Object.entries(rates)) {
@@ -130,16 +134,13 @@ export class LiveExchangeRateService extends ExchangeRateService {
       if (toCurrency) {
         console.log(`💰 Storing rate: ${baseCurrency} -> ${currencyCode.toUpperCase()} = ${rate}`);
         
-        // Remove old API rates for this pair (keep only latest)
-        await this.removeOldApiRates(fromCurrency.id, toCurrency.id);
-        
-        // Add new rate (unified source for both forex and crypto)
+        // Add new rate (unified API source for all currencies)
         await this.database.addExchangeRate({
           fromCurrencyId: fromCurrency.id,
           toCurrencyId: toCurrency.id,
           rate: rate,
           date: currentDate,
-          source: toCurrency.type === 'crypto' ? 'crypto-api' : 'api',
+          source: 'api',
           timestamp: timestamp,
           apiTimestamp: apiTimestamp || timestamp,
           provider: 'Currency-API (GitHub)'
@@ -151,19 +152,45 @@ export class LiveExchangeRateService extends ExchangeRateService {
     }
     
     console.log(`✅ Stored ${ratesStored} exchange rates successfully`);
+    
+    // Final verification
+    const finalRates = this.database.getTable('exchange_rates');
+    console.log(`🔍 Final verification: ${finalRates.length} total rates in database`);
+    console.log('📊 Final rates by source:', 
+      finalRates.reduce((acc, rate) => {
+        acc[rate.source] = (acc[rate.source] || 0) + 1;
+        return acc;
+      }, {})
+    );
+    
     return ratesStored;
   }
 
-  async removeOldApiRates(fromCurrencyId, toCurrencyId) {
-    const existingRates = this.database.getTable('exchange_rates')
-      .filter(rate => 
-        rate.fromCurrencyId === fromCurrencyId && 
-        rate.toCurrencyId === toCurrencyId && 
-        rate.source === 'api'
-      );
+  async removeAllExchangeRates() {
+    // Remove ALL exchange rates (API, manual, crypto-api - everything) for complete refresh
+    const allExistingRates = this.database.getTable('exchange_rates');
     
-    for (const rate of existingRates) {
+    console.log(`🧹 Removing ALL ${allExistingRates.length} existing exchange rates before adding fresh ones`);
+    console.log('📋 Existing rates by source:', 
+      allExistingRates.reduce((acc, rate) => {
+        acc[rate.source] = (acc[rate.source] || 0) + 1;
+        return acc;
+      }, {})
+    );
+    
+    // Create a copy of the array to avoid iteration issues when deleting
+    const ratesToDelete = [...allExistingRates];
+    
+    for (const rate of ratesToDelete) {
+      console.log(`🗑️ Deleting rate: ${rate.id} (${rate.source})`);
       this.database.deleteExchangeRate(rate.id);
+    }
+    
+    // Verify all rates are deleted
+    const remainingRates = this.database.getTable('exchange_rates');
+    console.log(`✅ After deletion: ${remainingRates.length} rates remaining`);
+    if (remainingRates.length > 0) {
+      console.warn('⚠️ Some rates were not deleted:', remainingRates);
     }
   }
 

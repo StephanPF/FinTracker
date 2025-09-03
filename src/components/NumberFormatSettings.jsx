@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import NumberFormatService from '../utils/numberFormatService';
 
 const NumberFormatSettings = () => {
-  const { database } = useAccounting();
+  const { database, updateUserPreferences } = useAccounting();
   const { t } = useLanguage();
   
   const [preferences, setPreferences] = useState({
@@ -72,7 +72,7 @@ const NumberFormatSettings = () => {
   const savePreferences = async () => {
     try {
       setIsLoading(true);
-      await database.updateUserPreferences('number_formatting', preferences);
+      await updateUserPreferences('number_formatting', preferences);
       alert('Number formatting preferences saved successfully!');
     } catch (error) {
       console.error('Error saving preferences:', error);

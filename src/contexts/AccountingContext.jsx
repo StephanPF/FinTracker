@@ -209,6 +209,35 @@ export const AccountingProvider = ({ children }) => {
       // Restore saved tab after database loads
       restoreSavedTab();
       
+      // Automatically refresh exchange rates with current live data instead of using old sample rates
+      try {
+        console.log('🚀 Refreshing exchange rates for new database with live data...');
+        
+        // Create exchange rate service directly (state hasn't updated yet)
+        const formatService = new NumberFormatService(database);
+        const currentApiSettings = database.getTable('api_settings')[0];
+        const liveService = new LiveExchangeRateService(database, currentApiSettings);
+        liveService.setNumberFormatService(formatService);
+        
+        // Get base currency
+        const currentSettings = database.getTable('currency_settings').find(s => s.userId === 'default');
+        const baseCurrencyId = currentSettings ? currentSettings.baseCurrencyId : 'CUR_001';
+        const baseCurrency = database.getTable('currencies').find(c => c.id === baseCurrencyId);
+        const baseCurrencyCode = baseCurrency ? baseCurrency.code : 'EUR';
+        
+        // Fetch live rates directly
+        const result = await liveService.fetchLiveRates(baseCurrencyCode);
+        if (result.success) {
+          console.log(`✅ Successfully populated new database with ${result.ratesCount} current exchange rates`);
+          // Refresh state to show updated rates
+          setExchangeRates([...database.getTable('exchange_rates')]);
+        } else {
+          console.warn('⚠️ Failed to fetch live rates for new database, using default sample rates');
+        }
+      } catch (error) {
+        console.warn('⚠️ Error refreshing rates for new database:', error.message, '- using default sample rates');
+      }
+      
       const buffers = database.exportAllTablesToBuffers();
       await fileStorage.saveAllTables(buffers);
       

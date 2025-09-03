@@ -7,6 +7,16 @@ import './ImportTransactions.css';
 
 const ImportTransactions = () => {
   const { bankConfigurations = [], transactions = [], currencies = [], getActiveProcessingRules } = useAccounting();
+
+  // Helper function to convert Date object to YYYY-MM-DD string (timezone-safe)
+  const dateToISOString = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [selectedBank, setSelectedBank] = useState(null);
   const [step, setStep] = useState(1);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -116,7 +126,7 @@ const ImportTransactions = () => {
         return null;
       }
 
-      return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+      return dateToISOString(date); // Return YYYY-MM-DD format (timezone-safe)
     } catch (error) {
       console.warn('Error parsing date:', dateString, error);
       return null;

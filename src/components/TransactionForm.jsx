@@ -42,6 +42,15 @@ const TransactionForm = ({ onSuccess }) => {
     return balance.toFixed(2);
   };
 
+  // Helper function to convert Date object to YYYY-MM-DD string (timezone-safe)
+  const dateToISOString = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Helper function to determine if destination account should be shown
   const shouldShowDestinationAccount = (transactionType) => {
     if (!transactionType) return false;
@@ -61,7 +70,7 @@ const TransactionForm = ({ onSuccess }) => {
            transactionType.name === 'Investissement - ACHAT';
   };
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: dateToISOString(new Date()),
     description: '',
     amount: '',
     destinationAmount: '', // Amount for destination account (for investments)
@@ -222,9 +231,9 @@ const TransactionForm = ({ onSuccess }) => {
   // Handle date picker changes
   const handleDateChange = (date) => {
     setSelectedDate(date);
-    // Update formData with ISO date string
+    // Update formData with timezone-safe ISO date string
     if (date) {
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = dateToISOString(date);
       setFormData(prev => ({
         ...prev,
         date: dateString
@@ -422,7 +431,7 @@ const TransactionForm = ({ onSuccess }) => {
       // Prepare transaction data with accountId and destinationAccountId (no debit/credit mapping)
       const transactionData = {
         ...formData,
-        date: formData.date || new Date().toISOString().split('T')[0],
+        date: formData.date || dateToISOString(new Date()),
         // Use the form's account fields directly
         accountId: formData.accountId,
         destinationAccountId: formData.destinationAccountId,
@@ -484,7 +493,7 @@ const TransactionForm = ({ onSuccess }) => {
       }
       
       setFormData({
-        date: new Date().toISOString().split('T')[0],
+        date: dateToISOString(new Date()),
         description: '',
         amount: '',
         destinationAmount: '',
