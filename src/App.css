@@ -2709,10 +2709,10 @@ input[type="number"] {
 
 .form-container {
   background: white;
-  padding: 1.5rem;
+  padding: 0.75rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .data-form {
@@ -2763,22 +2763,12 @@ input[type="number"] {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 
-/* Account form specific styling - align buttons with form fields */
+/* Account form specific styling - all fields in a single row */
 .account-form {
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-}
-
-.account-form .form-actions {
-  grid-column: 4;
-  margin-top: 0;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-self: end;
-  gap: 0.25rem;
-  padding-top: 1.5rem; /* Account for label height to align with input fields */
+  grid-template-columns: 2fr 0.6fr 2fr 1.5fr 0.8fr;
 }
 
 .table-container {
@@ -3560,7 +3550,7 @@ input[type="number"] {
 /* Search and Actions Container */
 .search-and-actions-container {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 1rem;
   margin-bottom: 0;
 }
@@ -3653,7 +3643,7 @@ input[type="number"] {
     grid-column: 1;
     flex-direction: row;
     justify-content: flex-end;
-    margin-top: 1rem;
+    margin-top: 0.75rem;
     gap: 0.5rem;
   }
   
@@ -6507,7 +6497,7 @@ body {
 
 /* Account Types Explanation Styles - Compact Version */
 .account-types-explanation {
-  margin: 0.5rem 0 0.25rem 0;
+  margin: 0;
   padding: 0.5rem;
   background: #f8fafc;
   border-radius: 6px;
@@ -7166,7 +7156,7 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding-top: 1.5rem;
+  padding-top: 0.75rem;
   border-top: 1px solid #e5e7eb;
 }
 

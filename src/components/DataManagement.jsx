@@ -489,79 +489,75 @@ const DataManagement = () => {
   );
 
   const renderAccountForm = () => (
-    <form onSubmit={handleSubmit} className="data-form account-form">
-      <div className="form-group">
-        <label>Account Name</label>
-        <input
-          type="text"
-          value={formData.name || ''}
-          onChange={(e) => handleInputChange('name', e.target.value)}
-          required
-        />
-      </div>
-      <div className="form-group">
-        <label>Account Code</label>
-        <input
-          type="text"
-          value={formData.accountCode || ''}
-          onChange={(e) => handleInputChange('accountCode', e.target.value.toUpperCase())}
-          placeholder="e.g., BNK, CSH, REV"
-          maxLength="3"
-          style={{ textTransform: 'uppercase' }}
-        />
-        <small style={{ color: '#6b7280', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
-          Optional 2-3 character code to identify this account type
-        </small>
-      </div>
-      <div className="form-group">
-        <label>Account Type</label>
-        <select
-          value={formData.accountTypeId || ''}
-          onChange={(e) => handleInputChange('accountTypeId', e.target.value)}
-          required
-        >
-          <option value="">Select Account Type</option>
-          {accountTypes.map(accountType => (
-            <option key={accountType.id} value={accountType.id}>
-              {accountType.type} - {accountType.subtype}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>{t('currency')}</label>
-        <select
-          value={formData.currencyId || 'CUR_001'}
-          onChange={(e) => handleInputChange('currencyId', e.target.value)}
-          required
-        >
-          {getActiveCurrencies().map(currency => (
-            <option key={currency.id} value={currency.id}>
-              {currency.symbol} {currency.name} ({currency.code})
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label>Initial Balance</label>
-        <input
-          type="number"
-          step="0.01"
-          value={formData.initialBalance !== undefined ? formData.initialBalance : formData.balance || ''}
-          onChange={(e) => handleInputChange('initialBalance', parseFloat(e.target.value) || 0)}
-          style={{ textAlign: 'left' }}
-          className="no-spinners"
-        />
-        <small style={{ color: '#6b7280', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
-          This is the starting balance you set for this account
-        </small>
-      </div>
-      <div className="form-actions">
-        <button type="submit" className="btn-primary">
+    <>
+      <form id="account-form" onSubmit={handleSubmit} className="data-form account-form">
+        <div className="form-group">
+          <label>Account Name</label>
+          <input
+            type="text"
+            value={formData.name || ''}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>Account Code</label>
+          <input
+            type="text"
+            value={formData.accountCode || ''}
+            onChange={(e) => handleInputChange('accountCode', e.target.value.toUpperCase())}
+            placeholder="e.g., BNK, CSH, REV"
+            maxLength="3"
+            style={{ textTransform: 'uppercase' }}
+          />
+        </div>
+        <div className="form-group">
+          <label>Account Type</label>
+          <select
+            value={formData.accountTypeId || ''}
+            onChange={(e) => handleInputChange('accountTypeId', e.target.value)}
+            required
+          >
+            <option value="">Select Account Type</option>
+            {accountTypes.map(accountType => (
+              <option key={accountType.id} value={accountType.id}>
+                {accountType.type} - {accountType.subtype}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
+          <label>{t('currency')}</label>
+          <select
+            value={formData.currencyId || 'CUR_001'}
+            onChange={(e) => handleInputChange('currencyId', e.target.value)}
+            required
+          >
+            {getActiveCurrencies().map(currency => (
+              <option key={currency.id} value={currency.id}>
+                {currency.symbol} {currency.name} ({currency.code})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="form-group">
+          <label>Initial Balance</label>
+          <input
+            type="number"
+            step="0.01"
+            value={formData.initialBalance !== undefined ? formData.initialBalance : formData.balance || ''}
+            onChange={(e) => handleInputChange('initialBalance', parseFloat(e.target.value) || 0)}
+            style={{ textAlign: 'left' }}
+            className="no-spinners"
+          />
+        </div>
+      </form>
+      <div className="form-actions" style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+        <button type="submit" form="account-form" className="btn-primary">
           {editingId ? t('updateAccount') : t('addAccount')}
         </button>
       </div>
-    </form>
+    </>
   );
 
 
