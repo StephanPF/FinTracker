@@ -32,7 +32,7 @@ class RelationalDatabase {
       currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
       exchange_rates: ['id', 'fromCurrencyId', 'toCurrencyId', 'rate', 'date', 'source', 'createdAt'],
       currency_settings: ['id', 'baseCurrencyId', 'autoUpdateRates', 'createdAt', 'updatedAt'],
-      user_preferences: ['id', 'userId', 'category', 'key', 'value', 'createdAt', 'updatedAt'],
+      user_preferences: ['id', 'userId', 'category', 'settings', 'createdAt', 'updatedAt'],
       database_info: ['id', 'key', 'value', 'createdAt', 'updatedAt'],
       tags: ['id', 'name', 'description', 'isActive', 'createdAt'],
       todos: ['id', 'title', 'description', 'category', 'status', 'priority', 'estimatedHours', 'completedAt', 'createdAt'],
@@ -187,7 +187,21 @@ class RelationalDatabase {
     return `${prefix}_${String(maxNumber + 1).padStart(3, '0')}`;
   }
 
+  // Initialize any missing tables that were added after database creation
+  initializeMissingTables() {
+    const expectedTables = Object.keys(this.tables);
+    for (const tableName of expectedTables) {
+      if (!this.tables[tableName]) {
+        this.tables[tableName] = [];
+        console.log(`Initialized missing table: ${tableName}`);
+      }
+    }
+  }
+
   initializeWorkbooks() {
+    // Ensure all tables exist before creating workbooks
+    this.initializeMissingTables();
+    
     for (const tableName of Object.keys(this.tables)) {
       this.workbooks[tableName] = XLSX.utils.book_new();
       
@@ -304,7 +318,7 @@ class RelationalDatabase {
     
     // Standard transaction creation
     const newTransaction = {
-      id: 'TXN' + Date.now(),
+      id: 'TXN' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
       date: transactionData.date || new Date().toISOString().split('T')[0],
       description: transactionData.description,
       accountId: transactionData.accountId,
@@ -315,12 +329,15 @@ class RelationalDatabase {
       categoryId: transactionData.categoryId || null,
       subcategoryId: transactionData.subcategoryId || null,
       reference: transactionData.reference || '',
+      reconciliationReference: transactionData.reconciliationReference || null,
       notes: transactionData.notes || '',
       payer: transactionData.payer || null,
       payee: transactionData.payee || null,
       payerId: transactionData.payerId || null,
       payeeId: transactionData.payeeId || null,
       broker: transactionData.broker || null,
+      productId: transactionData.productId || null,
+      transactionGroupId: transactionData.transactionGroupId || null,
       linkedTransactionId: null,
       transactionType: this.getTransactionType(transactionData.categoryId),
       cashWithdrawal: this.isCashWithdrawalTransaction(transactionData.subcategoryId),
@@ -373,9 +390,9 @@ class RelationalDatabase {
     const debitTransaction = {
       id: debitTxnId,
       date: transactionData.date || new Date().toISOString().split('T')[0],
-      description: transactionData.description + (destAccount ? ` to ${destAccount.name}` : ''),
+      description: transactionData.description,
       accountId: transactionData.accountId,
-      destinationAccountId: null,
+      destinationAccountId: transactionData.destinationAccountId,
       amount: debitAmount,
       currencyId: debitCurrencyId,
       exchangeRate: exchangeRate,
@@ -406,7 +423,7 @@ class RelationalDatabase {
     const creditTransaction = {
       id: creditTxnId,
       date: transactionData.date || new Date().toISOString().split('T')[0],
-      description: transactionData.description + (sourceAccount ? ` from ${sourceAccount.name}` : ''),
+      description: transactionData.description,
       accountId: transactionData.destinationAccountId,
       destinationAccountId: null,
       amount: creditAmount,
@@ -934,7 +951,8 @@ class RelationalDatabase {
       'accounts', 'transactions', 'tags', 'todos', 'transaction_types',
       'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
-      'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules'
+      'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules',
+      'cash_allocations'
     ];
 
     for (const tableName of requiredTables) {
@@ -1220,7 +1238,10 @@ class RelationalDatabase {
   }
 
   getUnreconciledTransactions(accountId = null) {
-    let transactions = this.tables.transactions.filter(t => !t.reconciliationReference);
+    let transactions = this.tables.transactions.filter(t => {
+      const ref = t.reconciliationReference;
+      return !ref || ref === '' || ref === null || ref === undefined;
+    });
     
     if (accountId) {
       transactions = transactions.filter(t => t.accountId === accountId);
@@ -1817,6 +1838,13 @@ class RelationalDatabase {
       throw new Error('Cannot delete transaction group: it is used in categories');
     }
 
+    // Check if group is used in transactions
+    const usedInTransactions = this.tables.transactions.some(transaction => transaction.transactionGroupId === id);
+
+    if (usedInTransactions) {
+      throw new Error('Cannot delete transaction group: it is used in transactions');
+    }
+
     const deletedGroup = this.tables.transaction_groups[groupIndex];
     this.tables.transaction_groups.splice(groupIndex, 1);
     this.saveTableToWorkbook('transaction_groups');
@@ -1858,6 +1886,7 @@ class RelationalDatabase {
       groupId: subcategoryData.groupId || null,
       name: subcategoryData.name,
       description: subcategoryData.description || '',
+      color: subcategoryData.color || '#666666',
       order: subcategoryData.order !== undefined ? subcategoryData.order : maxOrder + 1,
       isActive: subcategoryData.isActive !== undefined ? subcategoryData.isActive : true,
       isCashWithdrawal: subcategoryData.isCashWithdrawal || false,
@@ -2723,6 +2752,19 @@ class RelationalDatabase {
 
   // Currency management methods
   addCurrency(currencyData) {
+    // Validate required fields
+    if (!currencyData.code || !currencyData.name) {
+      throw new Error('Currency code and name are required');
+    }
+
+    // Check for duplicate currency code
+    const existingCurrency = this.tables.currencies.find(curr => 
+      curr.code === currencyData.code && curr.isActive !== false
+    );
+    if (existingCurrency) {
+      throw new Error(`Currency with code '${currencyData.code}' already exists`);
+    }
+
     const id = this.generateId('CUR');
     const newCurrency = {
       id,
@@ -2740,6 +2782,16 @@ class RelationalDatabase {
     const currencyIndex = this.tables.currencies.findIndex(currency => currency.id === id);
     if (currencyIndex === -1) {
       throw new Error(`Currency with id ${id} not found`);
+    }
+
+    // Check for duplicate currency code (if code is being updated)
+    if (currencyData.code) {
+      const existingCurrency = this.tables.currencies.find(curr => 
+        curr.code === currencyData.code && curr.id !== id && curr.isActive !== false
+      );
+      if (existingCurrency) {
+        throw new Error(`Currency with code '${currencyData.code}' already exists`);
+      }
     }
 
     const updatedCurrency = {
@@ -2820,14 +2872,43 @@ class RelationalDatabase {
   }
 
   updateUserPreferences(category, settings, userId = 'default') {
-    let preferences = this.tables.user_preferences.find(p => p.userId === userId && p.category === category);
+    let preferences;
+    
+    // Special handling for currency_formatting - find by currency ID
+    if (category === 'currency_formatting' && settings.currencyId) {
+      preferences = this.tables.user_preferences.find(p => {
+        if (p.userId !== userId || p.category !== category) return false;
+        try {
+          const existingSettings = typeof p.settings === 'string' ? JSON.parse(p.settings) : p.settings;
+          return existingSettings.currencyId === settings.currencyId;
+        } catch (e) {
+          return false;
+        }
+      });
+    } else {
+      preferences = this.tables.user_preferences.find(p => p.userId === userId && p.category === category);
+    }
     
     if (preferences) {
       // Parse existing settings from JSON string, merge with new settings, then stringify back
       const existingSettings = typeof preferences.settings === 'string' 
         ? JSON.parse(preferences.settings) 
         : preferences.settings;
-      preferences.settings = JSON.stringify({ ...existingSettings, ...settings });
+      
+      // Deep merge to preserve nested objects like 'preferences'
+      const mergedSettings = { ...existingSettings };
+      for (const [key, value] of Object.entries(settings)) {
+        if (value && typeof value === 'object' && !Array.isArray(value) && 
+            existingSettings[key] && typeof existingSettings[key] === 'object' && !Array.isArray(existingSettings[key])) {
+          // Deep merge nested objects
+          mergedSettings[key] = { ...existingSettings[key], ...value };
+        } else {
+          // Simple assignment for primitives and arrays
+          mergedSettings[key] = value;
+        }
+      }
+      
+      preferences.settings = JSON.stringify(mergedSettings);
       preferences.updatedAt = new Date().toISOString();
     } else {
       preferences = {
@@ -3038,6 +3119,7 @@ class RelationalDatabase {
     const newPayee = {
       id,
       name: payeeData.name,
+      description: payeeData.description || '',
       isActive: payeeData.isActive !== undefined ? payeeData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -3075,6 +3157,16 @@ class RelationalDatabase {
     if (payeeIndex === -1) {
       throw new Error(`Payee with id ${id} not found`);
     }
+
+    // Check if payee is used in transactions
+    const usedInTransactions = this.tables.transactions.some(
+      transaction => transaction.payeeId === id
+    );
+
+    if (usedInTransactions) {
+      throw new Error('Cannot delete payee: it is used in transactions');
+    }
+
     const deletedPayee = this.tables.payees[payeeIndex];
     this.tables.payees.splice(payeeIndex, 1);
     this.saveTableToWorkbook('payees');
@@ -3092,6 +3184,7 @@ class RelationalDatabase {
     const newPayer = {
       id,
       name: payerData.name,
+      description: payerData.description || '',
       isActive: payerData.isActive !== undefined ? payerData.isActive : true,
       createdAt: new Date().toISOString()
     };
@@ -3129,6 +3222,16 @@ class RelationalDatabase {
     if (payerIndex === -1) {
       throw new Error(`Payer with id ${id} not found`);
     }
+
+    // Check if payer is used in transactions
+    const usedInTransactions = this.tables.transactions.some(
+      transaction => transaction.payerId === id
+    );
+
+    if (usedInTransactions) {
+      throw new Error('Cannot delete payer: it is used in transactions');
+    }
+
     const deletedPayer = this.tables.payers[payerIndex];
     this.tables.payers.splice(payerIndex, 1);
     this.saveTableToWorkbook('payers');
@@ -3643,6 +3746,7 @@ class RelationalDatabase {
     const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
     return Math.max(1, months);
   }
+
 }
 
 export default RelationalDatabase;

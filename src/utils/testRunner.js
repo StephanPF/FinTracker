@@ -2,6 +2,11 @@
 import RelationalDatabase from './relationalDatabase.js';
 import ExchangeRateService from './exchangeRateService.js';
 import { createDataManagementTests } from './dataManagement.test.js';
+import { createSettingsTests } from './settings.test.js';
+import { createTransactionFormTests } from './transactionForm.test.js';
+import { createOverviewTests } from './overview.test.js';
+import { createImportTransactionsTests } from './importTransactions.test.js';
+import { createReconciliationTests } from './reconciliation.test.js';
 
 // Mock XLSX for browser environment
 const mockXLSX = {
@@ -67,6 +72,31 @@ const expect = {
     const tolerance = Math.pow(10, -precision) / 2;
     if (diff > tolerance) {
       throw new Error(`Expected ${actual} to be close to ${expected} (within ${tolerance})`);
+    }
+  },
+  toBeGreaterThan: (actual, expected) => {
+    if (actual <= expected) {
+      throw new Error(`Expected ${actual} to be greater than ${expected}`);
+    }
+  },
+  toBeGreaterThanOrEqual: (actual, expected) => {
+    if (actual < expected) {
+      throw new Error(`Expected ${actual} to be greater than or equal to ${expected}`);
+    }
+  },
+  toBeLessThan: (actual, expected) => {
+    if (actual >= expected) {
+      throw new Error(`Expected ${actual} to be less than ${expected}`);
+    }
+  },
+  toBeTruthy: (actual) => {
+    if (!actual) {
+      throw new Error(`Expected ${actual} to be truthy`);
+    }
+  },
+  toBeFalsy: (actual) => {
+    if (actual) {
+      throw new Error(`Expected ${actual} to be falsy`);
     }
   }
 };
@@ -340,7 +370,12 @@ export const runTestSuite = async () => {
   const allTests = [
     ...createDatabaseTests(),
     ...createExchangeRateServiceTests(),
-    ...createDataManagementTests()
+    ...createDataManagementTests(),
+    ...createSettingsTests(),
+    ...createTransactionFormTests(),
+    ...createOverviewTests(),
+    ...createImportTransactionsTests(),
+    ...createReconciliationTests()
   ];
 
   const results = [];
