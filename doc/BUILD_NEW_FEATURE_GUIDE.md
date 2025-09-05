@@ -223,6 +223,90 @@ const dateToISOString = (date) => {
 - **Follow existing test patterns** from `TEST_CASES.md`
 - **Include edge cases** and error scenarios
 - **Test timezone handling** for any date-related functionality
+- **⚠️ CRITICAL: Integrate tests into Test Dashboard for visibility**
+
+### Test Integration Process
+Every new feature MUST have tests integrated into the Test Dashboard. Follow this exact process:
+
+#### Step 1: Create Test Module
+Create a new test file following the naming pattern: `[featureName]TestRunner.test.js`
+
+```javascript
+// Example: budgetSetupTestRunner.test.js
+import RelationalDatabase from './relationalDatabase.js';
+
+// Mock XLSX module for browser environment
+const mockXLSX = { /* standard mock implementation */ };
+window.XLSX = mockXLSX;
+
+// Fallback expect implementation
+const testExpect = {
+  toBe: (actual, expected) => { /* implementation */ },
+  toEqual: (actual, expected) => { /* implementation */ },
+  // ... other test utilities
+};
+
+// Export function that returns array of test objects
+export const create[FeatureName]Tests = (expectObj) => {
+  let db;
+  
+  const expect = expectObj || (typeof window !== 'undefined' && window.expect) || testExpected;
+  
+  const beforeEach = () => {
+    db = new RelationalDatabase();
+    db.createNewDatabase('en');
+    // Initialize test data...
+  };
+
+  return [
+    {
+      id: 'FeatureName_Category_001',
+      category: 'Feature Name',
+      suite: 'Test Suite Name',
+      name: 'Should perform specific test',
+      expectedBehavior: 'Description of expected behavior',
+      test: () => {
+        beforeEach();
+        // Test implementation...
+        expect.toBe(actualValue, expectedValue);
+      }
+    },
+    // ... more tests
+  ];
+};
+```
+
+#### Step 2: Update Test Runner
+Add your test module to `src/utils/testRunner.js`:
+
+```javascript
+// 1. Add import statement
+import { create[FeatureName]Tests } from './[featureName]TestRunner.test.js';
+
+// 2. Add to allTests array in runTestSuite function
+const allTests = [
+  ...createDatabaseTests(),
+  ...createExchangeRateServiceTests(),
+  ...createDataManagementTests(),
+  // ... existing tests
+  ...create[FeatureName]Tests()  // ← Add your tests here
+];
+```
+
+#### Step 3: Test Categories and Organization
+Organize your tests using these guidelines:
+
+**Category Naming**: Use descriptive feature names (e.g., "Budget Setup", "Import Transactions")
+**Suite Naming**: Group related tests (e.g., "Database Schema", "Validation", "Calculations")
+**Test ID Pattern**: `FeatureName_Category_###` (e.g., "BudgetSetup_Schema_001")
+
+#### Step 4: Verification Checklist
+After integration, verify:
+- [ ] Tests appear in Test Dashboard under correct category
+- [ ] All tests can be run individually 
+- [ ] Tests can be run as a group by category/suite
+- [ ] Test results display properly (pass/fail status)
+- [ ] Test descriptions and expected behaviors are clear
 
 ### Test Framework Setup
 ```javascript
@@ -230,8 +314,43 @@ const dateToISOString = (date) => {
 const expect = {
   toBe: (actual, expected) => { /* implementation */ },
   toEqual: (actual, expected) => { /* implementation */ },
-  // ... other test utilities
+  toHaveLength: (actual, expected) => { /* implementation */ },
+  toBeGreaterThan: (actual, expected) => { /* implementation */ },
+  toBeTruthy: (actual) => { /* implementation */ },
+  toBeFalsy: (actual) => { /* implementation */ },
+  toContain: (actual, expected) => { /* implementation */ }
 };
+```
+
+### Test Coverage Requirements
+Each feature should include tests for:
+- **Database schema validation** (if feature adds new tables)
+- **CRUD operations** (create, read, update, delete)
+- **Business logic validation** 
+- **Error handling scenarios**
+- **Edge cases and boundary conditions**
+- **Integration with existing features**
+- **UI validation rules** (if applicable)
+
+### Example Test Implementation
+```javascript
+// Complete test example
+{
+  id: 'BudgetSetup_Schema_001',
+  category: 'Budget Setup',
+  suite: 'Database Schema', 
+  name: 'Should have budgets table with correct schema',
+  expectedBehavior: 'Budgets table should contain all required fields',
+  test: () => {
+    beforeEach();
+    const budgetsSchema = db.tableSchemas.budgets;
+    const expectedFields = ['id', 'name', 'description', 'status'];
+    
+    expectedFields.forEach(field => {
+      expect.toContain(budgetsSchema, field);
+    });
+  }
+}
 ```
 
 ## 📁 **File Organization**
@@ -299,6 +418,9 @@ Before considering a feature complete:
 - [ ] All database changes persist to file storage
 - [ ] Timezone handling is implemented safely
 - [ ] Comprehensive tests are written and passing
+- [ ] **⚠️ CRITICAL: Tests are integrated into Test Dashboard and visible**
+- [ ] Tests can be run individually and as groups
+- [ ] Test results display correctly in Test Dashboard
 - [ ] Component is responsive and accessible
 - [ ] Internationalization support is complete
 - [ ] Error handling is implemented

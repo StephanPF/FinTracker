@@ -1,0 +1,387 @@
+/* Budget Setup Page */
+.budget-setup-page {
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+/* Amount Input Container */
+.amount-input-container {
+  position: relative;
+  display: inline-block;
+}
+
+.currency-symbol-right {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+  font-weight: 500;
+}
+
+.budget-setup-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header */
+.budget-setup-header {
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.budget-setup-header .page-title {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+/* Step 1: Budget Selection */
+.budget-selection-step {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.budget-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.budget-option {
+  flex: 1;
+  min-width: 300px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.budget-option h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.1rem;
+  color: #1a202c;
+}
+
+.budget-option p {
+  margin: 0 0 8px 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* New Budget Form */
+.new-budget-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.new-budget-form h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: #1a202c;
+}
+
+.form-group {
+  margin-bottom: 8px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Existing Budgets List */
+.existing-budgets {
+  margin-top: 8px;
+}
+
+.budget-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.budget-item:hover {
+  background-color: #f9fafb;
+}
+
+.budget-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.budget-name {
+  font-weight: 500;
+  color: #1a202c;
+}
+
+.budget-total {
+  color: #059669;
+  font-weight: 500;
+}
+
+.budget-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Status-specific styling */
+.budget-status.status-draft {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.budget-status.status-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.budget-status.status-inactive {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Step 2: Budget Configuration */
+.budget-configuration-step {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.budget-table-container h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.1rem;
+  color: #1a202c;
+}
+
+/* Add Line Item Form */
+.add-line-item {
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+}
+
+.line-item-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.line-item-form select,
+.line-item-form input {
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.amount-input-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: 8px;
+  color: #6b7280;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.amount-input-container input {
+  padding-left: 24px;
+}
+
+/* Budget Table */
+.budget-table {
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.budget-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.budget-table th,
+.budget-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.budget-table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.budget-table td {
+  color: #1a202c;
+}
+
+/* Budget Summary */
+.budget-summary {
+  margin: 12px 0;
+  padding: 12px;
+  background-color: #f0f9ff;
+  border-radius: 6px;
+  border-left: 4px solid #3b82f6;
+}
+
+.budget-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.total-item {
+  font-size: 0.9rem;
+  color: #1a202c;
+}
+
+/* Configuration Actions */
+.configuration-actions {
+  border-top: 1px solid #e5e7eb;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.unsaved-indicator {
+  color: #f59e0b;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.btn-primary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: #1a202c;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-remove {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.2s;
+}
+
+.btn-remove:hover {
+  background-color: #dc2626;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .budget-setup-content {
+    padding: 16px;
+  }
+  
+  .budget-setup-header .page-title {
+    font-size: 1.875rem;
+  }
+  
+  .budget-options {
+    flex-direction: column;
+  }
+  
+  .line-item-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .line-item-form select,
+  .line-item-form input,
+  .line-item-form .amount-input-container {
+    margin-bottom: 8px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .budget-table {
+    font-size: 0.8rem;
+  }
+  
+  .budget-table th,
+  .budget-table td {
+    padding: 4px;
+  }
+}

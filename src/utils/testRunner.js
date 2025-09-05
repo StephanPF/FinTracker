@@ -8,6 +8,7 @@ import { createOverviewTests } from './overview.test.js';
 import { createImportTransactionsTests } from './importTransactions.test.js';
 import { createReconciliationTests } from './reconciliation.test.js';
 import { createExistingReconciliationsTests } from './existingReconciliations.test.js';
+import { createBudgetSetupTests } from './budgetSetupTestRunner.test.js';
 
 // Mock XLSX for browser environment
 const mockXLSX = {
@@ -377,7 +378,8 @@ export const runTestSuite = async () => {
     ...createOverviewTests(),
     ...createImportTransactionsTests(),
     ...createReconciliationTests(),
-    ...createExistingReconciliationsTests()
+    ...createExistingReconciliationsTests(),
+    ...createBudgetSetupTests()
   ];
 
   const results = [];

@@ -16,6 +16,7 @@ import ImportTransactions from './ImportTransactions';
 import ReconciliationPage from './ReconciliationPage';
 import ExistingReconciliationsPage from './ExistingReconciliationsPage';
 import TestDashboard from './TestDashboard';
+import BudgetSetup from './BudgetSetup';
 import Logo from './Logo';
 
 const Dashboard = () => {
@@ -24,7 +25,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState(() => {
     // Initialize activeTab from URL hash first, then localStorage as fallback
     const hash = window.location.hash.slice(1);
-    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
+    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
     
     if (validTabs.includes(hash)) {
       return hash;
@@ -85,7 +86,7 @@ const Dashboard = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
-      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
+      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
         localStorage.setItem('activeTab', hash);
@@ -175,13 +176,19 @@ const Dashboard = () => {
             className={activeTab === 'import-transactions' ? 'nav-btn active' : 'nav-btn'}
             onClick={() => handleTabNavigation('import-transactions')}
           >
-            <span>📥 {t('importTransactions')}</span>
+            <span>{t('importTransactionsTitle')}</span>
           </button>
           <button 
             className={activeTab === 'reconciliation' ? 'nav-btn active' : 'nav-btn'}
             onClick={() => handleTabNavigation('reconciliation')}
           >
             <span>🔄 {t('reconciliation')}</span>
+          </button>
+          <button 
+            className={activeTab === 'budget-setup' ? 'nav-btn active' : 'nav-btn'}
+            onClick={() => handleTabNavigation('budget-setup')}
+          >
+            <span>💼 {t('budgetSetup')}</span>
           </button>
         </div>
         <div className="nav-actions">
@@ -307,6 +314,12 @@ const Dashboard = () => {
         {activeTab === 'reconciliation/existing' && (
           <div className="reconciliation-existing-tab">
             <ExistingReconciliationsPage />
+          </div>
+        )}
+
+        {activeTab === 'budget-setup' && (
+          <div className="budget-setup-tab">
+            <BudgetSetup onNavigate={handleTabNavigation} />
           </div>
         )}
       </div>

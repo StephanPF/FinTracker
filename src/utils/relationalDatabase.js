@@ -21,7 +21,9 @@ class RelationalDatabase {
       payers: [],
       bank_configurations: [],
       processing_rules: [],
-      cash_allocations: []
+      cash_allocations: [],
+      budgets: [],
+      budget_line_items: []
     };
     
     // Define table schemas with headers for empty tables
@@ -44,7 +46,9 @@ class RelationalDatabase {
       api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt'],
       bank_configurations: ['id', 'name', 'type', 'fieldMapping', 'settings', 'isActive', 'createdAt', 'updatedAt'],
       processing_rules: ['id', 'bankConfigId', 'name', 'type', 'active', 'ruleOrder', 'conditions', 'conditionLogic', 'actions', 'createdAt', 'updatedAt'],
-      cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'dateSpent', 'isAutomatic', 'createdAt', 'updatedAt']
+      cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'dateSpent', 'isAutomatic', 'createdAt', 'updatedAt'],
+      budgets: ['id', 'name', 'description', 'status', 'createdAt', 'lastModified', 'isDefault'],
+      budget_line_items: ['id', 'budgetId', 'subcategoryId', 'subcategoryName', 'period', 'amount', 'baseCurrency']
     };
     
     this.workbooks = {};
@@ -83,6 +87,10 @@ class RelationalDatabase {
         categoryId: { table: 'transaction_types', field: 'id', optional: true },
         transactionGroupId: { table: 'transaction_groups', field: 'id', optional: true },
         subcategoryId: { table: 'subcategories', field: 'id', optional: true }
+      },
+      budget_line_items: {
+        budgetId: { table: 'budgets', field: 'id' },
+        subcategoryId: { table: 'subcategories', field: 'id' }
       }
     };
   }
@@ -137,6 +145,8 @@ class RelationalDatabase {
       bank_configurations: [],
       processing_rules: [],
       cash_allocations: [],
+      budgets: [],
+      budget_line_items: [],
       
       database_info: [
         {
@@ -952,7 +962,7 @@ class RelationalDatabase {
       'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
       'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules',
-      'cash_allocations'
+      'cash_allocations', 'budgets', 'budget_line_items'
     ];
 
     for (const tableName of requiredTables) {
