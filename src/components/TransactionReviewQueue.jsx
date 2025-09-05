@@ -138,12 +138,12 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
 
     // Transaction type specific validations
     if (selectedCategory) {
-      const shouldShowDestinationAccount = selectedCategory.name === 'Transfer' || 
-                                           selectedCategory.name === 'Investment - SELL' || 
-                                           selectedCategory.name === 'Investment - BUY';
+      const shouldShowDestinationAccount = selectedCategory.id === 'CAT_003' || // Transfer
+                                           selectedCategory.id === 'CAT_004' || // Investment - SELL
+                                           selectedCategory.id === 'CAT_005';   // Investment - BUY
       
-      const isInvestmentTransaction = selectedCategory.name === 'Investment - SELL' || 
-                                      selectedCategory.name === 'Investment - BUY';
+      const isInvestmentTransaction = selectedCategory.id === 'CAT_004' || // Investment - SELL
+                                      selectedCategory.id === 'CAT_005';   // Investment - BUY
 
       if (shouldShowDestinationAccount && !transaction.destinationAccountId) {
         errors.push(t('destinationAccountRequired'));
@@ -153,19 +153,19 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
         errors.push(t('destinationAmountRequired'));
       }
 
-      if (selectedCategory.name === 'Income' && !transaction.payer) {
+      if (selectedCategory.id === 'CAT_001' && !transaction.payer) {
         errors.push(t('payerRequiredForIncome'));
       }
 
-      if (selectedCategory.name === 'Expenses' && !transaction.payee) {
+      if (selectedCategory.id === 'CAT_002' && !transaction.payee) {
         errors.push(t('payeeRequiredForExpenses'));
       }
 
       // Investment broker validation
       if (isInvestmentTransaction) {
-        if (selectedCategory.name === 'Investment - SELL' && !transaction.payer) {
+        if (selectedCategory.id === 'CAT_004' && !transaction.payer) {
           errors.push('Payer (broker) is required');
-        } else if (selectedCategory.name === 'Investment - BUY' && !transaction.payee) {
+        } else if (selectedCategory.id === 'CAT_005' && !transaction.payee) {
           errors.push('Payee (broker) is required');
         }
       }

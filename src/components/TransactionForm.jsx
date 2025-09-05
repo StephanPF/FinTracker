@@ -54,20 +54,16 @@ const TransactionForm = ({ onSuccess }) => {
   // Helper function to determine if destination account should be shown
   const shouldShowDestinationAccount = (transactionType) => {
     if (!transactionType) return false;
-    return transactionType.name === 'Transfer' || 
-           transactionType.name === 'Investment - SELL' || 
-           transactionType.name === 'Investment - BUY' ||
-           transactionType.name === 'Investissement - VENTE' || 
-           transactionType.name === 'Investissement - ACHAT';
+    return transactionType.id === 'CAT_003' || // Transfer
+           transactionType.id === 'CAT_004' || // Investment - SELL
+           transactionType.id === 'CAT_005';   // Investment - BUY
   };
 
   // Helper function to determine if this is an investment transaction
   const isInvestmentTransaction = (transactionType) => {
     if (!transactionType) return false;
-    return transactionType.name === 'Investment - SELL' || 
-           transactionType.name === 'Investment - BUY' ||
-           transactionType.name === 'Investissement - VENTE' || 
-           transactionType.name === 'Investissement - ACHAT';
+    return transactionType.id === 'CAT_004' || // Investment - SELL
+           transactionType.id === 'CAT_005';   // Investment - BUY
   };
   const [formData, setFormData] = useState({
     date: dateToISOString(new Date()),
@@ -338,19 +334,19 @@ const TransactionForm = ({ onSuccess }) => {
       missing.push('destinationAmount');
     }
     // For Income transactions, require payer
-    if (selectedTransactionType && selectedTransactionType.name === 'Income' && !formData.payer) {
+    if (selectedTransactionType && selectedTransactionType.id === 'CAT_001' && !formData.payer) {
       missing.push('payer');
     }
     // For Expenses transactions, require payee
-    if (selectedTransactionType && selectedTransactionType.name === 'Expenses' && !formData.payee) {
+    if (selectedTransactionType && selectedTransactionType.id === 'CAT_002' && !formData.payee) {
       missing.push('payee');
     }
     // For Investment transactions, require broker via payee/payer fields
     if (selectedTransactionType && isInvestmentTransaction(selectedTransactionType) && 
         !formData.payee && !formData.payer) {
-      if (selectedTransactionType.name === 'Investment - SELL') {
+      if (selectedTransactionType.id === 'CAT_004') { // Investment - SELL
         missing.push('payer');
-      } else if (selectedTransactionType.name === 'Investment - BUY') {
+      } else if (selectedTransactionType.id === 'CAT_005') { // Investment - BUY
         missing.push('payee');
       }
     }
@@ -375,7 +371,7 @@ const TransactionForm = ({ onSuccess }) => {
       const destAccount = accountsWithTypes.find(acc => acc.id === formData.destinationAccountId);
       
       if (sourceAccount && destAccount) {
-        if (selectedTransactionType.name === 'Transfer') {
+        if (selectedTransactionType.id === 'CAT_003') { // Transfer
           // For transfers: accounts must have the same currency
           if (sourceAccount.currencyId !== destAccount.currencyId) {
             setError('Transfer accounts must have the same currency');
@@ -568,19 +564,19 @@ const TransactionForm = ({ onSuccess }) => {
       currencyId: currencyId,
       exchangeRate: exchangeRate,
       description: isDescriptionUserModified ? prev.description : transactionType.name,
-      payee: (transactionType.name !== 'Expenses' && transactionType.name !== 'Investment - BUY') ? '' : prev.payee, // Clear payee if not Expenses or Investment - BUY
-      payer: (transactionType.name !== 'Income' && transactionType.name !== 'Investment - SELL') ? '' : prev.payer // Clear payer if not Income or Investment - SELL
+      payee: (transactionType.id !== 'CAT_002' && transactionType.id !== 'CAT_005') ? '' : prev.payee, // Clear payee if not Expenses or Investment - BUY
+      payer: (transactionType.id !== 'CAT_001' && transactionType.id !== 'CAT_004') ? '' : prev.payer // Clear payer if not Income or Investment - SELL
     }));
     setSelectedCategory(null);
     
     // Clear payee input if not Expenses or Investment - BUY transaction type
-    if (transactionType.name !== 'Expenses' && transactionType.name !== 'Investment - BUY') {
+    if (transactionType.id !== 'CAT_002' && transactionType.id !== 'CAT_005') {
       setPayeeInput('');
       setShowPayeeDropdown(false);
     }
     
     // Clear payer input if not Income or Investment - SELL transaction type
-    if (transactionType.name !== 'Income' && transactionType.name !== 'Investment - SELL') {
+    if (transactionType.id !== 'CAT_001' && transactionType.id !== 'CAT_004') {
       setPayerInput('');
       setShowPayerDropdown(false);
     }
@@ -835,7 +831,7 @@ const TransactionForm = ({ onSuccess }) => {
                 className={`${!isDescriptionUserModified && formData.description ? 'default-description' : ''} ${missingFields.includes('description') ? 'field-error' : ''}`.trim()}
               />
             </div>
-            {(selectedTransactionType.name === 'Expenses' || selectedTransactionType.name === 'Investment - BUY') && (
+            {(selectedTransactionType.id === 'CAT_002' || selectedTransactionType.id === 'CAT_005') && (
               <div className="payee-field">
                 <div className="payee-autocomplete-container">
                   <input
@@ -846,7 +842,7 @@ const TransactionForm = ({ onSuccess }) => {
                     onChange={handlePayeeInputChange}
                     onBlur={handlePayeeInputBlur}
                     onFocus={() => payeeInput.length > 0 && setShowPayeeDropdown(true)}
-                    placeholder={selectedTransactionType.name === 'Investment - BUY' ? "🏢 Start typing broker/exchange name... *" : "👤 Start typing payee name... *"}
+                    placeholder={selectedTransactionType.id === 'CAT_005' ? "🏢 Start typing broker/exchange name... *" : "👤 Start typing payee name... *"}
                     className={missingFields.includes('payee') ? 'field-error' : ''}
                   />
                   
@@ -866,7 +862,7 @@ const TransactionForm = ({ onSuccess }) => {
                 </div>
               </div>
             )}
-            {(selectedTransactionType.name === 'Income' || selectedTransactionType.name === 'Investment - SELL') && (
+            {(selectedTransactionType.id === 'CAT_001' || selectedTransactionType.id === 'CAT_004') && (
               <div className="payee-field">
                 <div className="payee-autocomplete-container">
                   <input
@@ -877,7 +873,7 @@ const TransactionForm = ({ onSuccess }) => {
                     onChange={handlePayerInputChange}
                     onBlur={handlePayerInputBlur}
                     onFocus={() => payerInput.length > 0 && setShowPayerDropdown(true)}
-                    placeholder={selectedTransactionType.name === 'Investment - SELL' ? "🏢 Start typing broker/exchange name... *" : "💼 Start typing payer name... *"}
+                    placeholder={selectedTransactionType.id === 'CAT_004' ? "🏢 Start typing broker/exchange name... *" : "💼 Start typing payer name... *"}
                     className={missingFields.includes('payer') ? 'field-error' : ''}
                   />
                   

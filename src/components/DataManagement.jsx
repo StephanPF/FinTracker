@@ -137,11 +137,9 @@ const DataManagement = () => {
     const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
     if (!transactionType) return false;
     
-    return transactionType.name === 'Transfer' || 
-           transactionType.name === 'Investment - SELL' || 
-           transactionType.name === 'Investment - BUY' ||
-           transactionType.name === 'Investissement - VENTE' || 
-           transactionType.name === 'Investissement - ACHAT';
+    return transactionType.id === 'CAT_003' || // Transfer
+           transactionType.id === 'CAT_004' || // Investment - SELL
+           transactionType.id === 'CAT_005';   // Investment - BUY
   };
 
   const shouldShowPayee = (transactionGroupId) => {
@@ -154,7 +152,8 @@ const DataManagement = () => {
     const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
     if (!transactionType) return false;
     
-    return transactionType.name === 'Expenses' || transactionType.name === 'Investment - BUY';
+    return transactionType.id === 'CAT_002' || // Expenses
+           transactionType.id === 'CAT_005';   // Investment - BUY
   };
 
   const shouldShowPayer = (transactionGroupId) => {
@@ -167,7 +166,8 @@ const DataManagement = () => {
     const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
     if (!transactionType) return false;
     
-    return transactionType.name === 'Income' || transactionType.name === 'Investment - SELL';
+    return transactionType.id === 'CAT_001' || // Income
+           transactionType.id === 'CAT_004';   // Investment - SELL
   };
 
   const isInvestmentTransaction = (transactionGroupId) => {
@@ -180,10 +180,8 @@ const DataManagement = () => {
     const transactionType = activeCategories.find(type => type.id === group.transactionTypeId);
     if (!transactionType) return false;
     
-    return transactionType.name === 'Investment - SELL' || 
-           transactionType.name === 'Investment - BUY' ||
-           transactionType.name === 'Investissement - VENTE' || 
-           transactionType.name === 'Investissement - ACHAT';
+    return transactionType.id === 'CAT_004' || // Investment - SELL
+           transactionType.id === 'CAT_005';   // Investment - BUY
   };
 
   // Helper function to get transaction groups filtered by selected transaction type

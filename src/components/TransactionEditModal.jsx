@@ -100,17 +100,17 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
   const shouldShowDestinationAccount = (categoryId) => {
     const category = categories.find(c => c.id === categoryId);
     return category && (
-      category.name === 'Transfer' || 
-      category.name === 'Investment - SELL' || 
-      category.name === 'Investment - BUY'
+      category.id === 'CAT_003' || // Transfer
+      category.id === 'CAT_004' || // Investment - SELL
+      category.id === 'CAT_005'    // Investment - BUY
     );
   };
 
   const isInvestmentTransaction = (categoryId) => {
     const category = categories.find(c => c.id === categoryId);
     return category && (
-      category.name === 'Investment - SELL' || 
-      category.name === 'Investment - BUY'
+      category.id === 'CAT_004' || // Investment - SELL
+      category.id === 'CAT_005'    // Investment - BUY
     );
   };
 
@@ -224,12 +224,12 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
       }
 
       // Payee required for Expenses and Investment-BUY
-      if ((selectedCategory.name === 'Expenses' || selectedCategory.name === 'Investment - BUY') && !formData.payee) {
+      if ((selectedCategory.id === 'CAT_002' || selectedCategory.id === 'CAT_005') && !formData.payee) {
         newErrors.payee = t('payeeRequired');
       }
 
       // Payer required for Income and Investment-SELL
-      if ((selectedCategory.name === 'Income' || selectedCategory.name === 'Investment - SELL') && !formData.payer) {
+      if ((selectedCategory.id === 'CAT_001' || selectedCategory.id === 'CAT_004') && !formData.payer) {
         newErrors.payer = t('payerRequired');
       }
     }
@@ -533,8 +533,8 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
 
                 {(() => {
                   const selectedCategory = categories.find(c => c.id === formData.categoryId);
-                  const shouldShowPayee = selectedCategory && (selectedCategory.name === 'Expenses' || selectedCategory.name === 'Investment - BUY');
-                  const shouldShowPayer = selectedCategory && (selectedCategory.name === 'Income' || selectedCategory.name === 'Investment - SELL');
+                  const shouldShowPayee = selectedCategory && (selectedCategory.id === 'CAT_002' || selectedCategory.id === 'CAT_005');
+                  const shouldShowPayer = selectedCategory && (selectedCategory.id === 'CAT_001' || selectedCategory.id === 'CAT_004');
                   
                   return (
                     <>
