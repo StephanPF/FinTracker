@@ -98,7 +98,7 @@ const Autocomplete = ({
   }, []);
 
   return (
-    <div className={`autocomplete-container ${className}`} ref={containerRef}>
+    <div className="autocomplete-container" ref={containerRef} style={{ width: '100%' }}>
       {label && (
         <label className="autocomplete-label">
           {label}
@@ -115,7 +115,7 @@ const Autocomplete = ({
           onBlur={handleInputBlur}
           placeholder={placeholder}
           disabled={disabled}
-          className={`autocomplete-input ${isError ? 'field-error' : ''}`}
+          className={`autocomplete-input ${isError ? 'field-error' : ''} ${className}`}
           style={{ width: '100%' }}
         />
         

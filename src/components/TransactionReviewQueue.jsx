@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import TransactionEditModal from './TransactionEditModal';
 import './TransactionReviewQueue.css';
 
 const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingStats }) => {
   const { accounts, addTransaction, categories, currencies, transactionTypes, subcategories, transactionGroups, numberFormatService } = useAccounting();
+  const { t } = useLanguage();
   const [transactionsList, setTransactionsList] = useState(transactions);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -48,10 +50,10 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
   };
 
   const getStatusText = (transaction) => {
-    if (transaction.status === 'error') return 'Error';
-    if (transaction.isDuplicate) return 'Duplicate';
-    if (transaction.status === 'warning') return 'Needs Attention';
-    return 'Ready';
+    if (transaction.status === 'error') return t('error');
+    if (transaction.isDuplicate) return t('duplicate');
+    if (transaction.status === 'warning') return t('needsAttention');
+    return t('ready');
   };
 
   const formatAmount = (amount, currencyId = 'CUR_002') => {
@@ -106,32 +108,32 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
 
     // Always required fields
     if (!transaction.date) {
-      errors.push('Missing or invalid date');
+      errors.push(t('missingOrInvalidDate'));
     }
 
     if (!transaction.description || transaction.description.trim() === '') {
-      errors.push('Missing description');
+      errors.push(t('missingDescription'));
     }
 
     if (transaction.amount === 0 || isNaN(transaction.amount)) {
-      errors.push('Invalid amount');
+      errors.push(t('invalidAmount'));
     }
 
     if (!transaction.subcategoryId) {
-      errors.push('Missing transaction category');
+      errors.push(t('missingTransactionCategory'));
     }
 
     if (!transaction.categoryId) {
-      errors.push('Missing transaction type');
+      errors.push(t('missingTransactionType'));
     }
 
     if (!transaction.transactionGroup) {
-      errors.push('Missing transaction group');
+      errors.push(t('missingTransactionGroup'));
     }
 
     // Account validation
     if (!transaction.fromAccountId) {
-      errors.push('Account is required');
+      errors.push(t('accountRequired'));
     }
 
     // Transaction type specific validations
@@ -144,19 +146,19 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
                                       selectedCategory.name === 'Investment - BUY';
 
       if (shouldShowDestinationAccount && !transaction.destinationAccountId) {
-        errors.push('Destination account is required');
+        errors.push(t('destinationAccountRequired'));
       }
 
       if (isInvestmentTransaction && (!transaction.destinationAmount || transaction.destinationAmount === 0)) {
-        errors.push('Destination amount is required');
+        errors.push(t('destinationAmountRequired'));
       }
 
       if (selectedCategory.name === 'Income' && !transaction.payer) {
-        errors.push('Payer is required');
+        errors.push(t('payerRequiredForIncome'));
       }
 
       if (selectedCategory.name === 'Expenses' && !transaction.payee) {
-        errors.push('Payee is required');
+        errors.push(t('payeeRequiredForExpenses'));
       }
 
       // Investment broker validation
@@ -272,15 +274,15 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
     <div className="transaction-review-queue">
       <div className="review-header">
         <div className="review-title">
-          <h3>Review Transactions</h3>
-          <p>Review and approve {transactions.length} parsed transactions before importing</p>
+          <h3>{t('reviewTransactions')}</h3>
+          <p>{t('reviewAndApprove').replace('{count}', transactions.length)}</p>
         </div>
         <div className="review-actions">
           <button className="btn btn-secondary" onClick={onBack}>
-            ← Back
+            {t('back')}
           </button>
           <button className="btn btn-secondary" onClick={onReset}>
-            Start Over
+            {t('startOver')}
           </button>
         </div>
       </div>
@@ -288,44 +290,44 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
       <div className="review-stats">
         <div className="stat-item">
           <span className="stat-icon">📊</span>
-          <span className="stat-label">Total:</span>
+          <span className="stat-label">{t('total')}</span>
           <span className="stat-value">{transactions.length}</span>
         </div>
         <div className="stat-item ready">
           <span className="stat-icon">🟢</span>
-          <span className="stat-label">Ready:</span>
+          <span className="stat-label">{t('ready')}:</span>
           <span className="stat-value">{statusCounts.ready}</span>
         </div>
         <div className="stat-item warning">
           <span className="stat-icon">🟡</span>
-          <span className="stat-label">Warning:</span>
+          <span className="stat-label">{t('warning')}:</span>
           <span className="stat-value">{statusCounts.warning}</span>
         </div>
         <div className="stat-item error">
           <span className="stat-icon">🔴</span>
-          <span className="stat-label">Error:</span>
+          <span className="stat-label">{t('error')}:</span>
           <span className="stat-value">{statusCounts.error}</span>
         </div>
         <div className="stat-item duplicate">
           <span className="stat-icon">🔵</span>
-          <span className="stat-label">Duplicates:</span>
+          <span className="stat-label">{t('duplicates')}</span>
           <span className="stat-value">{statusCounts.duplicate}</span>
         </div>
         {ruleProcessingStats && (
           <>
             <div className="stat-item rules-applied">
               <span className="stat-icon">⚙️</span>
-              <span className="stat-label">Rules Applied:</span>
+              <span className="stat-label">{t('rulesApplied')}</span>
               <span className="stat-value">{ruleProcessingStats.totalRulesApplied}</span>
             </div>
             <div className="stat-item transactions-processed">
               <span className="stat-icon">🔄</span>
-              <span className="stat-label">Processed:</span>
+              <span className="stat-label">{t('processed')}:</span>
               <span className="stat-value">{ruleProcessingStats.transactionsWithRules}</span>
             </div>
             <div className="stat-item skipped">
               <span className="stat-icon">🚫</span>
-              <span className="stat-label">Skipped:</span>
+              <span className="stat-label">{t('skipped')}:</span>
               <span className="stat-value">{ruleProcessingStats.skippedTransactions}</span>
             </div>
           </>
@@ -339,11 +341,11 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
             onChange={(e) => setFilter(e.target.value)}
             className="filter-select"
           >
-            <option value="all">All Transactions</option>
-            <option value="ready">Ready ({statusCounts.ready})</option>
-            <option value="warning">Needs Attention ({statusCounts.warning})</option>
-            <option value="error">Errors ({statusCounts.error})</option>
-            <option value="duplicate">Duplicates ({statusCounts.duplicate})</option>
+            <option value="all">{t('allTransactions')}</option>
+            <option value="ready">{t('readyTransactions')} ({statusCounts.ready})</option>
+            <option value="warning">{t('needsAttention')} ({statusCounts.warning})</option>
+            <option value="error">{t('errorTransactions')} ({statusCounts.error})</option>
+            <option value="duplicate">{t('duplicateTransactions')} ({statusCounts.duplicate})</option>
           </select>
         </div>
 
@@ -352,10 +354,10 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
             className="btn btn-secondary btn-small"
             onClick={handleSelectAll}
           >
-            {selectedIds.size === filteredTransactions.length ? 'Deselect All' : 'Select Ready'}
+            {selectedIds.size === filteredTransactions.length ? t('deselectAll') : t('selectReady')}
           </button>
           <span className="selected-count">
-            {selectedIds.size} selected
+            {selectedIds.size} {t('selected')}
           </span>
         </div>
       </div>
@@ -393,14 +395,14 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
                 <div className="transaction-secondary">
                   <span className="transaction-status-text">{getStatusText(transaction)}</span>
                   {transaction.reference && (
-                    <span className="transaction-reference">Ref: {transaction.reference}</span>
+                    <span className="transaction-reference">{t('ref')} {transaction.reference}</span>
                   )}
                   {transaction.rulesApplied && transaction.rulesApplied.length > 0 && (
                     <span className="transaction-rules-applied">
-                      ⚙️ {transaction.rulesApplied.length} rule{transaction.rulesApplied.length > 1 ? 's' : ''} applied
+                      ⚙️ {transaction.rulesApplied.length} {transaction.rulesApplied.length > 1 ? t('rules') : t('rule')} {transaction.rulesApplied.length > 1 ? t('appliedPlural') : t('applied')}
                     </span>
                   )}
-                  <span className="transaction-file">File: {transaction.fileName}</span>
+                  <span className="transaction-file">{t('file')} {transaction.fileName}</span>
                 </div>
               </div>
 
@@ -412,7 +414,7 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
                     handleEditTransaction(transaction);
                   }}
                 >
-                  Edit
+                  {t('edit')}
                 </button>
               </div>
             </div>
@@ -421,23 +423,23 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
 
         {selectedTransaction && (
           <div className="transaction-preview">
-            <h4>Transaction Details</h4>
+            <h4>{t('transactionDetails')}</h4>
             <div className="preview-content">
               <div className="preview-field">
-                <label>Date:</label>
+                <label>{t('date')}</label>
                 <span>{selectedTransaction.date}</span>
               </div>
               <div className="preview-field">
-                <label>Description:</label>
+                <label>{t('description')}</label>
                 <span>{selectedTransaction.description}</span>
               </div>
               <div className="preview-field">
-                <label>Amount:</label>
+                <label>{t('amount')}</label>
                 <span>{formatAmount(selectedTransaction.amount)}</span>
               </div>
               {selectedTransaction.reference && (
                 <div className="preview-field">
-                  <label>Reference:</label>
+                  <label>{t('reference')}</label>
                   <span>{selectedTransaction.reference}</span>
                 </div>
               )}
@@ -496,7 +498,7 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
                 style={{ width: `${importProgress}%` }}
               ></div>
             </div>
-            <p className="progress-text">Importing... {Math.round(importProgress)}%</p>
+            <p className="progress-text">{t('progressText').replace('{progress}', Math.round(importProgress))}</p>
           </div>
         )}
 
@@ -505,7 +507,7 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
           onClick={handleImportSelected}
           disabled={selectedIds.size === 0 || importing}
         >
-          {importing ? 'Importing...' : `Import ${selectedIds.size} Selected Transactions`}
+          {importing ? t('importing') : t('importSelectedTransactions').replace('{count}', selectedIds.size)}
         </button>
       </div>
 

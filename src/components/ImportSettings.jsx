@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import BankConfigurationForm from './BankConfigurationForm';
 import './ImportSettings.css';
 
 const ImportSettings = () => {
+  const { t } = useLanguage();
   const { bankConfigurations = [], addBankConfiguration, removeBankConfiguration } = useAccounting();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBank, setEditingBank] = useState(null);
@@ -27,7 +29,7 @@ const ImportSettings = () => {
   };
 
   const handleDeleteBank = (bankId) => {
-    if (window.confirm('Are you sure you want to delete this bank configuration?')) {
+    if (window.confirm(t('confirmDeleteBank'))) {
       removeBankConfiguration(bankId);
     }
   };
@@ -42,14 +44,14 @@ const ImportSettings = () => {
       <div className="settings-section">
         <div className="section-header">
           <div className="section-title">
-            <h2>Bank Configurations</h2>
+            <h2>{t('bankConfigurations')}</h2>
           </div>
           {!showAddForm && (
             <button 
               className="btn btn-primary"
               onClick={() => setShowAddForm(true)}
             >
-              + Add Bank
+              + {t('addBankConfiguration')}
             </button>
           )}
         </div>
@@ -68,13 +70,13 @@ const ImportSettings = () => {
         {bankConfigurations.length === 0 && !showAddForm ? (
           <div className="no-banks">
             <div className="no-banks-icon">🏦</div>
-            <h3>No Bank Configurations</h3>
-            <p>Add your first bank configuration to start importing transactions.</p>
+            <h3>{t('noBankConfigurations')}</h3>
+            <p>{t('addFirstBank')}</p>
             <button 
               className="btn btn-primary"
               onClick={() => setShowAddForm(true)}
             >
-              Add Your First Bank
+              {t('addYourFirstBank')}
             </button>
           </div>
         ) : (
@@ -86,9 +88,9 @@ const ImportSettings = () => {
                     <div className="bank-logo">🏦</div>
                     <div className="bank-details">
                       <h3>{bank.name}</h3>
-                      <p className="bank-type">{bank.type || 'Custom Configuration'}</p>
+                      <p className="bank-type">{bank.type || t('customConfiguration')}</p>
                       <p className="bank-fields">
-                        {Object.keys(bank.fieldMapping || {}).length} fields mapped
+                        {Object.keys(bank.fieldMapping || {}).length} {t('fieldsMapped')}
                       </p>
                     </div>
                   </div>
@@ -97,25 +99,25 @@ const ImportSettings = () => {
                       className="btn btn-secondary btn-small"
                       onClick={() => handleEditBank(bank)}
                     >
-                      Edit
+                      {t('edit')}
                     </button>
                     <button 
                       className="btn btn-danger btn-small"
                       onClick={() => handleDeleteBank(bank.id)}
                     >
-                      Delete
+                      {t('delete')}
                     </button>
                   </div>
                 </div>
 
                 <div className="bank-config-preview">
-                  <h4>Field Mapping:</h4>
+                  <h4>{t('fieldMapping')}:</h4>
                   <div className="field-mappings">
                     {Object.entries(bank.fieldMapping || {}).map(([systemField, csvColumn]) => (
                       <div key={systemField} className="field-mapping">
                         <span className="system-field">{systemField}</span>
                         <span className="arrow">→</span>
-                        <span className="csv-column">{csvColumn || 'Not mapped'}</span>
+                        <span className="csv-column">{csvColumn || t('notMapped')}</span>
                       </div>
                     ))}
                   </div>
@@ -123,16 +125,16 @@ const ImportSettings = () => {
 
                 {bank.settings && (
                   <div className="bank-config-settings">
-                    <h4>Settings:</h4>
+                    <h4>{t('settings')}:</h4>
                     <div className="config-settings">
                       {bank.settings.dateFormat && (
-                        <span className="setting-item">Date: {bank.settings.dateFormat}</span>
+                        <span className="setting-item">{t('dateFormat')}: {bank.settings.dateFormat}</span>
                       )}
                       {bank.settings.currency && (
-                        <span className="setting-item">Currency: {bank.settings.currency}</span>
+                        <span className="setting-item">{t('currency')}: {bank.settings.currency}</span>
                       )}
                       {bank.settings.delimiter && (
-                        <span className="setting-item">Delimiter: {bank.settings.delimiter}</span>
+                        <span className="setting-item">{t('delimiter')}: {bank.settings.delimiter}</span>
                       )}
                     </div>
                   </div>
@@ -144,7 +146,7 @@ const ImportSettings = () => {
       </div>
 
       <div className="settings-section">
-        <h2>Import History</h2>
+        <h2>{t('importHistory')}</h2>
         <p>View your transaction import history and logs</p>
         
         <div className="import-history-placeholder">

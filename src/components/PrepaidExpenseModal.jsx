@@ -3,10 +3,12 @@ import { createPortal } from 'react-dom';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import './PrepaidExpenseModal.css';
 
 const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
   const { currencies, numberFormatService, database } = useAccounting();
+  const { t } = useLanguage();
   const [selectedMethod, setSelectedMethod] = useState(transaction?.recognitionMethod || '');
   const [serviceStartDate, setServiceStartDate] = useState(
     transaction?.serviceStartDate ? new Date(transaction.serviceStartDate + 'T12:00:00') : null
@@ -197,11 +199,11 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
         if (!serviceStartDate) newErrors.push('Service date is required');
         break;
       case 'amortize':
-        if (!serviceEndDate) newErrors.push('Service end date is required');
+        if (!serviceEndDate) newErrors.push(t('serviceEndDateRequired'));
         break;
       case 'defer_and_amortize':
-        if (!serviceStartDate) newErrors.push('Service start date is required');
-        if (!serviceEndDate) newErrors.push('Service end date is required');
+        if (!serviceStartDate) newErrors.push(t('serviceStartDateRequired'));
+        if (!serviceEndDate) newErrors.push(t('serviceEndDateRequired'));
         break;
     }
     
@@ -293,14 +295,14 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
       <div className="modal-overlay" onClick={onClose}>
         <div className="prepaid-modal" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
-            <h3>Cannot Mark as Prepaid</h3>
+            <h3>{t('cannotMarkAsPrepaid')}</h3>
             <button className="close-btn" onClick={onClose}>×</button>
           </div>
           <div className="modal-content">
-            <p>Transfer transactions cannot be marked as prepaid expenses.</p>
+            <p>{t('transfersCannotBePrepaid')}</p>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={onClose}>
-                Close
+                {t('close')}
               </button>
             </div>
           </div>
@@ -314,7 +316,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="prepaid-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Configure Prepaid Expense</h3>
+          <h3>{t('configurePrepaidExpense')}</h3>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
         
@@ -322,15 +324,15 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
           {/* Transaction Info */}
           <div className="transaction-info">
             <div className="info-row">
-              <span className="label">Transaction:</span>
+              <span className="label">{t('transaction')}</span>
               <span className="value">{transaction.description}</span>
             </div>
             <div className="info-row">
-              <span className="label">Amount:</span>
+              <span className="label">{t('amount')}</span>
               <span className="value">{formatCurrency(Math.abs(transaction.amount), transaction.currencyId)}</span>
             </div>
             <div className="info-row">
-              <span className="label">Date:</span>
+              <span className="label">{t('date')}</span>
               <span className="value">{formatDate(transaction.date)}</span>
             </div>
           </div>
@@ -340,17 +342,17 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
             {/* Left Column - Recognition Method */}
             <div className="modal-left-column">
               <div className="form-section">
-                <label htmlFor="recognitionMethod" className="section-label">Recognition Method</label>
+                <label htmlFor="recognitionMethod" className="section-label">{t('recognitionMethod')}</label>
                 <select
                   id="recognitionMethod"
                   value={selectedMethod}
                   onChange={(e) => setSelectedMethod(e.target.value)}
                   className="recognition-select"
                 >
-                  <option value="">Select recognition method...</option>
-                  <option value="defer">Defer expense</option>
-                  <option value="amortize">Amortize expense</option>
-                  <option value="defer_and_amortize">Defer and amortize</option>
+                  <option value="">{t('selectRecognitionMethod')}</option>
+                  <option value="defer">{t('deferExpense')}</option>
+                  <option value="amortize">{t('amortizeExpense')}</option>
+                  <option value="defer_and_amortize">{t('deferAndAmortize')}</option>
                 </select>
                 
                 {/* Explanatory text based on selection */}
@@ -358,28 +360,25 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                   <div className="method-explanation">
                     {selectedMethod === 'defer' && (
                       <div className="explanation-content">
-                        <div className="explanation-title">Defer expense</div>
+                        <div className="explanation-title">{t('deferExpenseTitle')}</div>
                         <div className="explanation-text">
-                          The full amount will be recognized as an expense on the service start date. 
-                          Use this for payments made in advance for services that will be consumed on a specific future date.
+                          {t('deferExpenseText')}
                         </div>
                       </div>
                     )}
                     {selectedMethod === 'amortize' && (
                       <div className="explanation-content">
-                        <div className="explanation-title">Amortize expense</div>
+                        <div className="explanation-title">{t('amortizeExpenseTitle')}</div>
                         <div className="explanation-text">
-                          The amount will be spread evenly from the transaction date to the service end date. 
-                          Recognition begins immediately after payment.
+                          {t('amortizeExpenseText')}
                         </div>
                       </div>
                     )}
                     {selectedMethod === 'defer_and_amortize' && (
                       <div className="explanation-content">
-                        <div className="explanation-title">Defer and amortize</div>
+                        <div className="explanation-title">{t('deferAndAmortizeTitle')}</div>
                         <div className="explanation-text">
-                          The amount will be spread evenly over the specified service period only. 
-                          No recognition occurs before the service start date.
+                          {t('deferAndAmortizeText')}
                         </div>
                       </div>
                     )}
@@ -398,7 +397,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                   {/* Dynamic Date Fields */}
                   {selectedMethod === 'defer' && (
                     <div className="form-section">
-                      <label>Service Date</label>
+                      <label>{t('serviceStartDate')}</label>
                       <DatePicker
                         selected={serviceStartDate}
                         onChange={(date) => {
@@ -435,7 +434,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
 
                   {selectedMethod === 'amortize' && (
                     <div className="form-section">
-                      <label>Service End Date</label>
+                      <label>{t('serviceEndDate')}</label>
                       <DatePicker
                         selected={serviceEndDate}
                         onChange={(date) => {
@@ -473,7 +472,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                   {selectedMethod === 'defer_and_amortize' && (
                     <div className="date-fields-row">
                       <div className="form-section date-field">
-                        <label>Service Start Date</label>
+                        <label>{t('serviceStartDate')}</label>
                         <DatePicker
                           selected={serviceStartDate}
                           onChange={(date) => {
@@ -507,7 +506,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
                         />
                       </div>
                       <div className="form-section date-field">
-                        <label>Service End Date</label>
+                        <label>{t('serviceEndDate')}</label>
                         <DatePicker
                           selected={serviceEndDate}
                           onChange={(date) => {
@@ -570,11 +569,11 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
         {/* Action Buttons */}
         <div className="modal-actions">
           <button className="btn btn-secondary" onClick={onClose}>
-            Cancel
+            {t('cancel')}
           </button>
           {transaction.isPrepaid && (
             <button className="btn btn-outline" onClick={handleRemovePrepaid}>
-              Remove Prepaid
+              {t('removePrepaidStatus')}
             </button>
           )}
           <button 
@@ -582,7 +581,7 @@ const PrepaidExpenseModal = ({ transaction, isOpen, onClose, onSave }) => {
             onClick={handleSave} 
             disabled={!isValid}
           >
-            Save
+            {t('apply')}
           </button>
         </div>
       </div>

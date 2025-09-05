@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import './ReconciliationSetup.css';
 
 const ReconciliationSetup = ({ onStart }) => {
   const { getActiveAccountsWithTypes, currencies, numberFormatService } = useAccounting();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     reconciliationReference: '',
     bankStatementTotal: '',
@@ -29,15 +31,15 @@ const ReconciliationSetup = ({ onStart }) => {
     const newErrors = {};
 
     if (!formData.accountId) {
-      newErrors.accountId = 'Account selection is required';
+      newErrors.accountId = t('accountRequired');
     }
 
     if (!formData.reconciliationReference.trim()) {
-      newErrors.reconciliationReference = 'Reconciliation reference is required';
+      newErrors.reconciliationReference = t('reconciliationReferenceRequired');
     }
 
     if (!formData.bankStatementTotal || isNaN(formData.bankStatementTotal)) {
-      newErrors.bankStatementTotal = 'Valid bank statement total is required';
+      newErrors.bankStatementTotal = t('validBankStatementTotalRequired');
     }
 
     setErrors(newErrors);
@@ -53,13 +55,13 @@ const ReconciliationSetup = ({ onStart }) => {
 
   const generateReference = () => {
     if (!formData.accountId) {
-      alert('Please select an account first before generating a reference.');
+      alert(t('selectAccountFirst'));
       return;
     }
 
     const selectedAccount = getActiveAccountsWithTypes().find(acc => acc.id === formData.accountId);
     if (!selectedAccount) {
-      alert('Selected account not found.');
+      alert(t('selectedAccountNotFound'));
       return;
     }
 
@@ -86,13 +88,13 @@ const ReconciliationSetup = ({ onStart }) => {
   return (
     <div className="reconciliation-setup">
       <div className="setup-card">
-        <h3>Step 1: Setup Reconciliation</h3>
-        <p>Enter the reconciliation reference and total amount from your bank statement</p>
+        <h3>{t('step1SetupReconciliation')}</h3>
+        <p>{t('enterReconciliationReference')}</p>
         
         <form onSubmit={handleSubmit} className="setup-form">
           <div className="form-field">
             <label htmlFor="accountId">
-              Account *
+              {t('account')} *
             </label>
             <select
               id="accountId"
@@ -104,7 +106,7 @@ const ReconciliationSetup = ({ onStart }) => {
               className={errors.accountId ? 'error' : ''}
               style={{ maxWidth: '600px' }}
             >
-              <option value="">Select an account...</option>
+              <option value="">{t('selectAccount')}...</option>
               {getActiveAccountsWithTypes().map(account => (
                 <option key={account.id} value={account.id}>
                   {account.name} ({account.accountType?.type}) ({formatAccountBalance(account)})
@@ -114,12 +116,12 @@ const ReconciliationSetup = ({ onStart }) => {
             {errors.accountId && (
               <span className="field-error">{errors.accountId}</span>
             )}
-            <small>Choose the account you want to reconcile</small>
+            <small>{t('chooseAccountToReconcile')}</small>
           </div>
 
           <div className="form-field">
             <label htmlFor="reconciliationReference">
-              Reconciliation Reference *
+              {t('reconciliationReference')} *
             </label>
             <div className="reference-input-group" style={{ maxWidth: '400px' }}>
               <input
@@ -137,20 +139,20 @@ const ReconciliationSetup = ({ onStart }) => {
                 type="button"
                 onClick={generateReference}
                 className="btn btn-secondary btn-small"
-                title="Generate reference for current month"
+                title={t('generateReferenceCurrentMonth')}
               >
-                Generate
+                {t('generate')}
               </button>
             </div>
             {errors.reconciliationReference && (
               <span className="field-error">{errors.reconciliationReference}</span>
             )}
-            <small>This reference will be attached to all reconciled transactions</small>
+            <small>{t('referenceAttachedToTransactions')}</small>
           </div>
 
           <div className="form-field">
             <label htmlFor="bankStatementTotal">
-              Bank Statement Total *
+              {t('bankStatementTotal')} *
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', maxWidth: '200px' }}>
               <input
@@ -188,7 +190,7 @@ const ReconciliationSetup = ({ onStart }) => {
             {errors.bankStatementTotal && (
               <span className="field-error">{errors.bankStatementTotal}</span>
             )}
-            <small>Total amount shown on your bank statement</small>
+            <small>{t('totalAmountOnBankStatement')}</small>
           </div>
 
           <div className="setup-actions">
@@ -196,7 +198,14 @@ const ReconciliationSetup = ({ onStart }) => {
               type="submit" 
               className="btn btn-primary btn-large"
             >
-              Start Reconciliation
+              {t('startReconciliation')}
+            </button>
+            <button 
+              type="button" 
+              className="btn btn-secondary btn-large"
+              onClick={() => window.location.hash = '#reconciliation/existing'}
+            >
+              {t('showExistingReconciliations')}
             </button>
           </div>
         </form>
@@ -204,12 +213,12 @@ const ReconciliationSetup = ({ onStart }) => {
 
       <div className="setup-info">
         <div className="info-card">
-          <h4>📋 How Reconciliation Works</h4>
+          <h4>📋 {t('howReconciliationWorks')}</h4>
           <ol>
-            <li><strong>Setup:</strong> Enter a reference (e.g., DA2501) and your bank statement total</li>
-            <li><strong>Select:</strong> Filter and tick transactions that appear on your bank statement</li>
-            <li><strong>Match:</strong> Compare your running total with the bank statement total</li>
-            <li><strong>Complete:</strong> When totals match, your reconciliation is complete</li>
+            <li><strong>{t('setupStep')}:</strong> {t('enterReferenceAndTotal')}</li>
+            <li><strong>{t('selectStep')}:</strong> {t('filterAndTickTransactions')}</li>
+            <li><strong>{t('matchStep')}:</strong> {t('compareRunningTotalWithBank')}</li>
+            <li><strong>{t('completeStep')}:</strong> {t('whenTotalsMatchComplete')}</li>
           </ol>
         </div>
       </div>

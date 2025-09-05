@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import './TransactionEditModal.css';
@@ -8,6 +9,7 @@ import Autocomplete from './Autocomplete';
 
 const TransactionEditModal = ({ transaction, accounts, categories = [], currencies = [], transactionTypes = [], subcategories = [], transactionGroups = [], onSave, onClose }) => {
   const { numberFormatService, database, tags, getActivePayees, getActivePayers } = useAccounting();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     date: transaction.date || '',
     description: transaction.description || '',
@@ -181,54 +183,54 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
 
     // Always required fields
     if (!formData.date) {
-      newErrors.date = 'Date is required';
+      newErrors.date = t('dateRequired');
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = t('descriptionRequired');
     }
 
     if (!formData.amount || formData.amount === 0 || isNaN(formData.amount)) {
-      newErrors.amount = 'Valid amount is required';
+      newErrors.amount = t('validAmountRequired');
     }
 
     if (!formData.subcategoryId) {
-      newErrors.subcategoryId = 'Transaction Category is required';
+      newErrors.subcategoryId = t('transactionCategoryRequired');
     }
 
     if (!formData.categoryId) {
-      newErrors.categoryId = 'Transaction Type is required';
+      newErrors.categoryId = t('transactionTypeRequired');
     }
 
     if (!formData.transactionGroup) {
-      newErrors.transactionGroup = 'Transaction Group is required';
+      newErrors.transactionGroup = t('transactionGroupRequired');
     }
 
     // Account validation (always required)
     if (!formData.fromAccountId) {
-      newErrors.accounts = 'Account is required';
+      newErrors.accounts = t('accountRequired');
     }
 
     // Conditionally required fields based on transaction type
     if (selectedCategory) {
       // Destination Account required for Transfers and Investments
       if (shouldShowDestinationAccount(formData.categoryId) && !formData.destinationAccountId) {
-        newErrors.destinationAccountId = 'Destination Account is required';
+        newErrors.destinationAccountId = t('destinationAccountRequired');
       }
 
       // Destination Amount required for Investments
       if (isInvestmentTransaction(formData.categoryId) && (!formData.destinationAmount || formData.destinationAmount === 0)) {
-        newErrors.destinationAmount = 'Destination Amount is required';
+        newErrors.destinationAmount = t('destinationAmountRequired');
       }
 
       // Payee required for Expenses and Investment-BUY
       if ((selectedCategory.name === 'Expenses' || selectedCategory.name === 'Investment - BUY') && !formData.payee) {
-        newErrors.payee = 'Payee is required';
+        newErrors.payee = t('payeeRequired');
       }
 
       // Payer required for Income and Investment-SELL
       if ((selectedCategory.name === 'Income' || selectedCategory.name === 'Investment - SELL') && !formData.payer) {
-        newErrors.payer = 'Payer is required';
+        newErrors.payer = t('payerRequired');
       }
     }
 
@@ -346,7 +348,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Edit Transaction</h3>
+          <h3>{t('editTransaction')}</h3>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
@@ -354,7 +356,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
           <div className="modal-body">
             {Object.keys(errors).length > 0 && (
               <div className="form-errors">
-                <h4>Please fix the following errors:</h4>
+                <h4>{t('pleaseFix')}</h4>
                 <ul>
                   {Object.entries(errors).map(([field, error]) => (
                     <li key={field}>{error}</li>
@@ -383,7 +385,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     }}
                     dateFormat={datePickerFormat}
                     className={errors.date ? 'error' : 'date-picker'}
-                    placeholderText={`Select date (${userDateFormat}) *`}
+                    placeholderText={`${t('selectDate')} (${userDateFormat}) *`}
                     showPopperArrow={false}
                     required
                   />
@@ -395,10 +397,10 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     value={formData.categoryId}
                     onChange={(e) => handleChange('categoryId', e.target.value)}
                     className={errors.categoryId ? 'error' : ''}
-                    title="Transaction Type *"
+                    title={`${t('transactionType')} *`}
                     required
                   >
-                    <option value="">Transaction Type *</option>
+                    <option value="">{t('transactionType')} *</option>
                     {categories.map(category => (
                       <option key={category.id} value={category.id}>
                         {category.name}
@@ -413,12 +415,12 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     value={formData.transactionGroup}
                     onChange={(e) => handleChange('transactionGroup', e.target.value)}
                     className={errors.transactionGroup ? 'error' : ''}
-                    title="Transaction Group *"
+                    title={`${t('transactionGroup')} *`}
                     disabled={!formData.categoryId}
                     required
                   >
                     <option value="">
-                      {!formData.categoryId ? 'Select Transaction Type first' : 'Transaction Group *'}
+                      {!formData.categoryId ? t('selectTransactionTypeFirst') : `${t('transactionGroup')} *`}
                     </option>
                     {getFilteredTransactionGroups().map(group => (
                       <option key={group.id} value={group.id}>
@@ -434,12 +436,12 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     value={formData.subcategoryId}
                     onChange={(e) => handleChange('subcategoryId', e.target.value)}
                     className={errors.subcategoryId ? 'error' : ''}
-                    title="Transaction Category *"
+                    title={`${t('transactionCategory')} *`}
                     required
                     disabled={!formData.transactionGroup}
                   >
                     <option value="">
-                      {!formData.transactionGroup ? 'Select Transaction Group first' : 'Transaction Category *'}
+                      {!formData.transactionGroup ? t('selectTransactionGroupFirst') : `${t('transactionCategory')} *`}
                     </option>
                     {getFilteredSubcategories().map(subcategory => (
                       <option key={subcategory.id} value={subcategory.id}>
@@ -456,7 +458,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     className={errors.description ? 'error' : ''}
-                    placeholder="Description *"
+                    placeholder={`${t('description')} *`}
                     required
                   />
                   {errors.description && <span className="field-error">{errors.description}</span>}
@@ -469,7 +471,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     value={formData.amount}
                     onChange={(e) => handleChange('amount', e.target.value)}
                     className={errors.amount ? 'error' : ''}
-                    placeholder="Amount *"
+                    placeholder={`${t('amount')} *`}
                     required
                   />
                   {errors.amount && <span className="field-error">{errors.amount}</span>}
@@ -481,9 +483,9 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                       value={formData.destinationAccountId}
                       onChange={(e) => handleChange('destinationAccountId', e.target.value)}
                       className={errors.destinationAccountId ? 'error' : ''}
-                      title="Destination Account *"
+                      title={`${t('destinationAccount')} *`}
                     >
-                      <option value="">Destination Account *</option>
+                      <option value="">{t('destinationAccount')} *</option>
                       {accounts.map(account => (
                         <option key={account.id} value={account.id}>
                           {account.name} ({account.type}) ({formatAccountBalance(account)})
@@ -502,7 +504,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                       value={formData.destinationAmount}
                       onChange={(e) => handleChange('destinationAmount', e.target.value)}
                       className={errors.destinationAmount ? 'error' : ''}
-                      placeholder="Destination Amount *"
+                      placeholder={`${t('destinationAmount')} *`}
                     />
                     {errors.destinationAmount && <span className="field-error">{errors.destinationAmount}</span>}
                   </div>
@@ -517,9 +519,9 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     value={formData.fromAccountId}
                     onChange={(e) => handleChange('fromAccountId', e.target.value)}
                     className={errors.accounts ? 'error' : ''}
-                    title="Account *"
+                    title={`${t('account')} *`}
                   >
-                    <option value="">Account *</option>
+                    <option value="">{t('account')} *</option>
                     {accounts.map(account => (
                       <option key={account.id} value={account.id}>
                         {account.name} ({account.type}) ({formatAccountBalance(account)})
@@ -543,7 +545,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                             onChange={(value) => handleChange('payee', value)}
                             onSelect={(option, value, label) => handleChange('payee', label)}
                             options={getActivePayees()}
-                            placeholder="Payee *"
+                            placeholder={`${t('payee')} *`}
                             getOptionLabel={(option) => option.name}
                             getOptionValue={(option) => option.id}
                             isError={errors.payee}
@@ -559,7 +561,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                             onChange={(value) => handleChange('payer', value)}
                             onSelect={(option, value, label) => handleChange('payer', label)}
                             options={getActivePayers()}
-                            placeholder="Payer *"
+                            placeholder={`${t('payer')} *`}
                             getOptionLabel={(option) => option.name}
                             getOptionValue={(option) => option.id}
                             isError={errors.payer}
@@ -577,7 +579,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     onChange={(value) => handleChange('tag', value)}
                     onSelect={(option, value, label) => handleChange('tag', label)}
                     options={tags.filter(tag => tag.isActive !== false)}
-                    placeholder="Tag"
+                    placeholder={t('tag')}
                     getOptionLabel={(option) => option.name}
                     getOptionValue={(option) => option.id}
                     className="optional"
@@ -590,7 +592,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     value={formData.reference}
                     onChange={(e) => handleChange('reference', e.target.value)}
                     className="optional"
-                    placeholder="Reference"
+                    placeholder={t('reference')}
                   />
                 </div>
 
@@ -600,7 +602,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     onChange={(e) => handleChange('notes', e.target.value)}
                     className="optional"
                     rows="3"
-                    placeholder="Notes"
+                    placeholder={t('notes')}
                   />
                 </div>
               </div>
@@ -610,10 +612,10 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
 
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Cancel
+              {t('cancel')}
             </button>
             <button type="submit" className="btn btn-primary">
-              Save Changes
+              {t('saveChanges')}
             </button>
           </div>
         </form>

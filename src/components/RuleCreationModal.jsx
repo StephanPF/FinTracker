@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 import ConditionBuilder from './ConditionBuilder';
 import ActionBuilder from './ActionBuilder';
 import './RuleCreationModal.css';
@@ -14,6 +15,7 @@ const RuleCreationModal = ({
   availableFields = [], 
   isEditing = false 
 }) => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     type: 'PROCESSING_RULE', // Single rule type now
@@ -56,45 +58,45 @@ const RuleCreationModal = ({
     const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Rule name is required';
+      newErrors.name = t('ruleNameRequired');
     }
 
     if (formData.conditions.length === 0) {
-      newErrors.conditions = 'At least one condition is required';
+      newErrors.conditions = t('atLeastOneCondition');
     } else {
       // Validate each condition
       formData.conditions.forEach((condition, index) => {
         if (!condition.field) {
-          newErrors[`condition_${index}_field`] = 'Field is required';
+          newErrors[`condition_${index}_field`] = t('fieldIsRequired');
         }
         if (!condition.operator) {
-          newErrors[`condition_${index}_operator`] = 'Operator is required';
+          newErrors[`condition_${index}_operator`] = t('operatorIsRequired');
         }
         if (shouldShowValue(condition.operator) && !condition.value) {
-          newErrors[`condition_${index}_value`] = 'Value is required';
+          newErrors[`condition_${index}_value`] = t('valueIsRequired');
         }
       });
     }
 
     if (formData.actions.length === 0) {
-      newErrors.actions = 'At least one action is required';
+      newErrors.actions = t('atLeastOneAction');
     } else {
       // Validate each action
       formData.actions.forEach((action, index) => {
         if (action.type === 'SET_FIELD') {
           if (!action.field) {
-            newErrors[`action_${index}_field`] = 'Field is required';
+            newErrors[`action_${index}_field`] = t('fieldIsRequired');
           }
           if (!action.value) {
-            newErrors[`action_${index}_value`] = 'Value is required';
+            newErrors[`action_${index}_value`] = t('valueIsRequired');
           }
         }
         if (action.type === 'TRANSFORM_FIELD') {
           if (!action.field) {
-            newErrors[`action_${index}_field`] = 'Field is required';
+            newErrors[`action_${index}_field`] = t('fieldIsRequired');
           }
           if (!action.transform) {
-            newErrors[`action_${index}_transform`] = 'Transform function is required';
+            newErrors[`action_${index}_transform`] = t('transformFunctionRequired');
           }
           const transformFunctions = [
             { key: 'absolute', requiresParameter: false },
@@ -106,7 +108,7 @@ const RuleCreationModal = ({
           ];
           const transformFunc = transformFunctions.find(t => t.key === action.transform);
           if (transformFunc?.requiresParameter && !action.parameter) {
-            newErrors[`action_${index}_parameter`] = 'Parameter is required for this transform';
+            newErrors[`action_${index}_parameter`] = t('parameterRequiredForTransform');
           }
         }
         // IGNORE_ROW actions don't need additional validation
@@ -133,7 +135,7 @@ const RuleCreationModal = ({
     } catch (error) {
       console.error('Error saving rule:', error);
       setErrors({ 
-        general: error.message || 'Failed to save rule. Please try again.' 
+        general: error.message || t('failedToSaveRule')
       });
     } finally {
       setSaving(false);
@@ -152,7 +154,7 @@ const RuleCreationModal = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>{isEditing ? 'Edit Processing Rule' : 'Create Processing Rule'}</h3>
+          <h3>{isEditing ? t('editProcessingRule') : t('createProcessingRule')}</h3>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
@@ -165,12 +167,12 @@ const RuleCreationModal = ({
 
           <div className="rule-basic-info">
             <div className="form-field">
-              <label htmlFor="ruleName">Rule Name *</label>
+              <label htmlFor="ruleName">{t('ruleName')} *</label>
               <input
                 id="ruleName"
                 type="text"
                 className={`form-input ${errors.name ? 'error' : ''}`}
-                placeholder="e.g., Convert negative amounts to positive"
+                placeholder={t('convertNegativeAmounts')}
                 value={formData.name}
                 onChange={(e) => updateFormData({ name: e.target.value })}
               />
@@ -181,7 +183,7 @@ const RuleCreationModal = ({
 
             <div className="form-row">
               <div className="form-field">
-                <label htmlFor="ruleOrder">Execution Order</label>
+                <label htmlFor="ruleOrder">{t('executionOrder')}</label>
                 <input
                   id="ruleOrder"
                   type="number"
@@ -190,7 +192,7 @@ const RuleCreationModal = ({
                   value={formData.ruleOrder}
                   onChange={(e) => updateFormData({ ruleOrder: parseInt(e.target.value) || 0 })}
                 />
-                <small>Lower numbers execute first</small>
+                <small>{t('lowerNumbersFirst')}</small>
               </div>
 
               <div className="form-field">
@@ -200,7 +202,7 @@ const RuleCreationModal = ({
                     checked={formData.active}
                     onChange={(e) => updateFormData({ active: e.target.checked })}
                   />
-                  Rule is active
+                  {t('ruleIsActive')}
                 </label>
               </div>
             </div>
@@ -236,7 +238,7 @@ const RuleCreationModal = ({
             onClick={onClose}
             disabled={saving}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button 
             type="button" 
@@ -244,7 +246,7 @@ const RuleCreationModal = ({
             onClick={handleSubmit}
             disabled={saving}
           >
-            {saving ? 'Saving...' : (isEditing ? 'Update Rule' : 'Create Rule')}
+            {saving ? t('saving') : (isEditing ? t('updateRule') : t('createRule'))}
           </button>
         </div>
       </div>

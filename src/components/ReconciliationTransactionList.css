@@ -43,6 +43,46 @@
   background-color: #f1f3f5 !important;
 }
 
+/* Checkbox styling to prevent dark backgrounds */
+.white-checkbox {
+  background-color: white !important;
+  color: #1a202c !important;
+  accent-color: #1a202c !important;
+  border: 1px solid #d1d5db !important;
+  width: 16px;
+  height: 16px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border-radius: 3px;
+  position: relative;
+  cursor: pointer;
+}
+
+.white-checkbox:checked {
+  background-color: #1a202c !important;
+  border-color: #1a202c !important;
+}
+
+.white-checkbox:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  position: absolute;
+  top: -1px;
+  left: 2px;
+}
+
+.white-checkbox:hover {
+  border-color: #9ca3af;
+}
+
+.white-checkbox:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+
 .transaction-list-header {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;

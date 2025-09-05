@@ -251,3 +251,138 @@ All fixes have been tested and verified:
    - Test date functionality across multiple timezones
 
 ---
+
+## Issue #4: Checkbox Dark Background Styling Problem
+
+**Date Discovered:** September 5, 2025  
+**Component:** ExistingReconciliationsPage / Form Checkboxes  
+**Severity:** Medium (UI/UX Issue)  
+**Status:** ✅ Fixed  
+
+### Description
+Checkboxes implemented with standard HTML `<input type="checkbox">` elements and inline styles were displaying with dark backgrounds instead of the required white backgrounds, violating the BUILD_NEW_FEATURE_GUIDE.md design requirements.
+
+### Root Cause
+Modern browsers apply default styling to checkbox elements that cannot be fully overridden with simple inline styles alone. The browser's native checkbox appearance was conflicting with the intended white background styling.
+
+**Specific Issues:**
+- `backgroundColor: 'white'` inline style was being ignored
+- `accentColor: '#1a202c'` was insufficient to control full appearance
+- Browser default `appearance` styling was taking precedence
+- Different browsers handle checkbox styling inconsistently
+
+### Technical Details
+**Files Affected:**
+- `src/components/ExistingReconciliationsPage.jsx` - Checkbox implementation
+- `src/components/ReconciliationTransactionList.css` - Styling solution
+
+**Code Issue:**
+```jsx
+// Before (problematic - inline styles insufficient):
+<input
+  type="checkbox"
+  style={{
+    backgroundColor: 'white',     // Ignored by browser
+    color: '#1a202c',
+    accentColor: '#1a202c',      // Not enough alone
+    border: '1px solid #d1d5db'
+  }}
+/>
+
+// After (fixed - CSS class with appearance override):
+<input
+  type="checkbox"
+  className="white-checkbox"
+/>
+```
+
+**CSS Solution:**
+```css
+.white-checkbox {
+  background-color: white !important;
+  appearance: none;                    /* ← CRITICAL: Removes browser defaults */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 1px solid #d1d5db !important;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  position: relative;
+  cursor: pointer;
+}
+
+.white-checkbox:checked {
+  background-color: #1a202c !important;
+  border-color: #1a202c !important;
+}
+
+.white-checkbox:checked::after {
+  content: '✓';                        /* Custom checkmark */
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  position: absolute;
+  top: -1px;
+  left: 2px;
+}
+```
+
+### Fix Applied
+1. **Created CSS Class**: Added `.white-checkbox` class in `ReconciliationTransactionList.css`
+2. **Appearance Override**: Used `appearance: none` to completely remove browser defaults
+3. **Custom Styling**: Implemented manual checkbox appearance with CSS
+4. **Custom Checkmark**: Used `::after` pseudo-element for checkmark icon
+5. **Cross-Browser Support**: Added vendor prefixes for webkit and moz
+6. **Updated Component**: Replaced inline styles with CSS class
+
+### Testing Results
+- ✅ Checkboxes now display with white background when unchecked
+- ✅ Checkboxes show dark background with white checkmark when checked
+- ✅ Consistent appearance across Chrome, Firefox, Safari, and Edge
+- ✅ Proper hover and focus states implemented
+- ✅ Maintains accessibility with keyboard navigation
+
+### Prevention Guidelines
+
+#### For Future Checkbox Implementations:
+1. **Never rely on inline styles alone** for checkbox styling
+2. **Always use CSS classes** with `appearance: none` for custom styling
+3. **Test across multiple browsers** during development
+4. **Use the established `.white-checkbox` class** for consistency
+
+#### Required CSS Pattern:
+```css
+.custom-checkbox {
+  appearance: none;           /* Essential for custom styling */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: white !important;
+  border: 1px solid #d1d5db !important;
+  /* Custom dimensions and styling */
+}
+
+.custom-checkbox:checked {
+  /* Custom checked state */
+}
+
+.custom-checkbox:checked::after {
+  content: '✓';  /* Custom checkmark */
+  /* Position and style the checkmark */
+}
+```
+
+### Updated Documentation
+- Enhanced `BUILD_NEW_FEATURE_GUIDE.md` with comprehensive checkbox implementation section
+- Added specific CSS class examples and common mistakes to avoid
+- Updated critical reminders to highlight checkbox requirements
+
+### Recommendation
+**For all future form implementations:**
+1. Use the existing `.white-checkbox` CSS class for consistency
+2. If creating new checkbox styles, always start with `appearance: none`
+3. Test checkbox appearance in multiple browsers before deployment
+4. Reference the updated BUILD_NEW_FEATURE_GUIDE.md for proper implementation patterns
+
+This issue highlights the importance of thorough cross-browser testing and the limitations of inline styles for overriding complex browser defaults in form elements.
+
+---

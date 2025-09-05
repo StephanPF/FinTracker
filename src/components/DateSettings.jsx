@@ -40,7 +40,7 @@ const DateSettings = () => {
     try {
       setIsLoading(true);
       await updateUserPreferences('date_formatting', preferences);
-      alert('Date preferences saved successfully!');
+      alert(t('datePreferencesSaved'));
     } catch (error) {
       console.error('Error saving date preferences:', error);
       alert('Error saving preferences. Please try again.');
@@ -90,7 +90,7 @@ const DateSettings = () => {
   return (
     <div className="date-settings">
       <div className="settings-header">
-        <h2>Date & Time Preferences</h2>
+        <h2>{t('dateTimePreferences')}</h2>
         <p>Customize how dates and times are displayed throughout the application</p>
       </div>
 
@@ -98,7 +98,7 @@ const DateSettings = () => {
         <div className="settings-panel">
           {/* Date Format */}
           <div className="setting-group">
-            <label>Date Format</label>
+            <label>{t('dateFormat')}</label>
             <div className="radio-group">
               {[
                 { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
@@ -123,7 +123,7 @@ const DateSettings = () => {
 
           {/* Time Format */}
           <div className="setting-group">
-            <label>Time Format</label>
+            <label>{t('timeFormat')}</label>
             <div className="radio-group">
               <label className="radio-option">
                 <input
@@ -133,7 +133,7 @@ const DateSettings = () => {
                   checked={preferences.timeFormat === '24h'}
                   onChange={(e) => handlePreferenceChange('timeFormat', e.target.value)}
                 />
-                24-hour <span className="format-example">({getTimeFormatExample('24h')})</span>
+                {t('hour24')} <span className="format-example">({getTimeFormatExample('24h')})</span>
               </label>
               <label className="radio-option">
                 <input
@@ -143,7 +143,7 @@ const DateSettings = () => {
                   checked={preferences.timeFormat === '12h'}
                   onChange={(e) => handlePreferenceChange('timeFormat', e.target.value)}
                 />
-                12-hour <span className="format-example">({getTimeFormatExample('12h')})</span>
+                {t('hour12')} <span className="format-example">({getTimeFormatExample('12h')})</span>
               </label>
             </div>
           </div>
@@ -184,13 +184,13 @@ const DateSettings = () => {
         <div className="preview-panel">
           <h3>Preview</h3>
           <div className="preview-section">
-            <h4>Current Date & Time</h4>
+            <h4>{t('currentDateTime')}</h4>
             <div className="preview-item">
-              <span className="preview-label">Date:</span>
+              <span className="preview-label">{t('date')}:</span>
               <span className="preview-value">{getDateFormatExample(preferences.dateFormat)}</span>
             </div>
             <div className="preview-item">
-              <span className="preview-label">Time:</span>
+              <span className="preview-label">{t('time')}</span>
               <span className="preview-value">{getTimeFormatExample(preferences.timeFormat)}</span>
             </div>
             <div className="preview-item">

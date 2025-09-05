@@ -14,6 +14,7 @@ import StressTest from './StressTest';
 import Settings from './Settings';
 import ImportTransactions from './ImportTransactions';
 import ReconciliationPage from './ReconciliationPage';
+import ExistingReconciliationsPage from './ExistingReconciliationsPage';
 import TestDashboard from './TestDashboard';
 import Logo from './Logo';
 
@@ -23,7 +24,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState(() => {
     // Initialize activeTab from URL hash first, then localStorage as fallback
     const hash = window.location.hash.slice(1);
-    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation'];
+    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
     
     if (validTabs.includes(hash)) {
       return hash;
@@ -84,7 +85,7 @@ const Dashboard = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
-      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation'];
+      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
         localStorage.setItem('activeTab', hash);
@@ -174,13 +175,13 @@ const Dashboard = () => {
             className={activeTab === 'import-transactions' ? 'nav-btn active' : 'nav-btn'}
             onClick={() => handleTabNavigation('import-transactions')}
           >
-            <span>📥 Import Transactions</span>
+            <span>📥 {t('importTransactions')}</span>
           </button>
           <button 
             className={activeTab === 'reconciliation' ? 'nav-btn active' : 'nav-btn'}
             onClick={() => handleTabNavigation('reconciliation')}
           >
-            <span>🔄 Reconciliation</span>
+            <span>🔄 {t('reconciliation')}</span>
           </button>
         </div>
         <div className="nav-actions">
@@ -199,7 +200,7 @@ const Dashboard = () => {
               <div className="hamburger-dropdown">
                 <div className="menu-item" onClick={() => handleMenuNavigation('todo')}>
                   <span className="menu-icon">🎯</span>
-                  <span className="menu-text">TODO</span>
+                  <span className="menu-text">{t('todo')}</span>
                 </div>
                 <div className="menu-item" onClick={() => handleMenuNavigation('architecture')}>
                   <span className="menu-icon">🏗️</span>
@@ -207,27 +208,27 @@ const Dashboard = () => {
                 </div>
                 <div className="menu-item" onClick={() => handleMenuNavigation('stress-test')}>
                   <span className="menu-icon">🧪</span>
-                  <span className="menu-text">Stress Test</span>
+                  <span className="menu-text">{t('stressTest')}</span>
                 </div>
                 <div className="menu-item" onClick={() => handleMenuNavigation('test-dashboard')}>
                   <span className="menu-icon">🧪</span>
-                  <span className="menu-text">Test Dashboard</span>
+                  <span className="menu-text">{t('testDashboard')}</span>
                 </div>
                 <div className="menu-item" onClick={() => handleMenuNavigation('settings')}>
                   <span className="menu-icon">⚙️</span>
-                  <span className="menu-text">Settings</span>
+                  <span className="menu-text">{t('settings')}</span>
                 </div>
                 <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
                   <span className="menu-icon">📊</span>
-                  <span className="menu-text">Reports</span>
+                  <span className="menu-text">{t('reports')}</span>
                 </div>
                 <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
                   <span className="menu-icon">📥</span>
-                  <span className="menu-text">Import/Export</span>
+                  <span className="menu-text">{t('importExport')}</span>
                 </div>
                 <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
                   <span className="menu-icon">ℹ️</span>
-                  <span className="menu-text">About</span>
+                  <span className="menu-text">{t('about')}</span>
                 </div>
               </div>
             )}
@@ -300,6 +301,12 @@ const Dashboard = () => {
         {activeTab === 'reconciliation' && (
           <div className="reconciliation-tab">
             <ReconciliationPage />
+          </div>
+        )}
+
+        {activeTab === 'reconciliation/existing' && (
+          <div className="reconciliation-existing-tab">
+            <ExistingReconciliationsPage />
           </div>
         )}
       </div>

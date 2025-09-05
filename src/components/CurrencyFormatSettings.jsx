@@ -176,13 +176,13 @@ const CurrencyFormatSettings = () => {
   return (
     <div className="currency-format-settings">
       <div className="settings-header">
-        <h2>💰 Currency Formatting Settings</h2>
+        <h2>{t('currencyFormattingSettings')}</h2>
         <p>Configure how each currency is displayed throughout the application.</p>
       </div>
 
       <div className="currency-selector">
         <label htmlFor="currency-select">
-          <strong>Select Currency to Configure:</strong>
+          <strong>{t('selectCurrencyToConfigure')}</strong>
         </label>
         <select 
           id="currency-select"
@@ -202,7 +202,7 @@ const CurrencyFormatSettings = () => {
         <div className="currency-settings-content">
           <div className="settings-grid">
             <div className="settings-panel">
-              <h3>📋 Format Settings for {selectedCurrency.name}</h3>
+              <h3>{t('formatSettingsFor')} {selectedCurrency.name}</h3>
               
               <div className="quick-presets">
                 <label><strong>Quick Presets:</strong></label>
@@ -212,34 +212,34 @@ const CurrencyFormatSettings = () => {
                     onClick={() => applyPreset('us')}
                     title="US Format: $1,234.56"
                   >
-                    🇺🇸 US Format
+                    {t('usFormat')}
                   </button>
                   <button 
                     className="preset-btn"
                     onClick={() => applyPreset('eu')}
                     title="European Format: 1 234,56 €"
                   >
-                    🇪🇺 EU Format
+                    {t('euFormat')}
                   </button>
                   <button 
                     className="preset-btn"
                     onClick={() => applyPreset('uk')}
                     title="UK Format: £1,234.56"
                   >
-                    🇬🇧 UK Format
+                    {t('ukFormat')}
                   </button>
                   <button 
                     className="preset-btn"
                     onClick={() => applyPreset('crypto')}
                     title="Crypto Format: 0.1234 BTC"
                   >
-                    🪙 Crypto Format
+                    {t('cryptoFormat')}
                   </button>
                 </div>
               </div>
 
               <div className="setting-group">
-                <label htmlFor="symbol-position">Currency Symbol Position:</label>
+                <label htmlFor="symbol-position">{t('currencySymbolPosition')}</label>
                 <select 
                   id="symbol-position"
                   value={preferences.currencySymbolPosition || 'before'} 
@@ -291,7 +291,7 @@ const CurrencyFormatSettings = () => {
               </div>
 
               <div className="setting-group">
-                <label htmlFor="negative-display">Negative Number Display:</label>
+                <label htmlFor="negative-display">{t('negativeNumberDisplay')}</label>
                 <select 
                   id="negative-display"
                   value={preferences.negativeDisplay || 'minus'} 
@@ -304,7 +304,7 @@ const CurrencyFormatSettings = () => {
               </div>
 
               <div className="setting-group">
-                <label htmlFor="large-number-notation">Large Number Notation:</label>
+                <label htmlFor="large-number-notation">{t('largeNumberNotation')}</label>
                 <select 
                   id="large-number-notation"
                   value={preferences.largeNumberNotation || 'full'} 
@@ -317,7 +317,7 @@ const CurrencyFormatSettings = () => {
               </div>
 
               <div className="setting-group">
-                <label htmlFor="currency-code-display">Currency Code Display:</label>
+                <label htmlFor="currency-code-display">{t('currencyCodeDisplay')}</label>
                 <select 
                   id="currency-code-display"
                   value={preferences.currencyCodeDisplay || 'symbol-only'} 
@@ -333,22 +333,22 @@ const CurrencyFormatSettings = () => {
             <div className="preview-panel">
               <h3>👀 Live Preview</h3>
               <div className="preview-section">
-                <h4>Positive Numbers:</h4>
+                <h4>{t('positiveNumbers')}</h4>
                 <div className="preview-value">{preview.positive || 'Loading...'}</div>
               </div>
               
               <div className="preview-section">
-                <h4>Negative Numbers:</h4>
+                <h4>{t('negativeNumbers')}</h4>
                 <div className="preview-value negative">{preview.negative || 'Loading...'}</div>
               </div>
               
               <div className="preview-section">
-                <h4>Large Numbers:</h4>
+                <h4>{t('largeNumbers')}</h4>
                 <div className="preview-value">{preview.large || 'Loading...'}</div>
               </div>
               
               <div className="preview-section">
-                <h4>Small Numbers:</h4>
+                <h4>{t('smallNumbers')}</h4>
                 <div className="preview-value">{preview.small || 'Loading...'}</div>
               </div>
             </div>

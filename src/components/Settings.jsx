@@ -12,25 +12,25 @@ const Settings = () => {
   const tabs = [
     {
       id: 'number-currency',
-      label: 'Number & Currency',
+      label: t('numberCurrency'),
       icon: '💰',
       component: CurrencyFormatSettings
     },
     {
       id: 'date',
-      label: 'Date',
+      label: t('date'),
       icon: '📅',
       component: DateSettings
     },
     {
       id: 'data',
-      label: 'Data',
+      label: t('data'),
       icon: '📁',
       component: DataSettings
     },
     {
       id: 'import',
-      label: 'Import',
+      label: t('import'),
       icon: '📥',
       component: ImportSettings
     }
@@ -41,8 +41,8 @@ const Settings = () => {
   return (
     <div className="settings-container">
       <div className="settings-header">
-        <h1>Settings</h1>
-        <p>Customize your application preferences and display options</p>
+        <h1>{t('settings')}</h1>
+        <p>{t('customizePreferences')}</p>
       </div>
 
       <div className="settings-navigation">

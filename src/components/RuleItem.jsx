@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import './RuleItem.css';
 
 const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFields }) => {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
 
   const getRuleTypeIcon = (type) => {
@@ -15,15 +17,15 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
 
   const getRuleTypeLabel = (type) => {
     switch (type) {
-      case 'FIELD_TRANSFORM': return 'Transform Field';
-      case 'FIELD_VALUE_SET': return 'Set Field Value';
-      case 'ROW_IGNORE': return 'Ignore Row';
-      default: return 'Unknown';
+      case 'FIELD_TRANSFORM': return t('transformField');
+      case 'FIELD_VALUE_SET': return t('setFieldValue');
+      case 'ROW_IGNORE': return t('ignoreRow');
+      default: return t('unknown');
     }
   };
 
   const getConditionSummary = (conditions, logic) => {
-    if (!conditions || conditions.length === 0) return 'No conditions';
+    if (!conditions || conditions.length === 0) return t('noConditions');
     
     if (conditions.length === 1) {
       const condition = conditions[0];
@@ -35,15 +37,15 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
   };
 
   const getActionSummary = (actions) => {
-    if (!actions || actions.length === 0) return 'No actions';
+    if (!actions || actions.length === 0) return t('noActions');
     
     return actions.map(action => {
       if (action.type === 'SET_FIELD') {
-        return `Set ${action.field} = "${action.value}"`;
+        return `${t('set')} ${action.field} = "${action.value}"`;
       } else if (action.type === 'TRANSFORM_FIELD') {
-        return `Transform ${action.field} using ${action.transform}`;
+        return `${t('transform')} ${action.field} ${t('using')} ${action.transform}`;
       }
-      return 'Unknown action';
+      return t('unknown');
     }).join(', ');
   };
 
@@ -57,15 +59,15 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
             <span className="rule-type">{getRuleTypeLabel(rule.type)}</span>
             <div className="rule-status">
               <span className={`status-indicator ${rule.active ? 'active' : 'inactive'}`}>
-                {rule.active ? '✓ Active' : '○ Inactive'}
+                {rule.active ? `✓ ${t('active')}` : `○ ${t('inactive')}`}
               </span>
             </div>
           </div>
           <div className="rule-summary">
-            <div className="rule-order">Order: {rule.ruleOrder || 0}</div>
+            <div className="rule-order">{t('order')} {rule.ruleOrder || 0}</div>
             <div className="rule-preview">
-              <span className="summary-when">When: {getConditionSummary(rule.conditions, rule.conditionLogic)}</span>
-              <span className="summary-then">Then: {getActionSummary(rule.actions)}</span>
+              <span className="summary-when">{t('when')} {getConditionSummary(rule.conditions, rule.conditionLogic)}</span>
+              <span className="summary-then">{t('then')} {getActionSummary(rule.actions)}</span>
             </div>
           </div>
         </div>
@@ -78,9 +80,9 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
               e.stopPropagation();
               onToggleActive(rule.id, !rule.active);
             }}
-            title={rule.active ? 'Deactivate rule' : 'Activate rule'}
+            title={rule.active ? t('deactivateRule') : t('activateRule')}
           >
-            {rule.active ? 'Disable' : 'Enable'}
+            {rule.active ? t('disable') : t('enable')}
           </button>
           <button
             type="button"
@@ -89,9 +91,9 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
               e.stopPropagation();
               onEdit(rule);
             }}
-            title="Edit rule"
+            title={t('editRule')}
           >
-            Edit
+            {t('edit')}
           </button>
           <button
             type="button"
@@ -100,14 +102,14 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
               e.stopPropagation();
               onDelete(rule.id);
             }}
-            title="Delete rule"
+            title={t('deleteRule')}
           >
-            Delete
+            {t('delete')}
           </button>
           <button
             type="button"
             className="btn btn-small btn-ghost expand-btn"
-            title={expanded ? 'Collapse' : 'Expand'}
+            title={expanded ? t('collapse') : t('expand')}
           >
             {expanded ? '▲' : '▼'}
           </button>
@@ -117,7 +119,7 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
       {expanded && (
         <div className="rule-details">
           <div className="rule-section">
-            <h6>Conditions ({rule.conditionLogic || 'ANY'}):</h6>
+            <h6>{t('conditions')} ({rule.conditionLogic || 'ANY'}):</h6>
             {rule.conditions && rule.conditions.length > 0 ? (
               <ul className="conditions-list">
                 {rule.conditions.map((condition, idx) => (
@@ -125,28 +127,28 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
                     <strong>{condition.field}</strong> {condition.operator} 
                     <em>"{condition.value}"</em>
                     {condition.caseSensitive === false && (
-                      <span className="condition-modifier">(case insensitive)</span>
+                      <span className="condition-modifier">{t('caseInsensitive')}</span>
                     )}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="empty-list">No conditions defined</p>
+              <p className="empty-list">{t('noConditionsDefined')}</p>
             )}
           </div>
 
           <div className="rule-section">
-            <h6>Actions:</h6>
+            <h6>{t('actions')}:</h6>
             {rule.actions && rule.actions.length > 0 ? (
               <ul className="actions-list">
                 {rule.actions.map((action, idx) => (
                   <li key={idx} className="action-item">
                     {action.type === 'SET_FIELD' && (
-                      <>Set <strong>{action.field}</strong> to <em>"{action.value}"</em></>
+                      <>{t('set')} <strong>{action.field}</strong> {t('to')} <em>"{action.value}"</em></>
                     )}
                     {action.type === 'TRANSFORM_FIELD' && (
                       <>
-                        Transform <strong>{action.field}</strong> using <em>{action.transform}</em>
+                        {t('transform')} <strong>{action.field}</strong> {t('using')} <em>{action.transform}</em>
                         {action.targetField && action.targetField !== action.field && (
                           <> → <strong>{action.targetField}</strong></>
                         )}
@@ -156,18 +158,18 @@ const RuleItem = ({ rule, index, onEdit, onDelete, onToggleActive, availableFiel
                 ))}
               </ul>
             ) : (
-              <p className="empty-list">No actions defined</p>
+              <p className="empty-list">{t('noActionsDefined')}</p>
             )}
           </div>
 
           <div className="rule-metadata">
             <div className="metadata-item">
-              <span className="metadata-label">Created:</span>
+              <span className="metadata-label">{t('created')}</span>
               <span className="metadata-value">{new Date(rule.createdAt).toLocaleDateString()}</span>
             </div>
             {rule.updatedAt && rule.updatedAt !== rule.createdAt && (
               <div className="metadata-item">
-                <span className="metadata-label">Updated:</span>
+                <span className="metadata-label">{t('updated')}</span>
                 <span className="metadata-value">{new Date(rule.updatedAt).toLocaleDateString()}</span>
               </div>
             )}

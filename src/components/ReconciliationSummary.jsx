@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import './ReconciliationSummary.css';
 
 const ReconciliationSummary = ({ 
@@ -12,6 +13,7 @@ const ReconciliationSummary = ({
   selectedAccount
 }) => {
   const { numberFormatService } = useAccounting();
+  const { t } = useLanguage();
   const difference = runningTotal - bankStatementTotal;
   const isBalanced = Math.abs(difference) < 0.01; // Account for floating point precision
 
@@ -41,21 +43,21 @@ const ReconciliationSummary = ({
     <div className="reconciliation-summary">
       <div className="summary-header">
         <div className="summary-title">
-          <h3>Step 2. Reconciliation: {reconciliationReference}</h3>
+          <h3>{t('step2Reconciliation')} {reconciliationReference}</h3>
           <div className="summary-actions">
             <button 
               className="btn btn-secondary btn-small"
               onClick={onReset}
             >
-              Reset
+              {t('reset')}
             </button>
             <button 
               className="btn btn-primary btn-small"
               onClick={onComplete}
               disabled={selectedCount === 0}
-              title={selectedCount === 0 ? 'Select at least one transaction to complete reconciliation' : 'Complete reconciliation'}
+              title={selectedCount === 0 ? t('selectAtLeastOneTransaction') : t('completeReconciliation')}
             >
-              Complete
+              {t('complete')}
             </button>
           </div>
         </div>
@@ -63,28 +65,28 @@ const ReconciliationSummary = ({
 
       <div className="summary-stats">
         <div className="stat-card">
-          <div className="stat-label">Bank Statement Total</div>
+          <div className="stat-label">{t('bankStatementTotal')}</div>
           <div className="stat-value bank-total">
             {formatCurrency(bankStatementTotal)}
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-label">Selected Transactions</div>
+          <div className="stat-label">{t('selectedTransactions')}</div>
           <div className="stat-value selected-total">
             {formatCurrency(runningTotal)}
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-label">Number of selected Transactions</div>
+          <div className="stat-label">{t('numberOfSelectedTransactions')}</div>
           <div className="stat-value">
             {selectedCount}
           </div>
         </div>
 
         <div className={`stat-card difference ${getDifferenceClass()}`}>
-          <div className="stat-label">Difference</div>
+          <div className="stat-label">{t('difference')}</div>
           <div className="stat-value">
             {difference >= 0 ? '+' : ''}{formatCurrency(difference)}
           </div>

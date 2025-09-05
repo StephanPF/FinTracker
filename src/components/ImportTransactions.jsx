@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import Papa from 'papaparse';
 import TransactionReviewQueue from './TransactionReviewQueue';
 import { applyProcessingRules } from '../utils/ruleProcessor';
@@ -7,6 +8,7 @@ import './ImportTransactions.css';
 
 const ImportTransactions = () => {
   const { bankConfigurations = [], transactions = [], currencies = [], getActiveProcessingRules } = useAccounting();
+  const { t } = useLanguage();
 
   // Helper function to convert Date object to YYYY-MM-DD string (timezone-safe)
   const dateToISOString = (date) => {
@@ -446,7 +448,7 @@ const ImportTransactions = () => {
           <h3>No Banks Configured</h3>
           <p>You need to configure at least one bank before importing transactions.</p>
           <button className="btn btn-primary">
-            Go to Settings
+            {t('goToSettings')}
           </button>
         </div>
       </div>
@@ -456,18 +458,18 @@ const ImportTransactions = () => {
   return (
     <div className="import-transactions">
       <div className="import-header">
-        <h2>📥 Import Transactions</h2>
+        <h2>📥 {t('importTransactionsTitle')}</h2>
         {step > 1 && (
           <button className="btn btn-secondary" onClick={resetImport}>
-            Start Over
+            {t('startOver')}
           </button>
         )}
       </div>
 
       {step === 1 && (
         <div className="bank-selection">
-          <h3>Step 1: Select Your Bank</h3>
-          <p>Choose the bank configuration to use for importing your transactions.</p>
+          <h3>{t('stepOne')}: {t('selectYourBank')}</h3>
+          <p>{t('chooseBankConfig')}</p>
           
           <div className="bank-cards">
             {bankConfigurations.map((bank, index) => (
@@ -479,7 +481,7 @@ const ImportTransactions = () => {
                 <div className="bank-logo">🏦</div>
                 <div className="bank-info">
                   <h4>{bank.name}</h4>
-                  <p>{bank.type || 'Custom Configuration'}</p>
+                  <p>{bank.type || t('customConfiguration')}</p>
                 </div>
                 <div className="bank-arrow">→</div>
               </div>
@@ -490,11 +492,11 @@ const ImportTransactions = () => {
 
       {step === 2 && selectedBank && (
         <div className="file-upload">
-          <h3>Step 2: Upload Your Files</h3>
-          <p>Upload CSV files from <strong>{selectedBank.name}</strong></p>
+          <h3>{t('stepTwo')}: {t('uploadYourFiles')}</h3>
+          <p>{t('uploadFromBank')} <strong>{selectedBank.name}</strong></p>
           
           <div className="expected-format">
-            <h4>Expected Format:</h4>
+            <h4>{t('expectedFormat')}:</h4>
             <div className="format-preview">
               <div className="format-fields">
                 {selectedBank.fieldMapping && Object.entries(selectedBank.fieldMapping).map(([field, column]) => (
@@ -517,7 +519,7 @@ const ImportTransactions = () => {
               <div className="bank-logo-large">🏦</div>
               <h3>{selectedBank.name}</h3>
               <p className="drop-text">
-                {dragActive ? 'Drop files here' : 'Drop CSV files here or click to browse'}
+                {dragActive ? t('dropFilesHere') : t('dragDropFiles')}
               </p>
               <input
                 type="file"
@@ -568,7 +570,7 @@ const ImportTransactions = () => {
               onClick={processFiles}
               disabled={processing}
             >
-              {processing ? 'Processing...' : 'Process Files'}
+              {processing ? t('processing') : t('processFiles')}
             </button>
             {processing && (
               <div className="processing-progress">

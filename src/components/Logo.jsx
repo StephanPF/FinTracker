@@ -1,6 +1,8 @@
 import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Logo = ({ variant = 'full', size = 'medium', theme = 'light', onClick, clickable = false }) => {
+  const { t } = useLanguage();
   const getSize = () => {
     switch (size) {
       case 'small': return { icon: '30px', title: '1rem', subtitle: '0.7rem' };
@@ -16,7 +18,7 @@ const Logo = ({ variant = 'full', size = 'medium', theme = 'light', onClick, cli
     className: `financeflow-logo-compact ${theme} ${clickable ? 'clickable' : ''}`,
     onClick: clickable ? onClick : undefined,
     style: clickable ? { cursor: 'pointer' } : {},
-    title: clickable ? 'Back to Main' : undefined
+    title: clickable ? t('backToMain') : undefined
   };
 
   if (variant === 'compact') {
@@ -55,7 +57,7 @@ const Logo = ({ variant = 'full', size = 'medium', theme = 'light', onClick, cli
       </div>
       <div className="ff-logo-text">
         <span className="ff-logo-title" style={{ fontSize: sizes.title }}>FinanceFlow</span>
-        <span className="ff-logo-subtitle" style={{ fontSize: sizes.subtitle }}>Personal Tracker</span>
+        <span className="ff-logo-subtitle" style={{ fontSize: sizes.subtitle }}>{t('personalTracker')}</span>
       </div>
     </div>
   );

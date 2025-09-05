@@ -67,16 +67,32 @@ This guide provides essential requirements and patterns to follow when developin
   border: 1px solid #d1d5db;
 }
 
-/* ✅ MANDATORY - Checkbox styling */
+/* ✅ MANDATORY - Checkbox styling (COMPLETE IMPLEMENTATION) */
 input[type="checkbox"] {
   background-color: white;
   color: #1a202c;
+  accent-color: #1a202c;  /* Controls the checkmark color */
+  border: 1px solid #d1d5db;
 }
+
+/* ✅ MANDATORY - React inline checkbox styling */
+style={{
+  backgroundColor: 'white',
+  color: '#1a202c',
+  accentColor: '#1a202c',
+  border: '1px solid #d1d5db'
+}}
 
 /* ❌ AVOID - Colored backgrounds or light text */
 input {
   background-color: #f3f4f6;  /* Avoid grey backgrounds */
   color: #9ca3af;             /* Avoid light text */
+}
+
+/* ❌ AVOID - Incomplete checkbox styling (causes dark background) */
+input[type="checkbox"] {
+  background-color: white;  /* Not sufficient alone! */
+  color: '#1a202c';         /* Missing accent-color causes dark background */
 }
 ```
 
@@ -290,17 +306,87 @@ Before considering a feature complete:
 - [ ] Documentation is updated
 - [ ] Feature integrates properly with existing workflows
 
+## 📋 **Checkbox Implementation Best Practices**
+
+### Complete Checkbox Styling Requirements
+When implementing checkboxes, you MUST include ALL these style properties to prevent dark backgrounds:
+
+```jsx
+// ✅ COMPLETE - Prevents dark background issues
+<input
+  type="checkbox"
+  style={{
+    backgroundColor: 'white',     // White background
+    color: '#1a202c',            // Dark text color  
+    accentColor: '#1a202c',      // ⚠️ CRITICAL: Controls checkmark color
+    border: '1px solid #d1d5db'  // Visible border
+  }}
+/>
+
+// ❌ INCOMPLETE - Will cause dark background
+<input
+  type="checkbox"
+  style={{
+    backgroundColor: 'white',     // Not enough alone!
+    color: '#1a202c'             // Missing accentColor causes issues
+  }}
+/>
+```
+
+### Checkbox Layout Best Practices
+- **Vertical centering**: Use `verticalAlign: 'middle'` on table cells
+- **Text alignment**: Use `textAlign: 'center'` for checkbox columns
+- **Padding**: Use consistent 8px padding for checkbox cells
+- **Column width**: Set explicit width (e.g., 100px) for checkbox columns
+
+### Example Implementation
+```jsx
+// Table header checkbox
+<th style={{ width: '100px', textAlign: 'center' }}>
+  <div style={{ display: 'flex', alignItems: 'center', flexDirection: 'column', gap: '4px' }}>
+    <span>Select All</span>
+    <input
+      type="checkbox"
+      checked={allSelected}
+      onChange={handleSelectAll}
+      style={{
+        backgroundColor: 'white',
+        color: '#1a202c',
+        accentColor: '#1a202c',
+        border: '1px solid #d1d5db'
+      }}
+    />
+  </div>
+</th>
+
+// Table row checkbox
+<td style={{ textAlign: 'center', padding: '8px', verticalAlign: 'middle' }}>
+  <input
+    type="checkbox"
+    checked={isSelected}
+    onChange={handleSelect}
+    style={{
+      backgroundColor: 'white',
+      color: '#1a202c',
+      accentColor: '#1a202c',
+      border: '1px solid #d1d5db'
+    }}
+  />
+</td>
+```
+
 ## 🚨 **Critical Reminders**
 
 1. **No 24px padding anywhere in the UI**
 2. **No 24px margins anywhere in the UI - maximum margin is 12px**
 3. **All form fields must have white background with dark foreground**
-4. **Amount fields must show appropriate currency symbols**
-5. **All date fields must have calendar functionality**
-6. **Read ISSUES_TO_BE_AWARE_OF.md before starting**
-7. **Test timezone handling thoroughly**
-8. **Ensure database changes persist to file storage**
-9. **Write tests for all new functionality**
+4. **⚠️ NEW: All checkboxes must include accentColor property to prevent dark backgrounds**
+5. **Amount fields must show appropriate currency symbols**
+6. **All date fields must have calendar functionality**
+7. **Read ISSUES_TO_BE_AWARE_OF.md before starting**
+8. **Test timezone handling thoroughly**
+9. **Ensure database changes persist to file storage**
+10. **Write tests for all new functionality**
 
 ## 📞 **Questions or Issues**
 

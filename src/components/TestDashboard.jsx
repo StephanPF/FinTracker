@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { runTestSuite, runIndividualTest } from '../utils/testRunner';
 import testReferenceManager from '../utils/testReferenceManager';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const TestDashboard = () => {
+  const { t } = useLanguage();
   const [testResults, setTestResults] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
   const [runningTests, setRunningTests] = useState(new Set());
@@ -237,29 +239,29 @@ const TestDashboard = () => {
     }));
 
     // Format for Claude Code analysis
-    const formattedOutput = `## Failed Tests Analysis Request
+    const formattedOutput = `## ${t('failedTestsAnalysisRequest')}
 
-**Context**: ${failedTests.length} failed tests extracted from Test Dashboard
-**Filters Applied**: Category="${selectedCategory || 'All'}", Suite="${selectedSuite || 'All'}", Failed Only=${showFailedOnly}
+**${t('context')}**: ${failedTests.length} failed tests extracted from Test Dashboard
+**${t('filtersApplied')}**: ${t('category')}="${selectedCategory || t('all')}", Suite="${selectedSuite || t('all')}", ${t('failedOnly')}=${showFailedOnly}
 
-### Failed Tests Data:
+### ${t('failedTestsData')}:
 
 ${extractedData.map(test => `
 **${test.testRef}: ${test.suite} - ${test.name}**
-- Test ID: ${test.testId}
-- Description: ${test.description}
-- Expected: ${test.expectedBehavior}
-- Error: ${test.error || 'No error message'}
-- Last Run: ${test.lastRun ? new Date(test.lastRun).toLocaleString() : 'Never'}
-- Duration: ${test.duration ? test.duration + 'ms' : 'N/A'}
+- ${t('testId')}: ${test.testId}
+- ${t('description')}: ${test.description}
+- ${t('expected')}: ${test.expectedBehavior}
+- ${t('error')}: ${test.error || t('noErrorMessage')}
+- ${t('lastRun')}: ${test.lastRun ? new Date(test.lastRun).toLocaleString() : t('never')}
+- ${t('duration')}: ${test.duration ? test.duration + 'ms' : t('na')}
 `).join('\n')}
 
-### Summary:
-- Total Failed: ${failedTests.length}
-- Most Common Errors: ${getMostCommonErrors(extractedData)}
-- Test Suites Affected: ${[...new Set(extractedData.map(t => t.suite))].join(', ')}
+### ${t('summary')}:
+- ${t('totalFailed')}: ${failedTests.length}
+- ${t('mostCommonErrors')}: ${getMostCommonErrors(extractedData)}
+- ${t('testSuitesAffected')}: ${[...new Set(extractedData.map(t => t.suite))].join(', ')}
 
-Please analyze these failures and provide fixes for the most critical issues.`;
+${t('pleaseAnalyze')}`;
 
     return formattedOutput;
   };
@@ -278,7 +280,7 @@ Please analyze these failures and provide fixes for the most critical issues.`;
       .sort(([,a], [,b]) => b - a)
       .slice(0, 3)
       .map(([error, count]) => `${error}(${count})`)
-      .join(', ') || 'Various';
+      .join(', ') || t('various');
   };
 
   // Copy to clipboard and show notification
@@ -287,7 +289,7 @@ Please analyze these failures and provide fixes for the most critical issues.`;
     
     try {
       await navigator.clipboard.writeText(data);
-      alert(`Copied ${filteredTests.filter(t => t.status === 'failed').length} failed tests to clipboard!\n\nYou can now paste this data to Claude Code for analysis.`);
+      alert(`${t('copiedFailedTests', { count: filteredTests.filter(t => t.status === 'failed').length })}\n\n${t('pasteToClaudeCode')}`);
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       const textArea = document.createElement('textarea');
@@ -296,30 +298,30 @@ Please analyze these failures and provide fixes for the most critical issues.`;
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      alert(`Copied ${filteredTests.filter(t => t.status === 'failed').length} failed tests to clipboard!\n\nYou can now paste this data to Claude Code for analysis.`);
+      alert(`${t('copiedFailedTests', { count: filteredTests.filter(t => t.status === 'failed').length })}\n\n${t('pasteToClaudeCode')}`);
     }
   };
 
   return (
     <div className="test-dashboard">
       <div className="test-header">
-        <h1>Test Dashboard</h1>
+        <h1>{t('testDashboard')}</h1>
         <div className="test-summary">
           <div className="summary-stat">
             <span className="stat-number">{totalTests}</span>
-            <span className="stat-label">Total Tests</span>
+            <span className="stat-label">{t('totalTests')}</span>
           </div>
           <div className="summary-stat passed">
             <span className="stat-number">{passedTests}</span>
-            <span className="stat-label">Passed</span>
+            <span className="stat-label">{t('passed')}</span>
           </div>
           <div className="summary-stat failed">
             <span className="stat-number">{failedTests}</span>
-            <span className="stat-label">Failed</span>
+            <span className="stat-label">{t('failed')}</span>
           </div>
           <div className="summary-stat running">
             <span className="stat-number">{runningTestsCount}</span>
-            <span className="stat-label">Running</span>
+            <span className="stat-label">{t('running')}</span>
           </div>
         </div>
         <div className="test-actions">
@@ -327,30 +329,30 @@ Please analyze these failures and provide fixes for the most critical issues.`;
             onClick={() => setShowFailedOnly(!showFailedOnly)}
             className={`btn-filter ${showFailedOnly ? 'active' : ''}`}
           >
-            {showFailedOnly ? 'Show All Tests' : 'Show Failed Only'}
+            {showFailedOnly ? t('showAllTests') : t('showFailedOnly')}
           </button>
           <button
             onClick={copyFailedTestsToClipboard}
             disabled={filteredTests.filter(t => t.status === 'failed').length === 0}
             className="btn-secondary"
-            title="Copy failed test details to clipboard for Claude Code analysis"
+            title={t('copyFailedTestsToClipboard')}
           >
-            📋 Export Failed ({filteredTests.filter(t => t.status === 'failed').length})
+            📋 {t('exportFailed')} ({filteredTests.filter(t => t.status === 'failed').length})
           </button>
           <button 
             onClick={refreshTestList} 
             disabled={isRunning || isRefreshing}
             className="btn-secondary"
-            title="Refresh test list without running tests"
+            title={t('refreshList')}
           >
-            {isRefreshing ? 'Refreshing...' : '🔄 Refresh List'}
+            {isRefreshing ? t('refreshing') : '🔄 ' + t('refreshList')}
           </button>
           <button 
             onClick={runAllTests} 
             disabled={isRunning}
             className="btn-primary"
           >
-            {isRunning ? 'Running All Tests...' : 'Run All Tests'}
+            {isRunning ? t('runningAllTests') : t('runAllTests')}
           </button>
         </div>
       </div>
@@ -363,12 +365,12 @@ Please analyze these failures and provide fixes for the most critical issues.`;
             value={selectedCategory}
             onChange={(e) => handleCategoryChange(e.target.value)}
           >
-            <option value="">All Categories ({totalTests} tests)</option>
+            <option value="">{t('allCategories')} ({totalTests} {t('tests')})</option>
             {uniqueCategories.map(category => {
               const categoryTestCount = testResults.filter(test => getHighLevelCategory(test.suite) === category).length;
               return (
                 <option key={category} value={category}>
-                  {category} ({categoryTestCount} tests)
+                  {category} ({categoryTestCount} {t('tests')})
                 </option>
               );
             })}
@@ -383,16 +385,16 @@ Please analyze these failures and provide fixes for the most critical issues.`;
           >
             <option value="">
               {selectedCategory 
-                ? `All ${selectedCategory} Suites` 
-                : `All Suites`} ({selectedCategory 
+                ? `${t('allSuites')} ${selectedCategory}` 
+                : t('allSuites')} ({selectedCategory 
                   ? testResults.filter(test => getHighLevelCategory(test.suite) === selectedCategory).length
-                  : totalTests} tests)
+                  : totalTests} {t('tests')})
             </option>
             {uniqueSuites.map(suite => {
               const suiteTestCount = testResults.filter(test => test.suite === suite).length;
               return (
                 <option key={suite} value={suite}>
-                  {suite} ({suiteTestCount} tests)
+                  {suite} ({suiteTestCount} {t('tests')})
                 </option>
               );
             })}
@@ -404,15 +406,15 @@ Please analyze these failures and provide fixes for the most critical issues.`;
         <table className="tests-table">
           <thead>
             <tr>
-              <th>Ref</th>
-              <th>Status</th>
-              <th>Suite</th>
-              <th>Test Name</th>
-              <th>Description</th>
-              <th>Expected</th>
-              <th>Duration</th>
-              <th>Last Run</th>
-              <th>Actions</th>
+              <th>Réf</th>
+              <th>{t('status')}</th>
+              <th>{t('suite')}</th>
+              <th>{t('testName')}</th>
+              <th>{t('description')}</th>
+              <th>{t('expected')}</th>
+              <th>{t('duration')}</th>
+              <th>{t('lastRun')}</th>
+              <th>{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -423,8 +425,8 @@ Please analyze these failures and provide fixes for the most critical issues.`;
               return (
                 <tr key={test.id} className={`test-row ${currentStatus}`}>
                   <td className="ref-cell">
-                    <span className="test-ref" style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }} title={`Test ID: ${test.id}`}>
-                      {test.testRef || 'N/A'}
+                    <span className="test-ref" style={{ fontSize: '11px', color: '#888', fontFamily: 'monospace' }} title={`${t('testId')}: ${test.id}`}>
+                      {test.testRef || t('na')}
                     </span>
                   </td>
                   <td className="status-cell">
@@ -438,14 +440,14 @@ Please analyze these failures and provide fixes for the most critical issues.`;
                   </td>
                   <td className="suite-cell">
                     <div className="test-suite-name" title={test.suite}>
-                      {test.suite ? test.suite.replace('RelationalDatabase - ', '').replace('ExchangeRateService - ', '') : 'Unknown'}
+                      {test.suite ? test.suite.replace('RelationalDatabase - ', '').replace('ExchangeRateService - ', '') : t('unknown')}
                     </div>
                   </td>
                   <td className="test-name-cell">
                     <div className="test-name">{test.name}</div>
                     {test.error && (
                       <div className="test-error-inline" title={formatError(test.error)}>
-                        Error: {formatError(test.error).substring(0, 150)}
+                        {t('error')}: {formatError(test.error).substring(0, 150)}
                         {formatError(test.error).length > 150 ? '...' : ''}
                       </div>
                     )}
@@ -471,7 +473,7 @@ Please analyze these failures and provide fixes for the most critical issues.`;
                       onClick={() => runSingleTest(test.id, test.name, test.testFunction)}
                       disabled={isRunning}
                       className="btn-run-test"
-                      title={isRunning ? 'Running...' : 'Run test'}
+                      title={isRunning ? t('running') : t('runTest')}
                     >
                       {isRunning ? '⏳' : '▶️'}
                     </button>

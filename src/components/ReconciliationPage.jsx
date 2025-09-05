@@ -3,10 +3,12 @@ import ReconciliationSetup from './ReconciliationSetup';
 import ReconciliationSummary from './ReconciliationSummary';
 import ReconciliationTransactionList from './ReconciliationTransactionList';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import './ReconciliationPage.css';
 
 const ReconciliationPage = () => {
   const { getUnreconciledTransactions, reconcileTransaction, unreconcileTransaction, accounts, currencies, numberFormatService } = useAccounting();
+  const { t } = useLanguage();
   
   // Helper function to get selected account with currency
   const getSelectedAccountWithCurrency = () => {

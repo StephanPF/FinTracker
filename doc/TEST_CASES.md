@@ -59,6 +59,24 @@ Your accounting application has comprehensive test coverage across three main te
   - **Error Handling** (1 test): Invalid transaction handling, data integrity
   - **Timezone Safety** (1 test): Timezone-safe date handling and timestamps
 
+## **9. Existing Reconciliations Tests** (`existingReconciliations.test.js`)
+- **Framework**: Browser-compatible with custom expect implementation
+- **Test Coverage**: 12+ comprehensive test cases covering Existing Reconciliations screen functionality:
+
+### **Existing Reconciliations Test Coverage:**
+  - **Screen Display** (1 test): Proper display of reconciled transactions with filters
+  - **Transaction Filtering** (2 tests): Filter by account, date range, reconciliation reference, amount range
+  - **Reconciliation Reference Filtering** (1 test): Dropdown with unique reconciliation references
+  - **Checkbox Selection** (2 tests): Individual transaction selection, select all/none functionality
+  - **Un-reconcile Validation** (2 tests): Button state management, selection count display
+  - **Un-reconcile Operations** (2 tests): Single transaction un-reconcile, bulk un-reconcile operations
+  - **Database Updates** (1 test): Proper removal of reconciliation references and timestamps
+  - **State Management** (1 test): Selection clearing when filters change
+  - **UI Responsiveness** (1 test): Button state updates and transaction count display
+  - **Navigation** (1 test): Back to reconciliation functionality
+  - **Error Handling** (1 test): Validation when no transactions selected
+  - **Date Format Integration** (1 test): Display dates according to user preferences
+
 ### **Import Transactions Test Coverage:**
   - **CSV Parsing** (2 tests): Field mapping, file format validation
   - **Date Processing** (2 tests): Multiple date formats, timezone-safe parsing
@@ -164,13 +182,14 @@ Your accounting application has comprehensive test coverage across three main te
 - Reference and reconciliation data handling
 
 ## **Test Coverage Statistics**:
-- **Total Test Cases**: 130+ individual test cases  
+- **Total Test Cases**: 142+ individual test cases  
 - **Data Management Sections Covered**: 9/9 (100%)
 - **Settings Sections Covered**: 4/4 (100%) - Date, Currency Format, Data, Import
 - **Transaction Form Features Covered**: 100% - All validation, creation, interactions, state management, complex logic
 - **Overview/Dashboard Features Covered**: 100% - Summary calculations, account filtering, currency breakdown, performance
 - **Import Transactions Features Covered**: 100% - CSV parsing, validation, processing rules, review queue, batch processing
 - **Reconciliation Features Covered**: 100% - Setup validation, transaction selection, balance calculations, database operations
+- **Existing Reconciliations Features Covered**: 100% - Un-reconcile operations, filtering, checkbox selection, state management
 - **Advanced Features Covered**: Investment, Transfer, Multi-Currency, References, Settings Integration, Form Validation, Overview Navigation, CSV Import, Processing Rules, Bank Reconciliation
 - **Referential Integrity Coverage**: 12 comprehensive tests for all data relationships
 - **Validation Types**: Data types, constraints, relationships, business rules, referential integrity, settings validation, form validation, overview calculations, import validation, reconciliation validation
@@ -443,4 +462,4 @@ The test suite now includes **comprehensive Reconciliation testing** covering al
 - ✅ Running total state updates
 - ✅ Multi-step reconciliation process state
 
-The test suite provides comprehensive coverage of all Data Management functionality, complete Settings management, **complete Transaction Form validation**, **complete Overview/Dashboard functionality**, **complete Import Transactions processing**, AND **complete Bank Reconciliation functionality** with proper validation, error handling, data integrity checks, **complete referential integrity protection**, settings validation, form validation, overview calculations, multi-currency support, CSV import processing, processing rules automation, bank reconciliation workflows, transaction selection management, balance calculations, and advanced feature testing including investment transactions, transfers, multi-currency operations, complex dual-transaction logic, account navigation, automated transaction classification, duplicate detection, reconciliation reference generation, bulk reconciliation operations, and full application configuration management.
+The test suite provides comprehensive coverage of all Data Management functionality, complete Settings management, **complete Transaction Form validation**, **complete Overview/Dashboard functionality**, **complete Import Transactions processing**, **complete Bank Reconciliation functionality**, AND **complete Existing Reconciliations functionality** with proper validation, error handling, data integrity checks, **complete referential integrity protection**, settings validation, form validation, overview calculations, multi-currency support, CSV import processing, processing rules automation, bank reconciliation workflows, transaction selection management, balance calculations, **un-reconcile operations**, **checkbox state management**, **bulk transaction processing**, and advanced feature testing including investment transactions, transfers, multi-currency operations, complex dual-transaction logic, account navigation, automated transaction classification, duplicate detection, reconciliation reference generation, bulk reconciliation operations, un-reconcile workflows, transaction filtering, and full application configuration management.

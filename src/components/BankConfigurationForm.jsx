@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import ProcessingRulesSection from './ProcessingRulesSection';
 import RuleCreationModal from './RuleCreationModal';
 import Papa from 'papaparse';
@@ -14,29 +15,31 @@ const PRESET_BANKS = [
   { name: 'Custom Configuration', type: 'Custom', csvFormat: 'Configure your own mapping' }
 ];
 
-const SYSTEM_FIELDS = [
-  { key: 'date', label: 'Date', required: true, description: 'Transaction date' },
-  { key: 'description', label: 'Description', required: true, description: 'Transaction description/memo' },
-  { key: 'amount', label: 'Amount', required: true, description: 'Transaction amount (signed)' },
-  { key: 'debit', label: 'Debit', required: false, description: 'Debit amount (separate column)' },
-  { key: 'credit', label: 'Credit', required: false, description: 'Credit amount (separate column)' },
-  { key: 'account', label: 'Account', required: false, description: 'Account number or name' },
-  { key: 'destinationAccountId', label: 'Destination Account', required: false, description: 'Destination account for transfers/investments' },
-  { key: 'destinationAmount', label: 'Destination Amount', required: false, description: 'Amount for destination account (investments)' },
-  { key: 'reference', label: 'Reference', required: false, description: 'Transaction ID/reference' },
-  { key: 'transactionType', label: 'Transaction Type', required: false, description: 'Transaction type (Income, Expenses, Transfer, etc.)' },
-  { key: 'transactionGroup', label: 'Transaction Group', required: false, description: 'Transaction group within the type' },
-  { key: 'category', label: 'Category', required: false, description: 'Transaction category (legacy)' },
-  { key: 'subcategoryId', label: 'Subcategory', required: false, description: 'Transaction subcategory' },
-  { key: 'payee', label: 'Payee', required: false, description: 'Payee name (for expenses/investments)' },
-  { key: 'payer', label: 'Payer', required: false, description: 'Payer name (for income/investments)' },
-  { key: 'tag', label: 'Tag', required: false, description: 'Transaction tag' },
-  { key: 'notes', label: 'Notes', required: false, description: 'Additional transaction notes' }
+const getSystemFields = (t) => [
+  { key: 'date', label: t('date'), required: true, description: t('transactionDate') },
+  { key: 'description', label: t('description'), required: true, description: t('transactionDescription') },
+  { key: 'amount', label: t('amount'), required: true, description: t('transactionAmount') },
+  { key: 'debit', label: t('debit'), required: false, description: t('debitAmount') },
+  { key: 'credit', label: t('credit'), required: false, description: t('creditAmount') },
+  { key: 'account', label: t('account'), required: false, description: t('accountNumber') },
+  { key: 'destinationAccountId', label: t('destinationAccount'), required: false, description: t('destinationAccountField') },
+  { key: 'destinationAmount', label: t('destinationAmount'), required: false, description: t('destinationAmountField') },
+  { key: 'reference', label: t('reference'), required: false, description: t('transactionReference') },
+  { key: 'transactionType', label: t('transactionType'), required: false, description: t('transactionTypeField') },
+  { key: 'transactionGroup', label: t('transactionGroup'), required: false, description: t('transactionGroupField') },
+  { key: 'category', label: t('category'), required: false, description: t('categoryField') },
+  { key: 'subcategoryId', label: t('subcategory'), required: false, description: t('subcategoryField') },
+  { key: 'payee', label: t('payee'), required: false, description: t('payeeField') },
+  { key: 'payer', label: t('payer'), required: false, description: t('payerField') },
+  { key: 'tag', label: t('tag'), required: false, description: t('tagField') },
+  { key: 'notes', label: t('notes'), required: false, description: t('notesField') }
 ];
 
 
 const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => {
   const { addProcessingRule, updateProcessingRule, getActiveCurrencies } = useAccounting();
+  const { t } = useLanguage();
+  const SYSTEM_FIELDS = getSystemFields(t);
   
   const [formData, setFormData] = useState(initialData || {
     name: '',
@@ -250,20 +253,20 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
   return (
     <div className="bank-configuration-form">
       <div className="form-header">
-        <h3>{isEditing ? 'Edit' : 'Add'} Bank Configuration</h3>
+        <h3>{isEditing ? t('editBankConfiguration') : t('addBankConfiguration')}</h3>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* Step 1: Choose Preset or Custom */}
         <div className="form-section">
-          <h4>Step 1: Choose Bank Type</h4>
+          <h4>{t('step1ChooseBankType')}</h4>
           <div className="preset-selection">
             <select 
               value={selectedPreset}
               onChange={(e) => handlePresetChange(e.target.value)}
               className="form-select"
             >
-              <option value="">Select a preset bank or choose custom</option>
+              <option value="">{t('selectPresetOrCustom')}</option>
               {PRESET_BANKS.map((bank) => (
                 <option key={bank.name} value={bank.name}>
                   {bank.name} ({bank.type})
@@ -275,27 +278,27 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
 
         {/* Step 2: Basic Information */}
         <div className="form-section">
-          <h4>Step 2: Basic Information</h4>
+          <h4>{t('step2BasicInformation')}</h4>
           <div className="form-grid">
             <div className="form-field">
-              <label htmlFor="bank-name">Bank Name *</label>
+              <label htmlFor="bank-name">{t('bankName')} *</label>
               <input
                 id="bank-name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter bank name"
+                placeholder={t('enterBankName')}
                 required
               />
             </div>
             <div className="form-field">
-              <label htmlFor="bank-type">Type</label>
+              <label htmlFor="bank-type">{t('type')}</label>
               <input
                 id="bank-type"
                 type="text"
                 value={formData.type}
                 onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                placeholder="e.g., Major US Bank, Credit Union"
+                placeholder={t('bankTypeExample')}
               />
             </div>
           </div>
@@ -303,8 +306,8 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
 
         {/* Step 3: CSV Sample */}
         <div className="form-section">
-          <h4>Step 3: CSV Sample</h4>
-          <p>Configure parsing settings and upload a sample CSV file</p>
+          <h4>{t('step3CsvSample')}</h4>
+          <p>{t('configureParsingSettings')}</p>
           
           <div className="csv-parsing-settings">
             <div className="form-checkboxes">
@@ -320,7 +323,7 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
             
             <div className="form-grid" style={{ marginTop: '15px' }}>
               <div className="form-field">
-                <label htmlFor="date-format">Date Format</label>
+                <label htmlFor="date-format">{t('dateFormat')}</label>
                 <select
                   id="date-format"
                   value={formData.settings.dateFormat}
@@ -335,7 +338,7 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
               </div>
 
               <div className="form-field">
-                <label htmlFor="currency">Default Currency</label>
+                <label htmlFor="currency">{t('defaultCurrency')}</label>
                 <select
                   id="currency"
                   value={formData.settings.currency}
@@ -350,29 +353,29 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
               </div>
 
               <div className="form-field">
-                <label htmlFor="delimiter">CSV Delimiter</label>
+                <label htmlFor="delimiter">{t('csvDelimiter')}</label>
                 <select
                   id="delimiter"
                   value={formData.settings.delimiter}
                   onChange={(e) => handleSettingChange('delimiter', e.target.value)}
                 >
-                  <option value=",">Comma (,)</option>
-                  <option value=";">Semicolon (;)</option>
-                  <option value="\t">Tab</option>
-                  <option value="|">Pipe (|)</option>
+                  <option value=",">{t('comma')}</option>
+                  <option value=";">{t('semicolon')}</option>
+                  <option value="\t">{t('tab')}</option>
+                  <option value="|">{t('pipe')}</option>
                 </select>
               </div>
 
               <div className="form-field">
-                <label htmlFor="amount-handling">Amount Handling</label>
+                <label htmlFor="amount-handling">{t('amountHandling')}</label>
                 <select
                   id="amount-handling"
                   value={formData.settings.amountHandling}
                   onChange={(e) => handleSettingChange('amountHandling', e.target.value)}
                   style={{ minWidth: '200px' }}
                 >
-                  <option value="signed">Single signed amount column</option>
-                  <option value="separate">Separate debit/credit columns</option>
+                  <option value="signed">{t('singleSignedColumn')}</option>
+                  <option value="separate">{t('separateDebitCredit')}</option>
                 </select>
               </div>
             </div>
@@ -397,10 +400,10 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
 
           {csvSample && (
             <div className="csv-preview">
-              <h5>CSV Preview:</h5>
+              <h5>{t('csvPreview')}</h5>
               <div className="csv-sample">{csvSample}</div>
               <div className="detected-columns">
-                <strong>Detected columns:</strong>
+                <strong>{t('detectedColumns')}</strong>
                 <div className="column-tags">
                   {csvColumns.map((col, index) => (
                     <span key={index} className="column-tag">
@@ -415,7 +418,7 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
 
         {/* Step 4: Field Mapping */}
         <div className="form-section">
-          <h4>Step 4: Field Mapping</h4>
+          <h4>{t('step4FieldMapping')}</h4>
           
           {/* Mapping Progress Summary */}
           {csvColumns.length > 0 && (
@@ -433,11 +436,11 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
                 return (
                   <div className="summary-stats">
                     <div className="stat-item">
-                      <span className="stat-label">Total Mapped:</span>
+                      <span className="stat-label">{t('totalMapped')}</span>
                       <span className="stat-value">{mappedFields}/{totalFields}</span>
                     </div>
                     <div className="stat-item">
-                      <span className="stat-label">Required Mapped:</span>
+                      <span className="stat-label">{t('requiredMapped')}</span>
                       <span className={`stat-value ${mappedRequired === requiredFields ? 'complete' : 'incomplete'}`}>
                         {mappedRequired}/{requiredFields}
                       </span>
@@ -474,7 +477,7 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
                     <p className="field-description">{field.description}</p>
                     {isMapped && (
                       <p className="mapping-info">
-                        → Mapped to: <strong>"{formData.fieldMapping[field.key]}"</strong>
+                        → {t('mappedTo')} <strong>"{formData.fieldMapping[field.key]}"</strong>
                       </p>
                     )}
                   </div>
@@ -483,7 +486,7 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
                     onChange={(e) => handleFieldMapping(field.key, e.target.value)}
                     className={`mapping-select ${isMapped ? 'mapped-select' : 'unmapped-select'}`}
                   >
-                    <option value="">Not mapped</option>
+                    <option value="">{t('notMapped')}</option>
                     {csvColumns.map((col, index) => (
                       <option key={index} value={col}>
                         {col || `Column ${index + 1}`}
@@ -510,10 +513,10 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
         {/* Form Actions */}
         <div className="form-actions">
           <button type="button" className="btn btn-secondary" onClick={onCancel}>
-            Cancel
+            {t('cancel')}
           </button>
           <button type="submit" className="btn btn-primary">
-            {isEditing ? 'Update' : 'Save'} Configuration
+            {isEditing ? t('updateConfiguration') : t('saveConfiguration')}
           </button>
         </div>
       </form>

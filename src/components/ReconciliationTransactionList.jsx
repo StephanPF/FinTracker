@@ -420,7 +420,7 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
               placeholder="Filter by tag"
               getOptionLabel={(option) => option.name}
               getOptionValue={(option) => option.id}
-              className="filter-select"
+              className="filter-input"
             />
           </div>
 

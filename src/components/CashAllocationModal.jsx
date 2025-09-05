@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import './CashAllocationModal.css';
@@ -18,6 +19,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
     getCashWithdrawalAllocations,
     deleteCashAllocationsByTransaction
   } = useAccounting();
+  const { t } = useLanguage();
 
   const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -208,7 +210,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
     const originalAmount = Math.abs(transaction.amount);
     
     if (totalAllocated > originalAmount) {
-      setError(`Total allocated amount (${formatCurrency(totalAllocated)}) exceeds withdrawal amount (${formatCurrency(originalAmount)})`);
+      setError(t('totalAllocatedExceeds').replace('{allocated}', formatCurrency(totalAllocated)).replace('{withdrawal}', formatCurrency(originalAmount)));
       return false;
     }
     
@@ -218,7 +220,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
     );
     
     if (incompleteAllocations.length > 0) {
-      setError('Please complete all allocation rows with amounts');
+      setError(t('completeAllocationRows'));
       return false;
     }
     
@@ -292,7 +294,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
           transactionGroupId: transactionGroupId, // Get from parent transaction's subcategory
           subcategoryId: transaction.subcategoryId, // Inherit from parent transaction
           amount: -Math.abs(unallocatedAmount), // Negative for expenses
-          description: 'Automatic allocation for unallocated cash',
+          description: t('automaticAllocation'),
           dateSpent: transaction.date, // Use parent transaction date
           isAutomatic: true // Flag as automatic
         };
@@ -320,7 +322,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
     <div className="modal-overlay">
       <div className="cash-allocation-modal">
         <div className="modal-header">
-          <h2>Allocate Cash Withdrawal</h2>
+          <h2>{t('allocateCashWithdrawal')}</h2>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
         
@@ -328,15 +330,15 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
           {/* Withdrawal Summary */}
           <div className="withdrawal-summary">
             <div className="summary-row">
-              <span className="label">Total Withdrawal:</span>
+              <span className="label">{t('totalWithdrawal')}</span>
               <span className="amount total">{formatCurrency(Math.abs(transaction.amount))}</span>
             </div>
             <div className="summary-row">
-              <span className="label">Total Allocated:</span>
+              <span className="label">{t('totalAllocated')}</span>
               <span className="amount allocated">{formatCurrency(getTotalAllocated())}</span>
             </div>
             <div className="summary-row">
-              <span className="label">Unallocated:</span>
+              <span className="label">{t('unallocated')}</span>
               <span className={`amount unallocated ${getUnallocatedAmount() < 0 ? 'negative' : ''}`}>
                 {formatCurrency(getUnallocatedAmount())}
               </span>
@@ -347,7 +349,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
 
           {/* Allocation Rows */}
           <div className="allocations-container">
-            <h3>Allocations</h3>
+            <h3>{t('allocations')}</h3>
             {allocations.map((allocation, index) => (
               <div key={index} className="allocation-row">
                 <div className="allocation-fields">
@@ -368,13 +370,13 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
                       }}
                       dateFormat={datePickerFormat}
                       className="date-picker-input"
-                      placeholderText="When"
+                      placeholderText={t('when')}
                       showPopperArrow={false}
                     />
                   </div>
 
                   <div className="field-group transaction-category">
-                    <label>Transaction Category</label>
+                    <label>{t('transactionCategory')}</label>
                     <select
                       value={allocation.categoryId}
                       onChange={(e) => updateAllocation(index, 'categoryId', e.target.value)}
@@ -387,7 +389,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
                         border: '1px solid #dee2e6'
                       }}
                     >
-                      <option value="">Select Category</option>
+                      <option value="">{t('selectCategory')}</option>
                       {categories.filter(cat => cat.id !== 'CAT_003').map(category => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -402,7 +404,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
                       onChange={(e) => updateAllocation(index, 'transactionGroupId', e.target.value)}
                       disabled={!allocation.categoryId}
                     >
-                      <option value="">Select Transaction Group</option>
+                      <option value="">{t('selectTransactionGroup')}</option>
                       {getAvailableGroups(allocation.categoryId).map(group => (
                         <option key={group.id} value={group.id}>
                           {group.name}
@@ -417,7 +419,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
                       onChange={(e) => updateAllocation(index, 'subcategoryId', e.target.value)}
                       disabled={!allocation.transactionGroupId}
                     >
-                      <option value="">Select Category</option>
+                      <option value="">{t('selectSubcategory')}</option>
                       {getAvailableSubcategories(allocation.transactionGroupId).map(sub => (
                         <option key={sub.id} value={sub.id}>
                           {sub.name}
@@ -442,7 +444,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
                       type="text"
                       value={allocation.description}
                       onChange={(e) => updateAllocation(index, 'description', e.target.value)}
-                      placeholder="What was this for?"
+                      placeholder={t('whatWasThisFor')}
                     />
                   </div>
 
@@ -466,7 +468,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
             className="add-allocation-btn"
             onClick={addNewAllocationRow}
           >
-            + Add Allocation
+            {t('addAllocation')}
           </button>
         </div>
 
@@ -477,7 +479,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
             onClick={onClose}
             disabled={loading}
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             type="button"
@@ -485,7 +487,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
             onClick={handleSave}
             disabled={loading || allocations.length === 0}
           >
-            {loading ? 'Saving...' : 'Save Allocations'}
+            {loading ? t('saving') : t('saveAllocations')}
           </button>
         </div>
       </div>

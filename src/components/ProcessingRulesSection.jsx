@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAccounting } from '../contexts/AccountingContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import RuleItem from './RuleItem';
 import './ProcessingRulesSection.css';
 
@@ -16,6 +17,7 @@ const ProcessingRulesSection = ({
     toggleProcessingRuleActive,
     updateProcessingRuleOrder 
   } = useAccounting();
+  const { t } = useLanguage();
   
   const [loading, setLoading] = useState(false);
   
@@ -43,7 +45,7 @@ const ProcessingRulesSection = ({
 
 
   const handleDeleteRule = async (ruleId) => {
-    if (!window.confirm('Are you sure you want to delete this rule?')) {
+    if (!window.confirm(t('areYouSureDelete'))) {
       return;
     }
     
@@ -74,44 +76,44 @@ const ProcessingRulesSection = ({
     <div className="processing-rules-section">
       <div className="rules-header">
         <div className="rules-title">
-          <h4>Step 5: Processing Rules (Optional)</h4>
-          <p>Create rules to automatically process transactions during import</p>
+          <h4>Step 5: {t('processingRulesOptional')}</h4>
+          <p>{t('createRulesToProcess')}</p>
         </div>
         <button 
           type="button"
           className="btn btn-primary btn-small"
           onClick={() => onCreateRule && onCreateRule()}
           disabled={!bankConfigId}
-          title={!bankConfigId ? "Save the bank configuration first to add rules" : "Add a new processing rule"}
+          title={!bankConfigId ? t('saveConfigFirst') : t('addNewProcessingRule')}
         >
-          + Add New Rule
+          + {t('addNewRule')}
         </button>
       </div>
 
       {loading && (
         <div className="rules-loading">
           <div className="loading-spinner"></div>
-          <span>Loading rules...</span>
+          <span>{t('loadingRules')}</span>
         </div>
       )}
 
       {!loading && rules.length === 0 && (
         <div className="rules-empty">
           <div className="empty-icon">📝</div>
-          <h5>No processing rules yet</h5>
+          <h5>{t('noProcessingRulesYet')}</h5>
           {bankConfigId ? (
             <>
-              <p>Add rules to automatically categorize transactions, transform field values, or filter rows during import.</p>
+              <p>{t('addRulesToAutomatically')}</p>
               <button 
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => onCreateRule && onCreateRule()}
               >
-                Create Your First Rule
+                {t('createYourFirstRule')}
               </button>
             </>
           ) : (
-            <p>Save the bank configuration first to add processing rules.</p>
+            <p>{t('saveConfigFirstToAdd')}</p>
           )}
         </div>
       )}
@@ -120,15 +122,15 @@ const ProcessingRulesSection = ({
         <div className="rules-list">
           <div className="rules-summary">
             <div className="summary-stat">
-              <span className="stat-label">Total Rules:</span>
+              <span className="stat-label">{t('totalRules')}</span>
               <span className="stat-value">{rules.length}</span>
             </div>
             <div className="summary-stat">
-              <span className="stat-label">Active:</span>
+              <span className="stat-label">{t('active')}</span>
               <span className="stat-value active">{rules.filter(r => r.active).length}</span>
             </div>
             <div className="summary-stat">
-              <span className="stat-label">Inactive:</span>
+              <span className="stat-label">{t('inactive')}</span>
               <span className="stat-value inactive">{rules.filter(r => !r.active).length}</span>
             </div>
           </div>
