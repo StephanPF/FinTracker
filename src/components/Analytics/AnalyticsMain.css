@@ -1,0 +1,353 @@
+/* Analytics Main Component Styles */
+/* Follows BUILD_NEW_FEATURE_GUIDE.md - Compact design with max 12px padding/margins */
+
+.analytics-main {
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+/* Header Section */
+.analytics-header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+
+/* View Toggle */
+.analytics-view-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.view-toggle-btn {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #1a202c;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-toggle-btn:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.view-toggle-btn.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.view-toggle-btn.user-guide-btn {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.view-toggle-btn.user-guide-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #7c3aed;
+}
+
+.view-toggle-btn.user-guide-btn.active {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+  color: white;
+}
+  border-color: #3b82f6;
+}
+
+/* Budget Indicator */
+.budget-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: #f0f9ff;
+  border-radius: 6px;
+  border-left: 4px solid #3b82f6;
+  margin-bottom: 8px;
+}
+
+.budget-label {
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.budget-name {
+  font-size: 0.9rem;
+  color: #1a202c;
+  font-weight: 600;
+}
+
+.budget-status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.budget-status.status-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.budget-status.status-inactive {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.budget-status.status-draft {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* No Budget Warning */
+.no-budget-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: #fffbeb;
+  border-radius: 6px;
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 8px;
+}
+
+.warning-icon {
+  font-size: 1rem;
+}
+
+.warning-text {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #92400e;
+}
+
+.btn-setup-budget {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-setup-budget:hover {
+  background-color: #d97706;
+}
+
+/* Content Area */
+.analytics-content {
+  padding: 0 12px;
+}
+
+/* Loading and Error States */
+.analytics-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  min-height: 200px;
+}
+
+.analytics-loading p {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.analytics-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  min-height: 200px;
+  justify-content: center;
+}
+
+.analytics-error p {
+  color: #dc2626;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.btn-retry {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-retry:hover {
+  background-color: #2563eb;
+}
+
+/* View Placeholders */
+.analytics-views {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.expense-view-placeholder,
+.cashflow-view-placeholder {
+  text-align: center;
+  padding: 12px;
+}
+
+.expense-view-placeholder h2,
+.cashflow-view-placeholder h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  color: #1a202c;
+}
+
+.expense-view-placeholder p,
+.cashflow-view-placeholder p {
+  margin: 0 0 8px 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.data-preview {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.data-preview h3 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: #1a202c;
+}
+
+.data-preview p {
+  margin: 4px 0;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .analytics-header {
+    padding: 8px;
+  }
+  
+  .analytics-title {
+    font-size: 1.25rem;
+  }
+  
+  .analytics-view-toggle {
+    flex-direction: column;
+  }
+  
+  .budget-indicator,
+  .no-budget-warning {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .analytics-content {
+    padding: 0 8px;
+  }
+  
+  .analytics-views {
+    padding: 8px;
+  }
+}
+
+/* Form Controls (for future shared components) */
+.form-control {
+  background-color: white;
+  color: #1a202c;
+  border: 1px solid #d1d5db;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+/* Button Variants */
+.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.btn-primary:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: #1a202c;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-filter {
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-filter:hover {
+  background: #e5e7eb;
+}
+
+.btn-filter.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}

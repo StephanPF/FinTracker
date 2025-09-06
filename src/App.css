@@ -6104,6 +6104,12 @@ body {
   font-weight: 500;
 }
 
+.menu-separator {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
+}
+
 
 
 /* Responsive adjustments */

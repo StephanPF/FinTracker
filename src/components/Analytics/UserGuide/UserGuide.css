@@ -1,0 +1,606 @@
+/* User Guide Component Styles - Following BUILD_NEW_FEATURE_GUIDE.md */
+/* Compact design with max 12px padding/margins */
+
+.user-guide {
+  background: #f9fafb;
+  color: #1a202c;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.5;
+}
+
+/* Header - Compact design */
+.user-guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.header-content .guide-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #1a202c;
+}
+
+.header-content .guide-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+  max-width: 500px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-expand-all,
+.btn-collapse-all {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #1a202c;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-expand-all:hover,
+.btn-collapse-all:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Table of Contents - Compact */
+.table-of-contents {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 0 12px 12px 12px;
+}
+
+.table-of-contents h3 {
+  color: #1a202c;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 4px;
+}
+
+.toc-list li {
+  margin: 0;
+}
+
+.toc-list a {
+  display: block;
+  color: #4b5563;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  border-left: 3px solid transparent;
+}
+
+.toc-list a:hover {
+  background: #f3f4f6;
+  color: #1a202c;
+  border-left-color: #3b82f6;
+}
+
+/* Guide Content - Compact */
+.guide-content {
+  padding: 0 12px;
+}
+
+.guide-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+/* Section Headers - Compact */
+.section-header {
+  background: #f9fafb;
+  padding: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+
+.section-header:hover {
+  background: #f3f4f6;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #1a202c;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expand-icon {
+  color: #3b82f6;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+  min-width: 12px;
+}
+
+.expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+/* Section Content - Compact */
+.section-content {
+  padding: 12px;
+}
+
+.section-content p {
+  color: #4b5563;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.section-content h4 {
+  color: #1a202c;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 12px 0 8px 0;
+}
+
+.section-content ul {
+  color: #4b5563;
+  padding-left: 12px;
+  margin-bottom: 8px;
+}
+
+.section-content li {
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.section-content strong {
+  color: #1a202c;
+  font-weight: 600;
+}
+
+/* Overview Cards - Compact Grid */
+.overview-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.overview-card {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.overview-card.expense-card {
+  border-left: 3px solid #ef4444;
+}
+
+.overview-card.cashflow-card {
+  border-left: 3px solid #10b981;
+}
+
+.card-icon {
+  font-size: 1.5rem;
+  min-width: 32px;
+}
+
+.card-content h4 {
+  margin: 0 0 4px 0;
+  color: #1a202c;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.card-content p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Key Concepts - Compact */
+.key-concepts {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+}
+
+.key-concepts h4 {
+  color: #1a202c;
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+/* Component Guide - Compact */
+.component-guide {
+  margin: 8px 0;
+}
+
+.component-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.component-item h4 {
+  color: #1a202c;
+  font-size: 1rem;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.feature-list ul {
+  margin: 8px 0 0 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.feature-list li {
+  position: relative;
+  padding-left: 12px;
+  margin-bottom: 4px;
+  color: #4b5563;
+  font-size: 0.85rem;
+}
+
+.feature-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Usage Tips - Compact */
+.usage-tips {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+}
+
+.usage-tips h4 {
+  color: #065f46;
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.usage-tips ul {
+  margin: 8px 0 0 0;
+}
+
+.usage-tips li {
+  color: #065f46;
+  font-size: 0.85rem;
+}
+
+/* View Modes - Compact */
+.view-modes {
+  margin: 8px 0;
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.mode-tab {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.mode-tab strong {
+  color: #3b82f6;
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.mode-tab p {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Navigation Guide - Compact */
+.navigation-guide,
+.troubleshooting-guide {
+  margin: 8px 0;
+}
+
+.nav-item,
+.trouble-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.nav-item h4,
+.trouble-item h4 {
+  color: #1a202c;
+  font-size: 1rem;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Advanced Features Grid - Compact */
+.advanced-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.feature-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.feature-icon {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.feature-card h4 {
+  color: #1a202c;
+  font-size: 1rem;
+  margin: 0 0 8px 0;
+}
+
+.feature-card p {
+  color: #4b5563;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.feature-card ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.feature-card li {
+  position: relative;
+  padding-left: 12px;
+  margin-bottom: 4px;
+  color: #4b5563;
+  font-size: 0.8rem;
+}
+
+.feature-card li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+/* Support Info - Compact */
+.support-info {
+  background: #fffbeb;
+  border: 1px solid #fbbf24;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+}
+
+.support-info h4 {
+  color: #92400e;
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.support-info p,
+.support-info li {
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+/* Footer - Compact */
+.user-guide-footer {
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footer-content p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.btn-navigate {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #1a202c;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.btn-navigate:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #1a202c;
+  text-decoration: none;
+}
+
+/* Responsive Design - Compact */
+@media (max-width: 1024px) {
+  .user-guide-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .header-actions {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .toc-list {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-cards,
+  .advanced-features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-tabs {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-guide-header,
+  .table-of-contents,
+  .guide-content {
+    margin: 0 8px 8px 8px;
+    padding: 8px;
+  }
+
+  .section-content {
+    padding: 8px;
+  }
+
+  .overview-cards {
+    gap: 4px;
+  }
+
+  .overview-card {
+    padding: 8px;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-content .guide-title {
+    font-size: 1.25rem;
+  }
+
+  .user-guide-header,
+  .table-of-contents,
+  .guide-content {
+    margin: 0 4px 8px 4px;
+    padding: 8px;
+  }
+
+  .section-header {
+    padding: 8px;
+  }
+
+  .section-content {
+    padding: 8px;
+  }
+
+  .overview-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card-icon {
+    min-width: auto;
+  }
+}
+
+/* Print Styles - Compact */
+@media print {
+  .user-guide {
+    background: white;
+  }
+
+  .header-actions {
+    display: none;
+  }
+
+  .guide-section {
+    page-break-inside: avoid;
+  }
+
+  .expand-icon {
+    display: none;
+  }
+
+  .section-content {
+    display: block !important;
+  }
+}
