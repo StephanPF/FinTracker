@@ -8,9 +8,7 @@ import DatabaseSetup from './DatabaseSetup';
 import DataManagement from './DataManagement';
 import TodoPage from './TodoPage';
 import HelpPanel from './HelpPanel';
-import Architecture from './Architecture';
 import Test from './Test';
-import StressTest from './StressTest';
 import Settings from './Settings';
 import ImportTransactions from './ImportTransactions';
 import ReconciliationPage from './ReconciliationPage';
@@ -26,7 +24,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState(() => {
     // Initialize activeTab from URL hash first, then localStorage as fallback
     const hash = window.location.hash.slice(1);
-    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
+    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'todo', 'test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
     
     if (validTabs.includes(hash)) {
       return hash;
@@ -87,7 +85,7 @@ const Dashboard = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
-      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'todo', 'architecture', 'test', 'stress-test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
+      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'todo', 'test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
         localStorage.setItem('activeTab', hash);
@@ -220,14 +218,6 @@ const Dashboard = () => {
                   <span className="menu-icon">🧪</span>
                   <span className="menu-text">{t('testDashboard')}</span>
                 </div>
-                <div className="menu-item" onClick={() => handleMenuNavigation('architecture')}>
-                  <span className="menu-icon">🏗️</span>
-                  <span className="menu-text">{t('architecture')}</span>
-                </div>
-                <div className="menu-item" onClick={() => handleMenuNavigation('stress-test')}>
-                  <span className="menu-icon">🧪</span>
-                  <span className="menu-text">{t('stressTest')}</span>
-                </div>
                 <div className="menu-separator"></div>
                 <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
                   <span className="menu-icon">📊</span>
@@ -273,19 +263,9 @@ const Dashboard = () => {
             <TodoPage />
           </div>
         )}
-        {activeTab === 'architecture' && (
-          <div className="architecture-tab">
-            <Architecture />
-          </div>
-        )}
         {activeTab === 'test' && (
           <div className="test-tab">
             <Test />
-          </div>
-        )}
-        {activeTab === 'stress-test' && (
-          <div className="stress-test-tab">
-            <StressTest />
           </div>
         )}
         {activeTab === 'test-dashboard' && (

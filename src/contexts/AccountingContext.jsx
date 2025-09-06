@@ -192,12 +192,12 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
-  const createNewDatabase = async () => {
+  const createNewDatabase = async (preset = 'default') => {
     try {
       const success = await fileStorage.createNewDatabase();
       if (!success) return false;
       
-      database.createNewDatabase(language);
+      database.createNewDatabase(language, preset);
       // Set the database language to current UI language
       database.setDatabaseLanguage(language);
       updateStateFromDatabase();

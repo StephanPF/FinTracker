@@ -122,7 +122,7 @@ class RelationalDatabase {
     }
   }
 
-  createNewDatabase(language = 'en') {
+  createNewDatabase(language = 'en', preset = 'default') {
     // Generate language-specific default data
     const defaultData = this.generateDefaultData(language);
     
@@ -132,8 +132,8 @@ class RelationalDatabase {
       tags: defaultData.tags,
       todos: defaultData.todos,
       transaction_types: this.generateCategories(language),
-      transaction_groups: this.generateTransactionGroups(language),
-      subcategories: this.generateSubcategories(language),
+      transaction_groups: this.generateTransactionGroups(language, preset),
+      subcategories: this.generateSubcategories(language, preset),
       currencies: this.generateCurrencies(),
       exchange_rates: this.generateExchangeRates(),
       currency_settings: this.generateCurrencySettings(),
@@ -645,8 +645,8 @@ class RelationalDatabase {
         }
         break;
       case 'Investment':
-      case 'Investment - SELL':
-      case 'Investment - BUY':
+      case 'Investment Sale':
+      case 'Investment Purchase':
         account.balance = (parseFloat(account.balance) || 0) - transaction.amount;
         break;
       default:
@@ -1956,7 +1956,11 @@ class RelationalDatabase {
     }
   }
 
-  generateTransactionGroups(language) {
+  generateTransactionGroups(language, preset = 'default') {
+    if (preset === 'nomadic') {
+      return language === 'fr' ? this.generateNomadicFrenchTransactionGroups() : this.generateNomadicEnglishTransactionGroups();
+    }
+    
     if (language === 'fr') {
       return this.generateFrenchTransactionGroups();
     } else {
@@ -1964,7 +1968,11 @@ class RelationalDatabase {
     }
   }
 
-  generateSubcategories(language) {
+  generateSubcategories(language, preset = 'default') {
+    if (preset === 'nomadic') {
+      return language === 'fr' ? this.generateNomadicFrenchSubcategories() : this.generateNomadicEnglishSubcategories();
+    }
+    
     if (language === 'fr') {
       return this.generateFrenchSubcategories();
     } else {
@@ -2009,7 +2017,7 @@ class RelationalDatabase {
       },
       {
         id: 'CAT_004',
-        name: 'Investment - SELL',
+        name: 'Investment Sale',
         description: 'Investment selling',
         color: '#9C27B0',
         icon: '📈',
@@ -2020,7 +2028,7 @@ class RelationalDatabase {
       },
       {
         id: 'CAT_005',
-        name: 'Investment - BUY',
+        name: 'Investment Purchase',
         description: 'Investment purchase',
         color: '#9C27B0',
         icon: '📈',
@@ -2069,7 +2077,7 @@ class RelationalDatabase {
       },
       {
         id: 'CAT_004',
-        name: 'Investissement - VENTE',
+        name: 'Vente d\'Investissement',
         description: 'Vente d\'investissement',
         color: '#9C27B0',
         icon: '📈',
@@ -2080,7 +2088,7 @@ class RelationalDatabase {
       },
       {
         id: 'CAT_005',
-        name: 'Investissement - ACHAT',
+        name: 'Achat d\'Investissement',
         description: 'Achat d\'investissement',
         color: '#9C27B0',
         icon: '📈',
@@ -2154,7 +2162,7 @@ class RelationalDatabase {
         description: 'Purchase of digital assets',
         color: '#4CAF50',
         isActive: true,
-        transactionTypeId: 'CAT_005', // Investment - BUY
+        transactionTypeId: 'CAT_005', // Investment Purchase
         createdAt: new Date().toISOString()
       }
     ];
@@ -2222,7 +2230,331 @@ class RelationalDatabase {
         description: 'Achat d\'actifs numériques',
         color: '#4CAF50',
         isActive: true,
-        transactionTypeId: 'CAT_005', // Investment - BUY
+        transactionTypeId: 'CAT_005', // Investment Purchase
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  generateNomadicEnglishTransactionGroups() {
+    return [
+      {
+        id: 'GRP_001',
+        name: 'Housing & Accommodation',
+        description: 'Hotels, Airbnb, co-living spaces, temporary housing',
+        color: '#ef4444',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_002',
+        name: 'Transportation',
+        description: 'Flights, trains, buses, ride-sharing, car rentals',
+        color: '#f97316',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_003',
+        name: 'Food & Dining',
+        description: 'Restaurants, groceries, delivery, local cuisines',
+        color: '#eab308',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_004',
+        name: 'Homeschooling & Education',
+        description: 'Online courses, tutoring, educational materials, skills development',
+        color: '#22c55e',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_005',
+        name: 'Health & Insurance',
+        description: 'Medical expenses, travel insurance, health services',
+        color: '#06b6d4',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_006',
+        name: 'Travel & Adventure',
+        description: 'Tourism, activities, experiences, entertainment',
+        color: '#8b5cf6',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_007',
+        name: 'Personal & Family Expenses',
+        description: 'Personal care, family support, gifts, clothing',
+        color: '#ec4899',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_008',
+        name: 'Technology & Connectivity',
+        description: 'Internet, mobile data, devices, software subscriptions',
+        color: '#6366f1',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_009',
+        name: 'Financial & Administrative',
+        description: 'Banking fees, taxes, legal services, bureaucracy',
+        color: '#64748b',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_010',
+        name: 'Miscellaneous',
+        description: 'Other expenses, unexpected costs, emergency funds',
+        color: '#78716c',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Expenses
+        createdAt: new Date().toISOString()
+      },
+      // Income groups for nomadic lifestyle
+      {
+        id: 'GRP_011',
+        name: 'Professional & Business',
+        description: 'Remote work, freelancing, consulting, business income',
+        color: '#10b981',
+        isActive: true,
+        transactionTypeId: 'CAT_001', // Income
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_012',
+        name: 'Investment & Savings',
+        description: 'Investment returns, dividends, savings interest',
+        color: '#059669',
+        isActive: true,
+        transactionTypeId: 'CAT_001', // Income
+        createdAt: new Date().toISOString()
+      },
+      // Investment - SELL groups
+      {
+        id: 'GRP_013',
+        name: 'Crypto Sale',
+        description: 'Cryptocurrency sales, crypto to fiat conversions',
+        color: '#f59e0b',
+        isActive: true,
+        transactionTypeId: 'CAT_004', // Investment Sale
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_014',
+        name: 'TradFi Sale',
+        description: 'Traditional finance sales, stocks, bonds, mutual funds',
+        color: '#dc2626',
+        isActive: true,
+        transactionTypeId: 'CAT_004', // Investment Sale
+        createdAt: new Date().toISOString()
+      },
+      // Investment - BUY groups
+      {
+        id: 'GRP_015',
+        name: 'Crypto Purchase',
+        description: 'Cryptocurrency purchases, fiat to crypto conversions',
+        color: '#16a34a',
+        isActive: true,
+        transactionTypeId: 'CAT_005', // Investment Purchase
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_016',
+        name: 'TradFi Purchase',
+        description: 'Traditional finance purchases, stocks, bonds, mutual funds',
+        color: '#0d9488',
+        isActive: true,
+        transactionTypeId: 'CAT_005', // Investment Purchase
+        createdAt: new Date().toISOString()
+      },
+      // Transfer group
+      {
+        id: 'GRP_017',
+        name: 'Bank Transfer',
+        description: 'Internal transfers between accounts and currencies',
+        color: '#2196F3',
+        isActive: true,
+        transactionTypeId: 'CAT_003', // Transfer
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  generateNomadicFrenchTransactionGroups() {
+    return [
+      {
+        id: 'GRP_001',
+        name: 'Logement & Hébergement',
+        description: 'Hôtels, Airbnb, espaces de co-living, logement temporaire',
+        color: '#ef4444',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_002',
+        name: 'Transport',
+        description: 'Vols, trains, bus, covoiturage, location de voitures',
+        color: '#f97316',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_003',
+        name: 'Nourriture & Restauration',
+        description: 'Restaurants, épicerie, livraison, cuisines locales',
+        color: '#eab308',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_004',
+        name: 'École-Maison & Éducation',
+        description: 'Cours en ligne, tutorat, matériel éducatif, développement de compétences',
+        color: '#22c55e',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_005',
+        name: 'Santé & Assurance',
+        description: 'Frais médicaux, assurance voyage, services de santé',
+        color: '#06b6d4',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_006',
+        name: 'Voyage & Aventure',
+        description: 'Tourisme, activités, expériences, divertissement',
+        color: '#8b5cf6',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_007',
+        name: 'Dépenses Personnelles & Familiales',
+        description: 'Soins personnels, soutien familial, cadeaux, vêtements',
+        color: '#ec4899',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_008',
+        name: 'Technologie & Connectivité',
+        description: 'Internet, données mobiles, appareils, abonnements logiciels',
+        color: '#6366f1',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_009',
+        name: 'Financier & Administratif',
+        description: 'Frais bancaires, taxes, services juridiques, bureaucratie',
+        color: '#64748b',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_010',
+        name: 'Divers',
+        description: 'Autres dépenses, coûts imprévus, fonds d\'urgence',
+        color: '#78716c',
+        isActive: true,
+        transactionTypeId: 'CAT_002', // Dépenses
+        createdAt: new Date().toISOString()
+      },
+      // Groupes de revenus pour le style de vie nomade
+      {
+        id: 'GRP_011',
+        name: 'Professionnel & Affaires',
+        description: 'Travail à distance, freelance, conseil, revenus d\'entreprise',
+        color: '#10b981',
+        isActive: true,
+        transactionTypeId: 'CAT_001', // Revenus
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_012',
+        name: 'Investissement & Épargne',
+        description: 'Rendements d\'investissement, dividendes, intérêts d\'épargne',
+        color: '#059669',
+        isActive: true,
+        transactionTypeId: 'CAT_001', // Revenus
+        createdAt: new Date().toISOString()
+      },
+      // Groupes d'investissement - VENTE
+      {
+        id: 'GRP_013',
+        name: 'Vente Crypto',
+        description: 'Ventes de cryptomonnaies, conversions crypto vers fiat',
+        color: '#f59e0b',
+        isActive: true,
+        transactionTypeId: 'CAT_004', // Investissement - VENTE
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_014',
+        name: 'Vente TradFi',
+        description: 'Ventes finance traditionnelle, actions, obligations, fonds',
+        color: '#dc2626',
+        isActive: true,
+        transactionTypeId: 'CAT_004', // Investissement - VENTE
+        createdAt: new Date().toISOString()
+      },
+      // Groupes d'investissement - ACHAT
+      {
+        id: 'GRP_015',
+        name: 'Achat Crypto',
+        description: 'Achats de cryptomonnaies, conversions fiat vers crypto',
+        color: '#16a34a',
+        isActive: true,
+        transactionTypeId: 'CAT_005', // Investissement - ACHAT
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'GRP_016',
+        name: 'Achat TradFi',
+        description: 'Achats finance traditionnelle, actions, obligations, fonds',
+        color: '#0d9488',
+        isActive: true,
+        transactionTypeId: 'CAT_005', // Investissement - ACHAT
+        createdAt: new Date().toISOString()
+      },
+      // Groupe de transfert
+      {
+        id: 'GRP_017',
+        name: 'Virement Bancaire',
+        description: 'Virements internes entre comptes et devises',
+        color: '#2196F3',
+        isActive: true,
+        transactionTypeId: 'CAT_003', // Virement
         createdAt: new Date().toISOString()
       }
     ];
@@ -2267,11 +2599,11 @@ class RelationalDatabase {
       { id: 'SUB_026', name: 'Wire Transfers', description: 'Domestic and international wire transfers', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_027', name: 'ATM Transfers', description: 'ATM cash deposits and transfers', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       
-      // GRP_006 - Digital Assets Selling (Investment - SELL)
+      // GRP_006 - Digital Assets Selling (Investment Sale)
       { id: 'SUB_033', name: 'Bitcoin Selling', description: 'Bitcoin selling', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_034', name: 'Ethereum Selling', description: 'Ethereum selling', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
 
-      // GRP_007 - Digital Assets Purchase (Investment - BUY)
+      // GRP_007 - Digital Assets Purchase (Investment Purchase)
       { id: 'SUB_028', name: 'Bitcoin Investment', description: 'Bitcoin purchases and investments', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_029', name: 'Ethereum Investment', description: 'Ethereum purchases and investments', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_030', name: 'Altcoin Investment', description: 'Alternative cryptocurrency investments', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
@@ -2319,16 +2651,226 @@ class RelationalDatabase {
       { id: 'SUB_026', name: 'Virements Télégraphiques', description: 'Virements nationaux et internationaux', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_027', name: 'Virements DAB', description: 'Dépôts et virements DAB', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
       
-      // GRP_006 - Actifs Numériques Vente (Investment - SELL)
+      // GRP_006 - Actifs Numériques Vente (Investment Sale)
       { id: 'SUB_033', name: 'Vente Bitcoin', description: 'Vente Bitcoin', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_034', name: 'Vente Ethereum', description: 'Vente Ethereum', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
 
-      // GRP_007 - Achat Actifs Numériques (Investment - BUY)
+      // GRP_007 - Achat Actifs Numériques (Investment Purchase)
       { id: 'SUB_028', name: 'Investissement Bitcoin', description: 'Achats et investissements Bitcoin', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_029', name: 'Investissement Ethereum', description: 'Achats et investissements Ethereum', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_030', name: 'Investissement Altcoin', description: 'Investissements cryptomonnaies alternatives', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_031', name: 'Trading Crypto', description: 'Activités trading cryptomonnaies', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_032', name: 'DeFi & Staking', description: 'Protocoles DeFi, récompenses staking', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() }
+    ];
+  }
+
+  generateNomadicEnglishSubcategories() {
+    return [
+      // GRP_001 - Housing & Accommodation (Expenses)
+      { id: 'SUB_001', name: 'Short-Term Rentals', description: 'Airbnb, VRBO, or other vacation rentals for temporary stays', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_002', name: 'Long-Term Rentals', description: 'Monthly leases for apartments, houses, or condos in extended-stay locations', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_003', name: 'Utilities & Internet', description: 'Wi-Fi subscriptions, portable hotspots, or utility fees for rentals (electricity, water, gas)', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_004', name: 'Accommodation Incidentals', description: 'Cleaning fees, booking fees, or security deposits', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_002 - Transportation (Expenses)
+      { id: 'SUB_005', name: 'Flights & Air Travel', description: 'International and domestic flights for family members', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_006', name: 'Ground Transport', description: 'Rental cars, taxis, rideshares (Uber/Lyft), or local buses', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_007', name: 'Fuel', description: 'Gasoline or diesel for personal or rented vehicles', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_008', name: 'Public Transportation', description: 'Train tickets, metro passes, or ferry costs', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_009', name: 'Vehicle Maintenance', description: 'Repairs, oil changes, or insurance for owned or rented vehicles', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_010', name: 'Travel Insurance', description: 'Coverage for trip cancellations, delays, or emergencies', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_003 - Food & Dining (Expenses)
+      { id: 'SUB_011', name: 'Groceries', description: 'Food and supplies for cooking meals at accommodations', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_012', name: 'Dining Out', description: 'Restaurants, cafes, or street food for family meals', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_013', name: 'Snacks & On-the-Go Food', description: 'Quick meals or snacks for travel days or outings', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_014', name: 'Special Diets', description: 'Costs for dietary restrictions (e.g., gluten-free, vegan) or supplements', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_004 - Homeschooling & Education (Expenses)
+      { id: 'SUB_015', name: 'Curriculum Materials', description: 'Textbooks, workbooks, or online course subscriptions', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_016', name: 'School & Educational Tools', description: 'Laptops, tablets, or apps for learning (e.g., Khan Academy, Outschool)', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_017', name: 'Supplies', description: 'Notebooks, pens, art supplies, or science kits for hands-on learning', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_018', name: 'Tutoring or Classes', description: 'Local classes, online tutors, or workshops for kids', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_019', name: 'Field Trip Expenses', description: 'Museum entry fees, historical site visits, or cultural experiences tied to learning', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_005 - Health & Insurance (Expenses)
+      { id: 'SUB_020', name: 'Health Insurance', description: 'International or travel health insurance for the family', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_021', name: 'Medical Expenses', description: 'Doctor visits, medications, or emergency care', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_022', name: 'Preventive Care', description: 'Travel vaccines or health checkups, testing', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_023', name: 'Dental & Vision', description: 'Routine checkups or unexpected dental/vision care', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_006 - Travel & Adventure (Expenses)
+      { id: 'SUB_024', name: 'Activities & Excursions', description: 'Tours, adventure sports, or cultural experiences (e.g., snorkeling, guided hikes)', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_025', name: 'Entry Fees', description: 'National parks, amusement parks, or local attractions', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_026', name: 'Gear & Equipment', description: 'Backpacks, hiking gear, or camping equipment for family activities', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_007 - Personal & Family Expenses (Expenses)
+      { id: 'SUB_027', name: 'Clothing', description: 'Weather-appropriate clothing, shoes, or travel gear for all family members', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_028', name: 'Toiletries', description: 'Personal care items like shampoo, toothpaste, or sunscreen', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_029', name: 'Laundry', description: 'Laundromat fees or detergent for washing clothes on the road', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_030', name: 'Gifts & Souvenirs', description: 'Small mementos or gifts from destinations', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_031', name: 'Family Gifts', description: 'Gifts for family members or special occasions', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_032', name: 'Birthdays', description: 'Birthday celebrations and related expenses', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_008 - Technology & Connectivity (Expenses)
+      { id: 'SUB_033', name: 'Devices', description: 'Replacement or repair of phones, tablets, or laptops', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_034', name: 'Subscriptions', description: 'Streaming services (e.g., Netflix), cloud storage, or VPNs for secure internet', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_035', name: 'Mobile Data & SIM Cards', description: 'Local or international SIM cards for phone and internet access', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_036', name: 'Tech Accessories', description: 'Chargers, adapters, or portable power banks', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_009 - Financial & Administrative (Expenses)
+      { id: 'SUB_037', name: 'Banking Fees', description: 'Currency conversion fees, ATM withdrawals, or international transaction charges', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_038', name: 'Visas & Permits', description: 'Costs for tourist visas, work permits, or residency applications', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_039', name: 'Taxes & Legal Fees', description: 'Tax preparation or legal services for nomadic lifestyle compliance', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_040', name: 'Emergency Fund', description: 'Savings for unexpected expenses or travel disruptions', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_010 - Miscellaneous (Expenses)
+      { id: 'SUB_041', name: 'Childcare & Entertainment', description: 'Toys, games, or babysitting services for downtime', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_042', name: 'Charity & Donations', description: 'Contributions to local communities or causes during travels', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_043', name: 'Unexpected Costs', description: 'Miscellaneous or unplanned expenses (e.g., lost items, fines)', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_011 - Professional & Business (Income)
+      { id: 'SUB_044', name: 'Remote Work Salary', description: 'Regular salary income from remote employment', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_045', name: 'Freelancing', description: 'Freelance project income and payments', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_046', name: 'Consulting', description: 'Consulting services and advisory income', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_047', name: 'Business Income', description: 'Income from online business or entrepreneurial activities', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_012 - Investment & Savings (Income)
+      { id: 'SUB_048', name: 'Investment Returns', description: 'Returns from investment portfolios and funds', groupId: 'GRP_012', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_049', name: 'Dividends', description: 'Dividend payments from stock investments', groupId: 'GRP_012', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_050', name: 'Savings Interest', description: 'Interest earned from savings accounts and deposits', groupId: 'GRP_012', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_013 - Crypto Sale (Investment Sale)
+      { id: 'SUB_051', name: 'Bitcoin Sales', description: 'Bitcoin sales and conversions to fiat currency', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_052', name: 'Ethereum Sales', description: 'Ethereum sales and conversions to fiat currency', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_053', name: 'Altcoin Sales', description: 'Sales of alternative cryptocurrencies', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_054', name: 'Crypto to Fiat Conversions', description: 'Converting cryptocurrency to fiat currency', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_014 - TradFi Sale (Investment Sale)
+      { id: 'SUB_055', name: 'Stock Sales', description: 'Sales of individual stocks and equity positions', groupId: 'GRP_014', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_056', name: 'Bond Sales', description: 'Sales of government and corporate bonds', groupId: 'GRP_014', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_057', name: 'Mutual Fund Sales', description: 'Redemption of mutual fund shares', groupId: 'GRP_014', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_015 - Crypto Purchase (Investment Purchase)
+      { id: 'SUB_058', name: 'Bitcoin Purchases', description: 'Bitcoin purchases and investments', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_059', name: 'Ethereum Purchases', description: 'Ethereum purchases and investments', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_060', name: 'Altcoin Purchases', description: 'Purchases of alternative cryptocurrencies', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_061', name: 'Fiat to Crypto Conversions', description: 'Converting fiat currency to cryptocurrency', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_016 - TradFi Purchase (Investment Purchase)
+      { id: 'SUB_062', name: 'Stock Purchases', description: 'Purchases of individual stocks and equity positions', groupId: 'GRP_016', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_063', name: 'Bond Purchases', description: 'Purchases of government and corporate bonds', groupId: 'GRP_016', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_064', name: 'Mutual Fund Purchases', description: 'Investment in mutual fund shares', groupId: 'GRP_016', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_017 - Bank Transfer (Transfer)
+      { id: 'SUB_065', name: 'Account to Account Transfer', description: 'Internal transfers between personal accounts', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_066', name: 'Currency Exchange Transfer', description: 'Transfers involving currency exchange', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_067', name: 'International Wire Transfer', description: 'Wire transfers to international accounts', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() }
+    ];
+  }
+
+  generateNomadicFrenchSubcategories() {
+    return [
+      // GRP_001 - Logement & Hébergement (Expenses)
+      { id: 'SUB_001', name: 'Locations Courte Durée', description: 'Airbnb, VRBO, ou autres locations de vacances pour séjours temporaires', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_002', name: 'Locations Longue Durée', description: 'Baux mensuels pour appartements, maisons, ou condos en séjour prolongé', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_003', name: 'Services Publics & Internet', description: 'Abonnements Wi-Fi, points d\'accès portables, ou frais de services pour locations (électricité, eau, gaz)', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_004', name: 'Frais Accessoires Logement', description: 'Frais de nettoyage, frais de réservation, ou dépôts de garantie', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_002 - Transport (Expenses)
+      { id: 'SUB_005', name: 'Vols & Transport Aérien', description: 'Vols internationaux et domestiques pour les membres de la famille', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_006', name: 'Transport Terrestre', description: 'Voitures de location, taxis, covoiturage (Uber/Lyft), ou bus locaux', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_007', name: 'Carburant', description: 'Essence ou diesel pour véhicules personnels ou loués', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_008', name: 'Transport Public', description: 'Billets de train, passes de métro, ou coûts de ferry', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_009', name: 'Entretien Véhicule', description: 'Réparations, vidanges, ou assurance pour véhicules possédés ou loués', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_010', name: 'Assurance Voyage', description: 'Couverture pour annulations de voyage, retards, ou urgences', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_003 - Nourriture & Restauration (Expenses)
+      { id: 'SUB_011', name: 'Épicerie', description: 'Nourriture et fournitures pour cuisiner dans les logements', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_012', name: 'Restaurants', description: 'Restaurants, cafés, ou nourriture de rue pour repas familiaux', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_013', name: 'Collations & Repas Rapides', description: 'Repas rapides ou collations pour journées de voyage ou sorties', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_014', name: 'Régimes Spéciaux', description: 'Coûts pour restrictions alimentaires (ex: sans gluten, végétalien) ou suppléments', groupId: 'GRP_003', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_004 - École-Maison & Éducation (Expenses)
+      { id: 'SUB_015', name: 'Matériel Pédagogique', description: 'Manuels, cahiers d\'exercices, ou abonnements de cours en ligne', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_016', name: 'Outils Scolaires & Éducatifs', description: 'Ordinateurs portables, tablettes, ou applications d\'apprentissage (ex: Khan Academy, Outschool)', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_017', name: 'Fournitures', description: 'Cahiers, stylos, fournitures artistiques, ou kits scientifiques pour apprentissage pratique', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_018', name: 'Tutorat ou Cours', description: 'Cours locaux, tuteurs en ligne, ou ateliers pour enfants', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_019', name: 'Sorties Éducatives', description: 'Frais d\'entrée musées, visites sites historiques, ou expériences culturelles liées à l\'apprentissage', groupId: 'GRP_004', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_005 - Santé & Assurance (Expenses)
+      { id: 'SUB_020', name: 'Assurance Santé', description: 'Assurance santé internationale ou de voyage pour la famille', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_021', name: 'Frais Médicaux', description: 'Visites médicales, médicaments, ou soins d\'urgence', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_022', name: 'Soins Préventifs', description: 'Vaccins de voyage ou bilans de santé, tests', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_023', name: 'Dentaire & Vision', description: 'Contrôles de routine ou soins dentaires/visuels inattendus', groupId: 'GRP_005', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_006 - Voyage & Aventure (Expenses)
+      { id: 'SUB_024', name: 'Activités & Excursions', description: 'Tours, sports d\'aventure, ou expériences culturelles (ex: plongée, randonnées guidées)', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_025', name: 'Droits d\'Entrée', description: 'Parcs nationaux, parcs d\'attractions, ou attractions locales', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_026', name: 'Équipement & Matériel', description: 'Sacs à dos, équipement de randonnée, ou matériel de camping pour activités familiales', groupId: 'GRP_006', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_007 - Dépenses Personnelles & Familiales (Expenses)
+      { id: 'SUB_027', name: 'Vêtements', description: 'Vêtements adaptés au climat, chaussures, ou équipement de voyage pour tous les membres de la famille', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_028', name: 'Articles de Toilette', description: 'Articles de soins personnels comme shampoing, dentifrice, ou crème solaire', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_029', name: 'Lessive', description: 'Frais de laverie ou détergent pour laver les vêtements en voyage', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_030', name: 'Cadeaux & Souvenirs', description: 'Petits souvenirs ou cadeaux des destinations', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_031', name: 'Cadeaux Familiaux', description: 'Cadeaux pour les membres de la famille ou occasions spéciales', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_032', name: 'Anniversaires', description: 'Célébrations d\'anniversaires et dépenses associées', groupId: 'GRP_007', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_008 - Technologie & Connectivité (Expenses)
+      { id: 'SUB_033', name: 'Appareils', description: 'Remplacement ou réparation de téléphones, tablettes, ou ordinateurs portables', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_034', name: 'Abonnements', description: 'Services de streaming (ex: Netflix), stockage cloud, ou VPN pour internet sécurisé', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_035', name: 'Données Mobile & Cartes SIM', description: 'Cartes SIM locales ou internationales pour accès téléphone et internet', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_036', name: 'Accessoires Tech', description: 'Chargeurs, adaptateurs, ou batteries portables', groupId: 'GRP_008', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_009 - Financier & Administratif (Expenses)
+      { id: 'SUB_037', name: 'Frais Bancaires', description: 'Frais de change, retraits DAB, ou frais de transactions internationales', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_038', name: 'Visas & Permis', description: 'Coûts pour visas touristiques, permis de travail, ou demandes de résidence', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_039', name: 'Taxes & Frais Juridiques', description: 'Préparation fiscale ou services juridiques pour conformité style de vie nomade', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_040', name: 'Fonds d\'Urgence', description: 'Épargne pour dépenses imprévues ou perturbations de voyage', groupId: 'GRP_009', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_010 - Divers (Expenses)
+      { id: 'SUB_041', name: 'Garde d\'Enfants & Divertissement', description: 'Jouets, jeux, ou services de garde pour temps libres', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_042', name: 'Charité & Dons', description: 'Contributions aux communautés locales ou causes pendant les voyages', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_043', name: 'Coûts Imprévus', description: 'Dépenses diverses ou non planifiées (ex: objets perdus, amendes)', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_011 - Professionnel & Affaires (Income)
+      { id: 'SUB_044', name: 'Salaire Télétravail', description: 'Revenus salariaux réguliers d\'emploi à distance', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_045', name: 'Freelance', description: 'Revenus de projets freelance et paiements', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_046', name: 'Conseil', description: 'Services de conseil et revenus consultatifs', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_047', name: 'Revenus d\'Affaires', description: 'Revenus d\'entreprise en ligne ou d\'activités entrepreneuriales', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_012 - Investissement & Épargne (Income)
+      { id: 'SUB_048', name: 'Rendements d\'Investissement', description: 'Rendements de portefeuilles d\'investissement et fonds', groupId: 'GRP_012', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_049', name: 'Dividendes', description: 'Paiements de dividendes d\'investissements en actions', groupId: 'GRP_012', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_050', name: 'Intérêts d\'Épargne', description: 'Intérêts gagnés sur comptes d\'épargne et dépôts', groupId: 'GRP_012', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_013 - Vente Crypto (Investment Sale)
+      { id: 'SUB_051', name: 'Ventes Bitcoin', description: 'Ventes Bitcoin et conversions en monnaie fiduciaire', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_052', name: 'Ventes Ethereum', description: 'Ventes Ethereum et conversions en monnaie fiduciaire', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_053', name: 'Ventes Altcoin', description: 'Ventes de cryptomonnaies alternatives', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_054', name: 'Conversions Crypto vers Fiat', description: 'Conversion de cryptomonnaie en monnaie fiduciaire', groupId: 'GRP_013', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_014 - Vente TradFi (Investment Sale)
+      { id: 'SUB_055', name: 'Ventes d\'Actions', description: 'Ventes d\'actions individuelles et positions d\'equity', groupId: 'GRP_014', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_056', name: 'Ventes d\'Obligations', description: 'Ventes d\'obligations gouvernementales et corporatives', groupId: 'GRP_014', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_057', name: 'Ventes de Fonds Communs', description: 'Rachat de parts de fonds communs de placement', groupId: 'GRP_014', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_015 - Achat Crypto (Investment Purchase)
+      { id: 'SUB_058', name: 'Achats Bitcoin', description: 'Achats et investissements Bitcoin', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_059', name: 'Achats Ethereum', description: 'Achats et investissements Ethereum', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_060', name: 'Achats Altcoin', description: 'Achats de cryptomonnaies alternatives', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_061', name: 'Conversions Fiat vers Crypto', description: 'Conversion de monnaie fiduciaire en cryptomonnaie', groupId: 'GRP_015', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_016 - Achat TradFi (Investment Purchase)
+      { id: 'SUB_062', name: 'Achats d\'Actions', description: 'Achats d\'actions individuelles et positions d\'equity', groupId: 'GRP_016', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_063', name: 'Achats d\'Obligations', description: 'Achats d\'obligations gouvernementales et corporatives', groupId: 'GRP_016', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_064', name: 'Achats de Fonds Communs', description: 'Investissement en parts de fonds communs de placement', groupId: 'GRP_016', isActive: true, createdAt: new Date().toISOString() },
+      
+      // GRP_017 - Virement Bancaire (Transfer)
+      { id: 'SUB_065', name: 'Virement Compte à Compte', description: 'Virements internes entre comptes personnels', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_066', name: 'Virement Change de Devise', description: 'Virements impliquant un change de devise', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_067', name: 'Virement International', description: 'Virements télégraphiques vers comptes internationaux', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() }
     ];
   }
 

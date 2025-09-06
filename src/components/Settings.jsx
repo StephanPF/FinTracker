@@ -30,8 +30,8 @@ const Settings = () => {
     },
     {
       id: 'import',
-      label: t('import'),
-      icon: '📥',
+      label: t('bankConfiguration'),
+      icon: '🏦',
       component: ImportSettings
     }
   ];

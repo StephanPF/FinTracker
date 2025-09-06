@@ -9,7 +9,6 @@ export const en = {
   importTransactionsTitle: "📥 Import Transactions",
   reconciliation: "Reconciliation",
   todo: "TODO",
-  stressTest: "Stress Test",
   settings: "Settings",
   reports: "Reports",
   importExport: "Import/Export",
@@ -434,6 +433,20 @@ export const en = {
   createNewDatabase: "Create New Database",
   selectDatabaseFolder: "Select Database Folder",
   cancel: "Cancel",
+
+  // Database Configuration Modal
+  chooseConfiguration: "Choose Database Configuration",
+  chooseConfigurationDesc: "Select a preset configuration that matches your lifestyle and financial needs",
+  defaultConfiguration: "Default Configuration",
+  defaultConfigurationDesc: "Standard personal finance setup suitable for most users",
+  nomadicLifestyle: "Nomadic Lifestyle",
+  nomadicLifestyleDesc: "Optimized for digital nomads, travelers, and location-independent professionals",
+  standardAccounts: "Standard account types",
+  basicCategories: "Basic transaction categories",
+  generalPurpose: "General purpose setup",
+  travelFriendly: "Travel-friendly categories",
+  locationTracking: "Location-based tracking",
+  currencyOptimized: "Multi-currency optimized",
   
   // Data Management
   dataManagementTitle: "Data Management",
@@ -444,6 +457,7 @@ export const en = {
   subcategories: "Transaction Categories",
   transaction_types: "Transaction Types",
   transaction_groups: "Transaction Groups",
+  allTransactionTypes: "All Transaction Types",
   
   // Forms
   accountName: "Account Name",
@@ -1060,9 +1074,7 @@ export const en = {
   optional: "Optional",
 
   // Architecture Page
-  architecture: "Architecture",
   databaseArchitecture: "Database Architecture",
-  architectureDescription: "Visual representation of the database structure, tables, and relationships",
   tables: "Tables",
   foreignKeys: "Foreign Keys",
   relationships: "Relationships",
@@ -1095,6 +1107,7 @@ export const en = {
   numberCurrency: "Number & Currency",
   data: "Data",
   import: "Import",
+  bankConfiguration: "Bank Configuration",
 
   // Currency Formatting
   currencyFormattingSettings: "💰 Currency Formatting Settings",

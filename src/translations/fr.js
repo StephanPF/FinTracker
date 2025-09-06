@@ -9,7 +9,6 @@ export const fr = {
   importTransactionsTitle: "📥 Importer Transactions",
   reconciliation: "Réconciliation",
   todo: "TODO",
-  stressTest: "Test de Charge",
   settings: "Paramètres",
   reports: "Rapports",
   importExport: "Importer/Exporter",
@@ -72,6 +71,20 @@ export const fr = {
   createNewDatabase: "Créer Nouvelle Base de Données",
   selectDatabaseFolder: "Sélectionner Dossier de Base de Données",
   cancel: "Annuler",
+
+  // Database Configuration Modal
+  chooseConfiguration: "Choisir la Configuration de Base de Données",
+  chooseConfigurationDesc: "Sélectionnez une configuration prédéfinie qui correspond à votre style de vie et besoins financiers",
+  defaultConfiguration: "Configuration par Défaut",
+  defaultConfigurationDesc: "Configuration financière personnelle standard adaptée à la plupart des utilisateurs",
+  nomadicLifestyle: "Style de Vie Nomade",
+  nomadicLifestyleDesc: "Optimisé pour les nomades numériques, voyageurs et professionnels indépendants de localisation",
+  standardAccounts: "Types de comptes standard",
+  basicCategories: "Catégories de transaction de base",
+  generalPurpose: "Configuration généraliste",
+  travelFriendly: "Catégories adaptées aux voyages",
+  locationTracking: "Suivi basé sur la localisation",
+  currencyOptimized: "Optimisé multi-devises",
 
   // Analytics
   analytics: "Analyses",
@@ -440,6 +453,7 @@ export const fr = {
   subcategories: "Catégories de Transaction",
   transaction_types: "Types de Transaction",
   transaction_groups: "Groupes de Transaction",
+  allTransactionTypes: "Tous les Types de Transaction",
   
   // Forms
   accountName: "Nom du Compte",
@@ -658,16 +672,13 @@ export const fr = {
 
   // Hamburger Menu
   todo: "TODO",
-  stressTest: "Test de Charge",
   settings: "Paramètres",
   reports: "Rapports",
   importExport: "Importer/Exporter",
   about: "À Propos",
 
   // Architecture Page
-  architecture: "Architecture",
   databaseArchitecture: "Architecture de Base de Données",
-  architectureDescription: "Représentation visuelle de la structure de la base de données, des tables et des relations",
   tables: "Tables",
   foreignKeys: "Clés Étrangères",
   relationships: "Relations",
@@ -1260,6 +1271,7 @@ export const fr = {
   date: "Date",
   data: "Données",
   import: "Importation",
+  bankConfiguration: "Configuration Bancaire",
   
   // Import Settings
   bankConfigurations: "Configurations Bancaires",

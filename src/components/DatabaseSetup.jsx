@@ -4,19 +4,28 @@ import { useLanguage } from '../contexts/LanguageContext';
 import RecentDatabases from './RecentDatabases';
 import LanguageSwitcher from './LanguageSwitcher';
 import Logo from './Logo';
+import DatabaseConfigurationModal from './DatabaseConfigurationModal';
+import './DatabaseConfigurationModal.css';
 
 const DatabaseSetup = () => {
   const { createNewDatabase, loadExistingDatabase } = useAccounting();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
 
-  const handleCreateNew = async () => {
+  const handleCreateNew = () => {
+    setIsModalOpen(true);
+  };
+
+  const handlePresetSelect = async (presetId) => {
     try {
       setLoading(true);
       setError('');
-      const success = await createNewDatabase();
+      // For now, pass presetId to createNewDatabase
+      // Later we can modify createNewDatabase to accept preset configuration
+      const success = await createNewDatabase(presetId);
       if (!success) {
         // Don't show error if user just cancelled the dialog
         setError('');
@@ -26,6 +35,10 @@ const DatabaseSetup = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
   };
 
   const handleLoadExisting = async () => {
@@ -120,6 +133,12 @@ const DatabaseSetup = () => {
         </div>
 
         <RecentDatabases />
+
+        <DatabaseConfigurationModal 
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSelectPreset={handlePresetSelect}
+        />
 
       </div>
     </div>

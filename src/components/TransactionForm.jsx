@@ -951,7 +951,7 @@ const TransactionForm = ({ onSuccess }) => {
                   placeholder="0.00"
                   className={missingFields.includes('amount') ? 'field-error' : ''}
                 />
-                <span className="currency-symbol">
+                <span className="currency-symbol-right">
                   {(() => {
                     const selectedAccountId = formData.accountId || selectedTransactionType.defaultAccountId;
                     const selectedAccount = accountsWithTypes.find(acc => acc.id === selectedAccountId);
@@ -973,7 +973,7 @@ const TransactionForm = ({ onSuccess }) => {
                     placeholder="0.00"
                     className={missingFields.includes('destinationAmount') ? 'field-error' : ''}
                   />
-                  <span className="currency-symbol">
+                  <span className="currency-symbol-right">
                     {(() => {
                       const destAccount = accountsWithTypes.find(acc => acc.id === formData.destinationAccountId);
                       const currency = destAccount ? getActiveCurrencies().find(c => c.id === destAccount.currencyId) : null;

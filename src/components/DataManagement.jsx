@@ -206,6 +206,7 @@ const DataManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [showAccountTypeTooltip, setShowAccountTypeTooltip] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTransactionTypeFilter, setSelectedTransactionTypeFilter] = useState('');
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [showAccountTypesExplanation, setShowAccountTypesExplanation] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -234,13 +235,23 @@ const DataManagement = () => {
     setShowAccountTypeTooltip(false);
   };
 
-  const filterData = (data, searchTerm) => {
+  const filterData = (data, searchTerm, transactionTypeFilter = '') => {
+    let filteredData = data;
+    
+    // Apply transaction type filter for transaction groups
+    if (activeTab === 'transaction_groups' && transactionTypeFilter) {
+      filteredData = filteredData.filter(item => 
+        item.transactionTypeId === transactionTypeFilter
+      );
+    }
+    
+    // Apply search term filter
     if (!searchTerm.trim()) {
-      return data;
+      return filteredData;
     }
 
     const term = searchTerm.toLowerCase().trim();
-    return data.filter(item => {
+    return filteredData.filter(item => {
       // Search in all string values of the object
       return Object.values(item).some(value => {
         if (value === null || value === undefined) return false;
@@ -2112,7 +2123,7 @@ const DataManagement = () => {
   };
 
   const { data: rawData, columns } = getTableData();
-  const data = filterData(rawData, searchTerm);
+  const data = filterData(rawData, searchTerm, selectedTransactionTypeFilter);
 
 
   return (
@@ -2127,6 +2138,7 @@ const DataManagement = () => {
               resetForm();
               setShowAccountTypeTooltip(false);
               setSearchTerm('');
+              setSelectedTransactionTypeFilter('');
             }}
           >
             {tab === 'payees' ? 'Payees' : tab === 'payers' ? 'Payers' : t(tab)}
@@ -2182,76 +2194,109 @@ const DataManagement = () => {
             )}
 
             <div className="search-and-actions-container">
-          <div className="search-container">
-            <div className="search-input-wrapper">
-              <input
-                type="text"
-                placeholder={`Search ${t(activeTab)}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-              <span className="search-icon">🔍</span>
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="search-clear"
-                  title="Clear search"
-                >
-                  ✕
-                </button>
-              )}
+              <div className="search-filter-row">
+                <div className="search-filter-left">
+                  <div className="search-input-wrapper">
+                    <input
+                      type="text"
+                      placeholder={`Search ${t(activeTab)}...`}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="search-input"
+                    />
+                    <span className="search-icon">🔍</span>
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="search-clear"
+                        title="Clear search"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  
+                  {activeTab === 'transaction_groups' && (
+                    <div className="filter-wrapper">
+                      <select
+                        value={selectedTransactionTypeFilter}
+                        onChange={(e) => setSelectedTransactionTypeFilter(e.target.value)}
+                        className="filter-select"
+                        style={{
+                          backgroundColor: 'white',
+                          color: '#1a202c',
+                          border: '1px solid #d1d5db',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          minWidth: '220px',
+                          maxWidth: '300px',
+                          width: 'auto',
+                          height: '36px',
+                          lineHeight: '1.4',
+                          whiteSpace: 'normal'
+                        }}
+                      >
+                        <option value="">{t('allTransactionTypes')}</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>
+                            {category.icon} {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                
+                {activeTab !== 'transaction_types' && (
+                  <div className="add-button-wrapper">
+                    <button 
+                      onClick={() => setShowForm(!showForm)}
+                      className="btn-primary"
+                    >
+                      {showForm ? t('cancel') : (editingId ? getEditButtonText() : getAddButtonText())}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            {searchTerm && (
-              <div className="search-results-info">
+
+            {(searchTerm || selectedTransactionTypeFilter) && (
+              <div className="search-results-info" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
                 {data.length} of {rawData.length} {t(activeTab)} found
               </div>
             )}
-          </div>
-          
-          <div className="data-actions">
-            {activeTab !== 'transaction_types' && (
-              <button 
-                onClick={() => setShowForm(!showForm)}
-                className="btn-primary"
-              >
-                {showForm ? t('cancel') : (editingId ? getEditButtonText() : getAddButtonText())}
-              </button>
+            <div className="table-container">
+            <h3>
+              {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab === 'transaction_groups' ? 'Transaction Groups' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
+              {reorderingAccounts && activeTab === 'accounts' && (
+                <span className="reordering-indicator"> - Reordering...</span>
+              )}
+              {reorderingCategories && activeTab === 'transaction_types' && (
+                <span className="reordering-indicator"> - Reordering...</span>
+              )}
+              {reorderingSubcategories && activeTab === 'subcategories' && (
+                <span className="reordering-indicator"> - Reordering...</span>
+              )}
+              {reorderingTransactionGroups && activeTab === 'transaction_groups' && (
+                <span className="reordering-indicator"> - Reordering...</span>
+              )}
+            </h3>
+            {isLoadingTransactions && activeTab === 'transactions' ? (
+              <div className="loading-state">
+                <div className="spinner"></div>
+                <h3>Loading {transactions.length.toLocaleString()} transactions...</h3>
+                <p>This may take a moment for large datasets</p>
+              </div>
+            ) : data.length > 0 ? (
+              renderTable(data, columns)
+            ) : (
+              <div className="empty-state">
+                <p>No {t(activeTab)} {t('noDataFound')}</p>
+              </div>
             )}
           </div>
-        </div>
-
-            <div className="table-container">
-              <h3>
-                {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
-                {reorderingAccounts && activeTab === 'accounts' && (
-                  <span className="reordering-indicator"> - Reordering...</span>
-                )}
-                {reorderingCategories && activeTab === 'transaction_types' && (
-                  <span className="reordering-indicator"> - Reordering...</span>
-                )}
-                {reorderingSubcategories && activeTab === 'subcategories' && (
-                  <span className="reordering-indicator"> - Reordering...</span>
-                )}
-                {reorderingTransactionGroups && activeTab === 'transaction_groups' && (
-                  <span className="reordering-indicator"> - Reordering...</span>
-                )}
-              </h3>
-              {isLoadingTransactions && activeTab === 'transactions' ? (
-                <div className="loading-state">
-                  <div className="spinner"></div>
-                  <h3>Loading {transactions.length.toLocaleString()} transactions...</h3>
-                  <p>This may take a moment for large datasets</p>
-                </div>
-              ) : data.length > 0 ? (
-                renderTable(data, columns)
-              ) : (
-                <div className="empty-state">
-                  <p>No {t(activeTab)} {t('noDataFound')}</p>
-                </div>
-              )}
-            </div>
-          </>
+        </>
         )}
       </div>
 

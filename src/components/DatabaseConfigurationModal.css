@@ -1,0 +1,212 @@
+/* Database Configuration Modal Styles */
+/* Following BUILD_NEW_FEATURE_GUIDE.md: max 12px padding/margins, compact design */
+
+.database-config-overlay {
+  /* Overlay styles are now handled by inline styles to prevent CSS conflicts */
+}
+
+.database-config-modal {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.2s ease-out;
+  /* Force modal positioning relative to viewport */
+  margin: 0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0 0 4px 0;
+}
+
+.modal-header p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.modal-content {
+  padding: 12px;
+}
+
+.preset-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.preset-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.preset-icon {
+  font-size: 2rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.preset-content {
+  flex: 1;
+}
+
+.preset-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0 0 4px 0;
+}
+
+.preset-content p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.preset-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.preset-features li {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.preset-action {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+  margin-left: 8px;
+}
+
+.preset-card:hover .preset-action {
+  color: #3b82f6;
+}
+
+.modal-footer {
+  padding: 12px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn {
+  background-color: white;
+  color: #1a202c;
+  border: 1px solid #d1d5db;
+}
+
+.secondary-btn:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .database-config-modal {
+    max-height: 95vh;
+  }
+  
+  .preset-cards {
+    gap: 8px;
+  }
+  
+  .preset-card {
+    padding: 8px;
+  }
+  
+  .preset-icon {
+    font-size: 1.5rem;
+    margin-right: 8px;
+  }
+  
+  .preset-features {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .preset-content h3 {
+    font-size: 1rem;
+  }
+  
+  .preset-content p {
+    font-size: 0.85rem;
+  }
+}
