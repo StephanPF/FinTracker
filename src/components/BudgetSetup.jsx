@@ -518,6 +518,7 @@ const BudgetSetup = ({ onNavigate }) => {
                       value={newLineItem.amount}
                       onChange={(e) => setNewLineItem(prev => ({...prev, amount: e.target.value}))}
                       placeholder="0.00"
+                      onWheel={(e) => e.target.blur()}
                       style={{
                         backgroundColor: 'white',
                         color: '#1a202c',

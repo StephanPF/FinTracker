@@ -573,6 +573,7 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                   value={filterAmountMin}
                   onChange={(e) => setFilterAmountMin(e.target.value)}
                   className="filter-input"
+                  onWheel={(e) => e.target.blur()}
                 />
               </div>
               
@@ -588,6 +589,7 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                   value={filterAmountMax}
                   onChange={(e) => setFilterAmountMax(e.target.value)}
                   className="filter-input"
+                  onWheel={(e) => e.target.blur()}
                 />
               </div>
               

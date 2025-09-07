@@ -24,6 +24,7 @@ const AnalyticsMain = ({ onNavigate }) => {
     fileStorage, 
     currencies, 
     getActiveCurrencies,
+    getBaseCurrency,
     numberFormatService,
     getCurrencyFormatPreferences 
   } = useAccounting();
@@ -140,11 +141,10 @@ const AnalyticsMain = ({ onNavigate }) => {
   };
 
   /**
-   * Get base currency for formatting
+   * Get base currency for formatting (uses user-configured base currency)
    */
-  const getBaseCurrency = () => {
-    const activeCurrencies = getActiveCurrencies();
-    return activeCurrencies.find(c => c.id === 'CUR_001') || activeCurrencies[0];
+  const getAnalyticsBaseCurrency = () => {
+    return getBaseCurrency() || getActiveCurrencies()[0];
   };
 
   /**
@@ -153,7 +153,7 @@ const AnalyticsMain = ({ onNavigate }) => {
   const formatCurrency = (amount, currencyId = null) => {
     try {
       if (!currencyId) {
-        const baseCurrency = getBaseCurrency();
+        const baseCurrency = getAnalyticsBaseCurrency();
         currencyId = baseCurrency ? baseCurrency.id : 'CUR_001';
       }
 
@@ -161,11 +161,11 @@ const AnalyticsMain = ({ onNavigate }) => {
         return numberFormatService.formatCurrency(amount, currencyId);
       }
       
-      const currency = currencies.find(c => c.id === currencyId) || getBaseCurrency();
+      const currency = currencies.find(c => c.id === currencyId) || getAnalyticsBaseCurrency();
       return `${currency?.symbol || '$'}${parseFloat(amount || 0).toFixed(2)}`;
     } catch (error) {
       console.error('Error formatting currency:', error);
-      const currency = getBaseCurrency();
+      const currency = getAnalyticsBaseCurrency();
       return `${currency?.symbol || '$'}${parseFloat(amount || 0).toFixed(2)}`;
     }
   };
@@ -194,7 +194,8 @@ const AnalyticsMain = ({ onNavigate }) => {
     
     // Utilities
     formatCurrency,
-    getBaseCurrency,
+    getBaseCurrency: getAnalyticsBaseCurrency,
+    database,
     t
   };
 

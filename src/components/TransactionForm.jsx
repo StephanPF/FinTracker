@@ -1223,6 +1223,7 @@ const TransactionForm = ({ onSuccess }) => {
                   onChange={handleChange}
                   placeholder="0.00"
                   className={missingFields.includes('amount') ? 'field-error' : ''}
+                  onWheel={(e) => e.target.blur()}
                 />
                 <span className="currency-symbol-right">
                   {(() => {
@@ -1245,6 +1246,7 @@ const TransactionForm = ({ onSuccess }) => {
                     onChange={handleChange}
                     placeholder="0.00"
                     className={missingFields.includes('destinationAmount') ? 'field-error' : ''}
+                    onWheel={(e) => e.target.blur()}
                   />
                   <span className="currency-symbol-right">
                     {(() => {

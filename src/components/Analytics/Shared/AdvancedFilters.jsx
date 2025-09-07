@@ -261,6 +261,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
                 min: e.target.value 
               })}
               className="filter-input range-input"
+              onWheel={(e) => e.target.blur()}
             />
             <span className="range-separator">-</span>
             <input
@@ -272,6 +273,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
                 max: e.target.value 
               })}
               className="filter-input range-input"
+              onWheel={(e) => e.target.blur()}
             />
           </div>
         </div>

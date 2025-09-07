@@ -191,6 +191,7 @@ const RuleCreationModal = ({
                   min="0"
                   value={formData.ruleOrder}
                   onChange={(e) => updateFormData({ ruleOrder: parseInt(e.target.value) || 0 })}
+                  onWheel={(e) => e.target.blur()}
                 />
                 <small>{t('lowerNumbersFirst')}</small>
               </div>

@@ -473,6 +473,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                     className={errors.amount ? 'error' : ''}
                     placeholder={`${t('amount')} *`}
                     required
+                    onWheel={(e) => e.target.blur()}
                   />
                   {errors.amount && <span className="field-error">{errors.amount}</span>}
                 </div>
@@ -505,6 +506,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                       onChange={(e) => handleChange('destinationAmount', e.target.value)}
                       className={errors.destinationAmount ? 'error' : ''}
                       placeholder={`${t('destinationAmount')} *`}
+                      onWheel={(e) => e.target.blur()}
                     />
                     {errors.destinationAmount && <span className="field-error">{errors.destinationAmount}</span>}
                   </div>

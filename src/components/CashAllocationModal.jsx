@@ -436,6 +436,7 @@ const CashAllocationModal = ({ isOpen, onClose, transaction }) => {
                       value={allocation.amount}
                       onChange={(e) => updateAllocation(index, 'amount', e.target.value)}
                       placeholder={`0.00 ${getCurrencySymbol()}`}
+                      onWheel={(e) => e.target.blur()}
                     />
                   </div>
 

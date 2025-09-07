@@ -334,6 +334,7 @@ const TransactionTable = ({ expenseData, activeBudget, formatCurrency }) => {
                 value={filterConfig.minAmount}
                 onChange={(e) => handleFilterChange('minAmount', e.target.value)}
                 className="filter-input"
+                onWheel={(e) => e.target.blur()}
               />
               <span>-</span>
               <input
@@ -342,6 +343,7 @@ const TransactionTable = ({ expenseData, activeBudget, formatCurrency }) => {
                 value={filterConfig.maxAmount}
                 onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
                 className="filter-input"
+                onWheel={(e) => e.target.blur()}
               />
             </div>
           </div>

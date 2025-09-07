@@ -142,6 +142,7 @@ const TodoPage = () => {
             onChange={(e) => setEstimatedHours(parseInt(e.target.value) || 1)}
             placeholder="Hours"
             className="hours-input"
+            onWheel={(e) => e.target.blur()}
             min="1"
             max="100"
           />

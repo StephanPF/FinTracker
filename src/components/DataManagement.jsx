@@ -677,6 +677,7 @@ const DataManagement = () => {
             onChange={(e) => handleInputChange('initialBalance', parseFloat(e.target.value) || 0)}
             style={{ textAlign: 'left' }}
             className="no-spinners"
+            onWheel={(e) => e.target.blur()}
           />
         </div>
       </form>
@@ -843,6 +844,7 @@ const DataManagement = () => {
             onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
             required
             style={{ paddingLeft: '24px', width: '100%' }}
+            onWheel={(e) => e.target.blur()}
           />
         </div>
       </div>
@@ -1084,6 +1086,7 @@ const DataManagement = () => {
           placeholder="Enter amount (optional)"
           step="0.01"
           style={{ width: '100%' }}
+          onWheel={(e) => e.target.blur()}
         />
       </div>
       <div className="form-group">
@@ -1464,6 +1467,7 @@ const DataManagement = () => {
           onChange={(e) => handleInputChange('decimalPlaces', parseInt(e.target.value))}
           min="0"
           max="18"
+          onWheel={(e) => e.target.blur()}
         />
       </div>
       

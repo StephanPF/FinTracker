@@ -369,6 +369,7 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
               onChange={(e) => setFilters(prev => ({ ...prev, amountMin: e.target.value }))}
               className="filter-input"
               placeholder="Min Amount"
+              onWheel={(e) => e.target.blur()}
             />
           </div>
 
@@ -380,6 +381,7 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
               onChange={(e) => setFilters(prev => ({ ...prev, amountMax: e.target.value }))}
               className="filter-input"
               placeholder="Max Amount"
+              onWheel={(e) => e.target.blur()}
             />
           </div>
 

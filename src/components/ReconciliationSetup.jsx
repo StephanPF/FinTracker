@@ -166,6 +166,7 @@ const ReconciliationSetup = ({ onStart }) => {
                 }))}
                 placeholder="0.00"
                 className={errors.bankStatementTotal ? 'error' : ''}
+                onWheel={(e) => e.target.blur()}
                 style={{
                   paddingRight: getSelectedAccountCurrency() ? '28px' : '12px',
                   width: '100%'

@@ -8,7 +8,7 @@ import { useAnalytics } from '../AnalyticsMain';
  * Follows BUILD_NEW_FEATURE_GUIDE.md compact design principles
  */
 const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
-  const { t } = useAnalytics();
+  const { t, database } = useAnalytics();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [chartData, setChartData] = useState([]);
 
@@ -36,7 +36,7 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
           ...category,
           percentage,
           budgetStatus: getBudgetStatus(category),
-          color: getBudgetColor(category),
+          color: getTransactionGroupColor(category),
           label: category.subcategoryName || `Category ${category.subcategoryId}`
         };
       })
@@ -56,16 +56,36 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
   };
 
   /**
-   * Get color based on budget status
+   * Get color from transaction group associated with the subcategory
    */
-  const getBudgetColor = (category) => {
-    const colors = {
-      'over-budget': '#ef4444',      // Red
-      'close-to-budget': '#f59e0b',  // Yellow
-      'within-budget': '#10b981',    // Green
-      'no-budget': '#6b7280'         // Gray
-    };
-    return colors[getBudgetStatus(category)] || colors['no-budget'];
+  const getTransactionGroupColor = (category) => {
+    try {
+      // Get subcategories table to find the groupId
+      const subcategories = database?.getTable('subcategories') || [];
+      const subcategory = subcategories.find(sub => sub.id === category.subcategoryId);
+      
+      if (subcategory && subcategory.groupId) {
+        // Get transaction groups table to find the color
+        const transactionGroups = database?.getTable('transaction_groups') || [];
+        const group = transactionGroups.find(grp => grp.id === subcategory.groupId);
+        
+        if (group && group.color) {
+          return group.color;
+        }
+      }
+      
+      // Fallback to budget color if no transaction group color found
+      const colors = {
+        'over-budget': '#ef4444',      // Red
+        'close-to-budget': '#f59e0b',  // Yellow
+        'within-budget': '#10b981',    // Green
+        'no-budget': '#6b7280'         // Gray
+      };
+      return colors[getBudgetStatus(category)] || colors['no-budget'];
+    } catch (error) {
+      console.error('Error getting transaction group color:', error);
+      return '#6b7280'; // Gray fallback
+    }
   };
 
   /**

@@ -259,6 +259,7 @@ const Test = () => {
                 value={stressTestCount}
                 onChange={(e) => setStressTestCount(parseInt(e.target.value))}
                 disabled={loading}
+                onWheel={(e) => e.target.blur()}
               />
             </div>
             

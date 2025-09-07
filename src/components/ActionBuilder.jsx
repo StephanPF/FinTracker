@@ -245,6 +245,7 @@ const ActionBuilder = ({ actions, availableFields, onUpdateActions }) => {
                           placeholder="Enter value"
                           value={action.parameter || ''}
                           onChange={(e) => updateAction(index, { parameter: e.target.value })}
+                          onWheel={(e) => e.target.blur()}
                         />
                       </div>
                     )}
