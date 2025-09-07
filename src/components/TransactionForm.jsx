@@ -782,7 +782,9 @@ const TransactionForm = ({ onSuccess }) => {
               style={{
                 background: selectedTransactionGroup?.id === group.id && selectedTransactionType
                   ? `linear-gradient(135deg, ${selectedTransactionType.color}20, ${selectedTransactionType.color}40)`
-                  : undefined,
+                  : selectedTransactionType 
+                  ? `${selectedTransactionType.color}10`
+                  : '#f8fafc',
                 borderColor: selectedTransactionGroup?.id === group.id && selectedTransactionType
                   ? selectedTransactionType.color
                   : undefined
