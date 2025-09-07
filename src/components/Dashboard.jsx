@@ -220,10 +220,6 @@ const Dashboard = () => {
                 </div>
                 <div className="menu-separator"></div>
                 <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
-                  <span className="menu-icon">📊</span>
-                  <span className="menu-text">{t('reports')}</span>
-                </div>
-                <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
                   <span className="menu-icon">ℹ️</span>
                   <span className="menu-text">{t('about')}</span>
                 </div>

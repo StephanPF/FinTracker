@@ -23,7 +23,8 @@ class RelationalDatabase {
       processing_rules: [],
       cash_allocations: [],
       budgets: [],
-      budget_line_items: []
+      budget_line_items: [],
+      transaction_templates: []
     };
     
     // Define table schemas with headers for empty tables
@@ -48,7 +49,8 @@ class RelationalDatabase {
       processing_rules: ['id', 'bankConfigId', 'name', 'type', 'active', 'ruleOrder', 'conditions', 'conditionLogic', 'actions', 'createdAt', 'updatedAt'],
       cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'dateSpent', 'isAutomatic', 'createdAt', 'updatedAt'],
       budgets: ['id', 'name', 'description', 'status', 'createdAt', 'lastModified', 'isDefault'],
-      budget_line_items: ['id', 'budgetId', 'subcategoryId', 'subcategoryName', 'period', 'amount', 'baseCurrency']
+      budget_line_items: ['id', 'budgetId', 'subcategoryId', 'subcategoryName', 'period', 'amount', 'baseCurrency'],
+      transaction_templates: ['id', 'name', 'description', 'amount', 'accountId', 'destinationAccountId', 'destinationAmount', 'currencyId', 'subcategoryId', 'groupId', 'payee', 'payer', 'reference', 'notes', 'tag', 'categoryId', 'usageCount', 'lastUsed', 'isActive', 'createdAt']
     };
     
     this.workbooks = {};
@@ -147,6 +149,7 @@ class RelationalDatabase {
       cash_allocations: [],
       budgets: [],
       budget_line_items: [],
+      transaction_templates: [],
       
       database_info: [
         {
@@ -183,7 +186,21 @@ class RelationalDatabase {
 
   // ID generation utility method
   generateId(prefix) {
-    const table = this.tables[prefix.toLowerCase() === 'cur' ? 'currencies' : 'exchange_rates'];
+    // Map prefix to appropriate table
+    const prefixToTable = {
+      'CUR': 'currencies',
+      'ER': 'exchange_rates',
+      'PAY': 'payees',
+      'TT': 'transaction_templates'
+    };
+    
+    const tableName = prefixToTable[prefix];
+    if (!tableName || !this.tables[tableName]) {
+      console.warn(`Unknown prefix ${prefix} or table not found`);
+      return `${prefix}_001`;
+    }
+    
+    const table = this.tables[tableName];
     const existingIds = table.map(item => item.id).filter(id => id.startsWith(prefix));
     
     let maxNumber = 0;
@@ -962,7 +979,7 @@ class RelationalDatabase {
       'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
       'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules',
-      'cash_allocations', 'budgets', 'budget_line_items'
+      'cash_allocations', 'budgets', 'budget_line_items', 'transaction_templates'
     ];
 
     for (const tableName of requiredTables) {
@@ -4297,6 +4314,123 @@ class RelationalDatabase {
     const end = new Date(endDate);
     const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
     return Math.max(1, months);
+  }
+
+  // Transaction Templates CRUD operations
+  addTransactionTemplate(templateData) {
+    // Initialize transaction_templates table if it doesn't exist
+    if (!this.tables.transaction_templates) {
+      this.tables.transaction_templates = [];
+    }
+    
+    const id = this.generateId('TT');
+    const newTemplate = {
+      id,
+      name: templateData.name,
+      description: templateData.description || '',
+      amount: templateData.amount || '',
+      accountId: templateData.accountId || '',
+      destinationAccountId: templateData.destinationAccountId || '',
+      destinationAmount: templateData.destinationAmount || '',
+      currencyId: templateData.currencyId || '',
+      subcategoryId: templateData.subcategoryId || '',
+      groupId: templateData.groupId || '',
+      payee: templateData.payee || '',
+      payer: templateData.payer || '',
+      reference: templateData.reference || '',
+      notes: templateData.notes || '',
+      tag: templateData.tag || '',
+      categoryId: templateData.categoryId || '',
+      usageCount: 0,
+      lastUsed: null,
+      isActive: templateData.isActive !== undefined ? templateData.isActive : true,
+      createdAt: new Date().toISOString()
+    };
+
+    this.tables.transaction_templates.push(newTemplate);
+    this.saveTableToWorkbook('transaction_templates');
+    return newTemplate;
+  }
+
+  getTransactionTemplates() {
+    return this.tables.transaction_templates || [];
+  }
+
+  getActiveTransactionTemplates() {
+    return this.getTransactionTemplates()
+      .filter(template => template.isActive !== false)
+      .sort((a, b) => {
+        // Sort by usage count (descending), then by last used (descending), then by name (ascending)
+        if (b.usageCount !== a.usageCount) {
+          return b.usageCount - a.usageCount;
+        }
+        if (b.lastUsed && a.lastUsed) {
+          return new Date(b.lastUsed) - new Date(a.lastUsed);
+        }
+        if (b.lastUsed) return 1;
+        if (a.lastUsed) return -1;
+        return a.name.localeCompare(b.name);
+      });
+  }
+
+  updateTransactionTemplate(id, templateData) {
+    const templateIndex = this.tables.transaction_templates.findIndex(template => template.id === id);
+    if (templateIndex === -1) {
+      throw new Error(`Transaction template with id ${id} not found`);
+    }
+    
+    const updatedTemplate = {
+      ...this.tables.transaction_templates[templateIndex],
+      ...templateData,
+      id: id
+    };
+    
+    this.tables.transaction_templates[templateIndex] = updatedTemplate;
+    this.saveTableToWorkbook('transaction_templates');
+    return updatedTemplate;
+  }
+
+  deleteTransactionTemplate(id) {
+    const templateIndex = this.tables.transaction_templates.findIndex(template => template.id === id);
+    if (templateIndex === -1) {
+      throw new Error(`Transaction template with id ${id} not found`);
+    }
+
+    const deletedTemplate = this.tables.transaction_templates[templateIndex];
+    this.tables.transaction_templates.splice(templateIndex, 1);
+    this.saveTableToWorkbook('transaction_templates');
+    return deletedTemplate;
+  }
+
+  getTransactionTemplateById(id) {
+    const template = this.tables.transaction_templates.find(template => template.id === id);
+    if (!template) {
+      return null;
+    }
+    return template;
+  }
+
+  useTransactionTemplate(id) {
+    const templateIndex = this.tables.transaction_templates.findIndex(template => template.id === id);
+    if (templateIndex === -1) {
+      throw new Error(`Transaction template with id ${id} not found`);
+    }
+
+    // Update usage count and last used date
+    this.tables.transaction_templates[templateIndex] = {
+      ...this.tables.transaction_templates[templateIndex],
+      usageCount: (this.tables.transaction_templates[templateIndex].usageCount || 0) + 1,
+      lastUsed: new Date().toISOString()
+    };
+
+    this.saveTableToWorkbook('transaction_templates');
+    return this.tables.transaction_templates[templateIndex];
+  }
+
+  getTransactionTemplateByName(name) {
+    return this.getTransactionTemplates().find(template => 
+      template.name.toLowerCase() === name.toLowerCase() && template.isActive !== false
+    );
   }
 
 }

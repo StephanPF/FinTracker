@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import DatePicker from "react-datepicker";
@@ -23,7 +24,14 @@ const TransactionForm = ({ onSuccess }) => {
     exchangeRateService,
     getActiveCurrencies,
     database,
-    numberFormatService
+    numberFormatService,
+    // Transaction Template functions
+    addTransactionTemplate,
+    getActiveTransactionTemplates,
+    useTransactionTemplate,
+    deleteTransactionTemplate,
+    getTransactionTemplateByName,
+    getTransactionTemplateById
   } = useAccounting();
   const { t } = useLanguage();
   const accountsWithTypes = getAccountsWithTypes();
@@ -106,6 +114,17 @@ const TransactionForm = ({ onSuccess }) => {
   const [tagInput, setTagInput] = useState('');
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [filteredTags, setFilteredTags] = useState([]);
+  
+  // Template state
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [usedTemplateId, setUsedTemplateId] = useState(null); // Track which template was used for this transaction
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [saveMode, setSaveMode] = useState('new'); // 'new' or 'replace'
+  const [selectedExistingTemplate, setSelectedExistingTemplate] = useState('');
+  const [templateNameError, setTemplateNameError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState(null);
   
   // Date input ref
   const dateInputRef = useRef(null);
@@ -472,6 +491,16 @@ const TransactionForm = ({ onSuccess }) => {
       
       await addTransaction(transactionData);
       
+      // Increment template usage count if a template was used
+      if (usedTemplateId) {
+        try {
+          await useTransactionTemplate(usedTemplateId);
+        } catch (error) {
+          console.warn('Failed to update template usage count:', error);
+          // Don't fail the transaction creation if template update fails
+        }
+      }
+      
       // Reset form data with proper currency from the current transaction type's default account
       const resetAccount = accountsWithTypes.find(acc => acc.id === selectedTransactionType?.defaultAccountId);
       const resetCurrencyId = resetAccount?.currencyId || 'CUR_001';
@@ -513,6 +542,10 @@ const TransactionForm = ({ onSuccess }) => {
       setShowPayerDropdown(false);
       setTagInput('');
       setShowTagDropdown(false);
+      
+      // Reset template selection and usage tracking
+      setSelectedTemplate('');
+      setUsedTemplateId(null);
       
       if (onSuccess) {
         onSuccess();
@@ -735,6 +768,206 @@ const TransactionForm = ({ onSuccess }) => {
     }, 200);
   };
 
+  // Template handlers
+  const resetTemplateModalState = () => {
+    setShowSaveTemplateModal(false);
+    setTemplateName('');
+    setSaveMode('new');
+    setSelectedExistingTemplate('');
+    setTemplateNameError('');
+  };
+
+  const handleTemplateSelect = async (e) => {
+    const templateId = e.target.value;
+    setSelectedTemplate(templateId);
+    
+    if (!templateId) {
+      setUsedTemplateId(null); // Clear usage tracking when no template selected
+      return;
+    }
+    
+    try {
+      // Get template data WITHOUT incrementing usage count
+      const template = getTransactionTemplateById(templateId);
+      if (!template) return;
+      
+      // Track which template is being used for potential usage increment later
+      setUsedTemplateId(templateId);
+      
+      // Apply template data to form (partial template support)
+      // Always set date to today
+      const today = new Date();
+      setSelectedDate(today);
+      setFormData(prev => ({
+        ...prev,
+        date: dateToISOString(today),
+        description: template.description || '',
+        amount: template.amount || '',
+        accountId: template.accountId || '',
+        destinationAccountId: template.destinationAccountId || '',
+        destinationAmount: template.destinationAmount || '',
+        currencyId: template.currencyId || 'CUR_001',
+        subcategoryId: template.subcategoryId || '',
+        payee: template.payee || '',
+        payer: template.payer || '',
+        reference: template.reference || '',
+        notes: template.notes || '',
+        tag: template.tag || ''
+      }));
+      
+      // Update related states
+      if (template.categoryId) {
+        const categories = getActiveCategories();
+        const category = categories.find(c => c.id === template.categoryId);
+        if (category) {
+          setSelectedTransactionType(category);
+          
+          // Restore saved transaction group if available
+          if (template.groupId) {
+            const groups = getActiveTransactionGroups();
+            const savedGroup = groups.find(group => group.id === template.groupId);
+            if (savedGroup) {
+              setSelectedTransactionGroup(savedGroup);
+            }
+          } else {
+            // Fallback: auto-select first available group if no group saved
+            const availableGroups = getActiveTransactionGroups().filter(group => 
+              group.transactionTypeId === category.id
+            );
+            if (availableGroups.length > 0) {
+              const firstGroup = availableGroups[0];
+              setSelectedTransactionGroup(firstGroup);
+            }
+          }
+        }
+      }
+      
+      if (template.subcategoryId) {
+        const subcategoriesWithCategories = getSubcategoriesWithCategories();
+        const subcategory = subcategoriesWithCategories.find(sub => sub.id === template.subcategoryId);
+        setSelectedCategory(subcategory?.category || null);
+      }
+      
+      // Set input states for autocomplete fields
+      setPayeeInput(template.payee || '');
+      setPayerInput(template.payer || '');
+      setTagInput(template.tag || '');
+      
+    } catch (error) {
+      console.error('Error loading template:', error);
+      setError('Error loading template');
+    }
+  };
+
+  const handleSaveTemplate = () => {
+    // Validate that we have at least some data to save
+    if (!selectedTransactionType || !formData.description.trim()) {
+      setError('Please select a transaction type and enter a description before saving as template');
+      return;
+    }
+    
+    setTemplateName(formData.description);
+    setShowSaveTemplateModal(true);
+  };
+
+  const confirmSaveTemplate = async () => {
+    // Clear any previous errors
+    setTemplateNameError('');
+    
+    let templateNameToUse = '';
+    let shouldSave = true;
+    
+    try {
+      if (saveMode === 'new') {
+        // New template mode - validate name is provided and doesn't exist
+        if (!templateName.trim()) {
+          setTemplateNameError('Template name is required');
+          return;
+        }
+        
+        templateNameToUse = templateName.trim();
+        
+        // Check if template name already exists
+        const existingTemplate = getTransactionTemplateByName(templateNameToUse);
+        if (existingTemplate) {
+          setTemplateNameError('A template with this name already exists');
+          return;
+        }
+      } else {
+        // Replace existing template mode
+        if (!selectedExistingTemplate) {
+          setTemplateNameError('Please select a template to replace');
+          return;
+        }
+        
+        const existingTemplate = getActiveTransactionTemplates().find(t => t.id === selectedExistingTemplate);
+        if (!existingTemplate) {
+          setTemplateNameError('Selected template not found');
+          return;
+        }
+        
+        templateNameToUse = existingTemplate.name;
+        
+        // Confirm replacement
+        shouldSave = window.confirm(`Are you sure you want to replace the template "${templateNameToUse}"?`);
+        if (shouldSave) {
+          // Delete existing template
+          await deleteTransactionTemplate(selectedExistingTemplate);
+        }
+      }
+      
+      if (shouldSave) {
+        const templateData = {
+          name: templateNameToUse,
+          description: formData.description,
+          amount: formData.amount,
+          accountId: formData.accountId,
+          destinationAccountId: formData.destinationAccountId,
+          destinationAmount: formData.destinationAmount,
+          currencyId: formData.currencyId,
+          subcategoryId: formData.subcategoryId,
+          groupId: selectedTransactionGroup?.id || '',
+          payee: formData.payee,
+          payer: formData.payer,
+          reference: formData.reference,
+          notes: formData.notes,
+          tag: formData.tag,
+          categoryId: selectedTransactionType?.id
+        };
+        
+        await addTransactionTemplate(templateData);
+        resetTemplateModalState();
+        setError('');
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
+      setError('Error saving template');
+    }
+  };
+
+  const handleDeleteTemplate = (templateId) => {
+    const templates = getActiveTransactionTemplates();
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      setTemplateToDelete(template);
+      setShowDeleteConfirm(true);
+    }
+  };
+
+  const confirmDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+    
+    try {
+      await deleteTransactionTemplate(templateToDelete.id);
+      setSelectedTemplate('');
+      setShowDeleteConfirm(false);
+      setTemplateToDelete(null);
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      setError('Error deleting template');
+    }
+  };
+
   return (
     <div className="transaction-form">
       <div className="transaction-panel">
@@ -750,6 +983,44 @@ const TransactionForm = ({ onSuccess }) => {
             popperClassName="date-picker-popper"
             required
           />
+        </div>
+
+        {/* Template Dropdown */}
+        <div className="template-section" style={{ marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <div className="form-group" style={{ margin: 0, width: '400px' }}>
+              <select
+                value={selectedTemplate}
+                onChange={handleTemplateSelect}
+                style={{ width: '100%' }}
+              >
+              <option value="">Load Template...</option>
+              {getActiveTransactionTemplates().map(template => (
+                <option key={template.id} value={template.id}>
+                  {template.name} {template.usageCount > 0 ? `(${template.usageCount})` : ''}
+                </option>
+              ))}
+            </select>
+            </div>
+            {selectedTemplate && (
+              <button
+                type="button"
+                onClick={() => handleDeleteTemplate(selectedTemplate)}
+                style={{
+                  padding: '8px',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+                title="Delete template"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Transaction Type Selection Cards */}
@@ -1069,16 +1340,285 @@ const TransactionForm = ({ onSuccess }) => {
 
       {/* Add Transaction Button */}
       {selectedTransactionType && (
-        <div className="transaction-submit-section">
+        <div className="transaction-submit-section" style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          width: 'calc(350px + 1.5rem + 200px)',
+          margin: '0 auto'
+        }}>
           <button 
             type="submit" 
             className="add-transaction-btn"
             onClick={handleSubmit}
             disabled={loading}
+            style={{ flex: 1 }}
           >
             {loading ? 'Adding Transaction...' : 'Add Transaction'}
           </button>
+          <button 
+            type="button" 
+            onClick={handleSaveTemplate}
+            disabled={loading}
+            style={{
+              padding: '0.75rem',
+              backgroundColor: '#059669',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: '500'
+            }}
+          >
+            Save as Template
+          </button>
         </div>
+      )}
+
+      {/* Save as Template Modal */}
+      {showSaveTemplateModal && createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '24px',
+            borderRadius: '8px',
+            maxWidth: '450px',
+            width: '90%'
+          }}>
+            <h3 style={{ margin: '0 0 20px 0' }}>Save as Template</h3>
+            
+            {/* Save Mode Selection */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  marginBottom: '8px'
+                }}>
+                  <input
+                    type="radio"
+                    name="saveMode"
+                    value="new"
+                    checked={saveMode === 'new'}
+                    onChange={(e) => {
+                      setSaveMode(e.target.value);
+                      setTemplateNameError('');
+                    }}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Save as new template
+                </label>
+              </div>
+              
+              <div>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="radio"
+                    name="saveMode"
+                    value="replace"
+                    checked={saveMode === 'replace'}
+                    onChange={(e) => {
+                      setSaveMode(e.target.value);
+                      setTemplateNameError('');
+                    }}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Replace existing template
+                </label>
+              </div>
+            </div>
+            
+            {/* Input Field - Changes based on save mode */}
+            {saveMode === 'new' ? (
+              <div style={{ marginBottom: '16px' }}>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => {
+                    setTemplateName(e.target.value);
+                    setTemplateNameError('');
+                  }}
+                  placeholder="Enter template name..."
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: templateNameError ? '1px solid #dc2626' : '1px solid #d1d5db',
+                    backgroundColor: 'white',
+                    color: '#1a202c'
+                  }}
+                  autoFocus
+                />
+                {templateNameError && (
+                  <div style={{
+                    color: '#dc2626',
+                    fontSize: '12px',
+                    marginTop: '4px'
+                  }}>
+                    {templateNameError}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginBottom: '16px' }}>
+                <select
+                  value={selectedExistingTemplate}
+                  onChange={(e) => {
+                    setSelectedExistingTemplate(e.target.value);
+                    setTemplateNameError('');
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: templateNameError ? '1px solid #dc2626' : '1px solid #d1d5db',
+                    backgroundColor: 'white',
+                    color: '#1a202c'
+                  }}
+                >
+                  <option value="">Select template to replace...</option>
+                  {getActiveTransactionTemplates().map(template => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} ({template.usageCount || 0})
+                    </option>
+                  ))}
+                </select>
+                {templateNameError && (
+                  <div style={{
+                    color: '#dc2626',
+                    fontSize: '12px',
+                    marginTop: '4px'
+                  }}>
+                    {templateNameError}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={resetTemplateModalState}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSaveTemplate}
+                disabled={(
+                  saveMode === 'new' && !templateName.trim()
+                ) || (
+                  saveMode === 'replace' && !selectedExistingTemplate
+                )}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#059669',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: ((
+                    saveMode === 'new' && templateName.trim()
+                  ) || (
+                    saveMode === 'replace' && selectedExistingTemplate
+                  )) ? 'pointer' : 'not-allowed',
+                  opacity: ((
+                    saveMode === 'new' && templateName.trim()
+                  ) || (
+                    saveMode === 'replace' && selectedExistingTemplate
+                  )) ? 1 : 0.6
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Template Confirmation */}
+      {showDeleteConfirm && templateToDelete && createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          padding: '12px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '24px',
+            borderRadius: '8px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0' }}>Delete Template</h3>
+            <p style={{ margin: '0 0 16px 0' }}>
+              Are you sure you want to delete the template "{templateToDelete.name}"?
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setTemplateToDelete(null);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteTemplate}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       </div>

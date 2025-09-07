@@ -15,6 +15,7 @@ const DataManagement = () => {
     tags,
     payees,
     payers,
+    transactionTemplates,
     addAccount,
     addProduct,
     addTransaction,
@@ -34,6 +35,11 @@ const DataManagement = () => {
     deletePayer,
     getPayers,
     getActivePayers,
+    addTransactionTemplate,
+    updateTransactionTemplate,
+    deleteTransactionTemplate,
+    getTransactionTemplates,
+    getActiveTransactionTemplates,
     resetToSetup,
     getAccountsWithTypes,
     getAccountTypes,
@@ -331,6 +337,9 @@ const DataManagement = () => {
           case 'payers':
             await updatePayer(editingId, formData);
             break;
+          case 'transaction_templates':
+            await updateTransactionTemplate(editingId, formData);
+            break;
           case 'transaction_types':
             await updateCategory(editingId, formData);
             break;
@@ -363,6 +372,9 @@ const DataManagement = () => {
             break;
           case 'payers':
             await addPayer(formData);
+            break;
+          case 'transaction_templates':
+            await addTransactionTemplate(formData);
             break;
           case 'transaction_types':
             await addCategory(formData);
@@ -473,6 +485,9 @@ const DataManagement = () => {
       case 'payers':
         confirmMessage = 'Are you sure you want to delete this payer?';
         break;
+      case 'transaction_templates':
+        confirmMessage = 'Are you sure you want to delete this transaction template?';
+        break;
       case 'transaction_types':
         confirmMessage = t('deleteCategoryConfirm');
         break;
@@ -507,6 +522,9 @@ const DataManagement = () => {
             break;
           case 'payers':
             await deletePayer(record.id);
+            break;
+          case 'transaction_templates':
+            await deleteTransactionTemplate(record.id);
             break;
           case 'transaction_types':
             await deleteCategory(record.id);
@@ -1037,6 +1055,161 @@ const DataManagement = () => {
     </form>
   );
 
+  const renderTransactionTemplateForm = () => (
+    <form onSubmit={handleSubmit} className="data-form">
+      <div className="form-group">
+        <input
+          type="text"
+          value={formData.name || ''}
+          onChange={(e) => handleInputChange('name', e.target.value)}
+          required
+          placeholder="Enter template name"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-group">
+        <input
+          type="text"
+          value={formData.description || ''}
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          placeholder="Enter description (optional)"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-group">
+        <input
+          type="number"
+          value={formData.amount || ''}
+          onChange={(e) => handleInputChange('amount', e.target.value)}
+          placeholder="Enter amount (optional)"
+          step="0.01"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-group">
+        <select 
+          value={formData.accountId || ''} 
+          onChange={(e) => handleInputChange('accountId', e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <option value="">Select account (optional)</option>
+          {accountsWithTypes.map(account => (
+            <option key={account.id} value={account.id}>
+              {account.name} ({formatAccountBalance(account)})
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+
+        <select 
+          value={formData.destinationAccountId || ''} 
+          onChange={(e) => handleInputChange('destinationAccountId', e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <option value="">Select destination account (optional)</option>
+          {accountsWithTypes.map(account => (
+            <option key={account.id} value={account.id}>
+              {account.name} ({formatAccountBalance(account)})
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <select 
+          value={formData.currencyId || ''} 
+          onChange={(e) => handleInputChange('currencyId', e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <option value="">Select currency (optional)</option>
+          {getActiveCurrencies().map(currency => (
+            <option key={currency.id} value={currency.id}>
+              {currency.symbol} {currency.code} - {currency.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <select 
+          value={formData.subcategoryId || ''} 
+          onChange={(e) => handleInputChange('subcategoryId', e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <option value="">Select category (optional)</option>
+          {getActiveSubcategories().map(subcategory => (
+            <option key={subcategory.id} value={subcategory.id}>
+              {subcategory.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <select 
+          value={formData.groupId || ''} 
+          onChange={(e) => handleInputChange('groupId', e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <option value="">Select group (optional)</option>
+          {getActiveTransactionGroups().map(group => (
+            <option key={group.id} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <input
+          type="text"
+          value={formData.payee || ''}
+          onChange={(e) => handleInputChange('payee', e.target.value)}
+          placeholder="Enter payee (optional)"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-group">
+        <input
+          type="text"
+          value={formData.payer || ''}
+          onChange={(e) => handleInputChange('payer', e.target.value)}
+          placeholder="Enter payer (optional)"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-group">
+        <input
+          type="text"
+          value={formData.reference || ''}
+          onChange={(e) => handleInputChange('reference', e.target.value)}
+          placeholder="Enter reference (optional)"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-group">
+        <textarea
+          value={formData.notes || ''}
+          onChange={(e) => handleInputChange('notes', e.target.value)}
+          placeholder="Enter notes (optional)"
+          style={{ width: '100%', minHeight: '60px' }}
+        />
+      </div>
+      <div className="form-group">
+
+        <input
+          type="text"
+          value={formData.tag || ''}
+          onChange={(e) => handleInputChange('tag', e.target.value)}
+          placeholder="Enter tag (optional)"
+          style={{ width: '100%' }}
+        />
+      </div>
+      <div className="form-actions">
+        <button type="submit" className="btn-primary">
+          {editingId ? 'Update Template' : 'Add Template'}
+        </button>
+      </div>
+    </form>
+  );
+
   const renderCategoryForm = () => (
     <form onSubmit={handleSubmit} className="data-form">
       <div className="form-group">
@@ -1326,6 +1499,8 @@ const DataManagement = () => {
         return 'Add Payee';
       case 'payers':
         return 'Add Payer';
+      case 'transaction_templates':
+        return 'Add Template';
       case 'transaction_types':
         return t('addCategory');
       case 'subcategories':
@@ -1351,6 +1526,8 @@ const DataManagement = () => {
         return 'Update Payee';
       case 'payers':
         return 'Update Payer';
+      case 'transaction_templates':
+        return 'Update Template';
       case 'transaction_types':
         return t('updateCategory');
       case 'subcategories':
@@ -1614,6 +1791,34 @@ const DataManagement = () => {
             { key: 'name', label: 'Name' }
           ]
         };
+      case 'transaction_templates':
+        return {
+          data: transactionTemplates,
+          columns: [
+            { key: 'id', label: 'ID' },
+            { key: 'name', label: 'Name' },
+            { key: 'description', label: 'Description', render: (value) => value || '-' },
+            { 
+              key: 'amount', 
+              label: 'Amount', 
+              render: (amount, row) => {
+                if (!amount) return '-';
+                const currency = currencies.find(c => c.id === row.currencyId);
+                return currency ? `${currency.symbol}${amount}` : amount;
+              }
+            },
+            { 
+              key: 'usageCount', 
+              label: 'Usage Count', 
+              render: (value) => value || 0
+            },
+            { 
+              key: 'lastUsed', 
+              label: 'Last Used', 
+              render: (value) => value ? formatDate(new Date(value)) : 'Never'
+            }
+          ]
+        };
       case 'transaction_types':
         return {
           data: categories,
@@ -1784,6 +1989,8 @@ const DataManagement = () => {
         return renderPayeeForm();
       case 'payers':
         return renderPayerForm();
+      case 'transaction_templates':
+        return renderTransactionTemplateForm();
       case 'transaction_types':
         return renderCategoryForm();
       case 'subcategories':
@@ -2129,7 +2336,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'payers', 'transactions'].map(tab => (
+        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'payers', 'transaction_templates', 'transactions'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'data-nav-btn active' : 'data-nav-btn'}
@@ -2141,7 +2348,7 @@ const DataManagement = () => {
               setSelectedTransactionTypeFilter('');
             }}
           >
-            {tab === 'payees' ? 'Payees' : tab === 'payers' ? 'Payers' : t(tab)}
+            {tab === 'payees' ? 'Payees' : tab === 'payers' ? 'Payers' : tab === 'transaction_templates' ? 'Transaction Templates' : t(tab)}
           </button>
         ))}
       </nav>
@@ -2268,7 +2475,7 @@ const DataManagement = () => {
             )}
             <div className="table-container">
             <h3>
-              {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab === 'transaction_groups' ? 'Transaction Groups' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
+              {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab === 'transaction_groups' ? 'Transaction Groups' : activeTab === 'transaction_templates' ? 'Transaction Templates' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
               {reorderingAccounts && activeTab === 'accounts' && (
                 <span className="reordering-indicator"> - Reordering...</span>
               )}

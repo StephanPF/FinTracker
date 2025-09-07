@@ -6059,7 +6059,7 @@ body {
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   width: auto;
-  min-width: 180px;
+  min-width: 220px;
   z-index: 2010;
   animation: slideDown 0.2s ease;
   margin-top: 8px;
@@ -6116,7 +6116,7 @@ body {
 @media (max-width: 768px) {
   .hamburger-dropdown {
     right: -8px;
-    min-width: 160px;
+    min-width: 200px;
   }
 }
 

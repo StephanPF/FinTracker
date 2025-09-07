@@ -23,7 +23,8 @@ class RelationalFileStorage {
       processing_rules: 'processing_rules.xlsx',
       cash_allocations: 'cash_allocations.xlsx',
       budgets: 'budgets.xlsx',
-      budget_line_items: 'budget_line_items.xlsx'
+      budget_line_items: 'budget_line_items.xlsx',
+      transaction_templates: 'transaction_templates.xlsx'
     };
   }
 

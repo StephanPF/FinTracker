@@ -46,6 +46,7 @@ export const AccountingProvider = ({ children }) => {
   const [payers, setPayers] = useState([]);
   const [bankConfigurations, setBankConfigurations] = useState([]);
   const [processingRules, setProcessingRules] = useState({});
+  const [transactionTemplates, setTransactionTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -145,6 +146,7 @@ export const AccountingProvider = ({ children }) => {
     setPayees([...database.getTable('payees')]);
     setPayers([...database.getTable('payers')]);
     setBankConfigurations([...database.getBankConfigurations()]);
+    setTransactionTemplates([...database.getTable('transaction_templates')]);
     
     // Load all processing rules for all bank configurations
     const allBankConfigs = database.getBankConfigurations();
@@ -527,6 +529,83 @@ export const AccountingProvider = ({ children }) => {
     return database.getActivePayers();
   };
 
+  // Transaction Template functions
+  const addTransactionTemplate = async (templateData) => {
+    try {
+      const newTemplate = database.addTransactionTemplate(templateData);
+      setTransactionTemplates([...database.getTable('transaction_templates')]);
+      
+      const buffer = database.exportTableToBuffer('transaction_templates');
+      await fileStorage.saveTable('transaction_templates', buffer);
+      
+      return newTemplate;
+    } catch (error) {
+      console.error('Error adding transaction template:', error);
+      throw error;
+    }
+  };
+
+  const updateTransactionTemplate = async (id, templateData) => {
+    try {
+      const updatedTemplate = database.updateTransactionTemplate(id, templateData);
+      setTransactionTemplates([...database.getTable('transaction_templates')]);
+      
+      const buffer = database.exportTableToBuffer('transaction_templates');
+      await fileStorage.saveTable('transaction_templates', buffer);
+      
+      return updatedTemplate;
+    } catch (error) {
+      console.error('Error updating transaction template:', error);
+      throw error;
+    }
+  };
+
+  const deleteTransactionTemplate = async (id) => {
+    try {
+      const deletedTemplate = database.deleteTransactionTemplate(id);
+      setTransactionTemplates([...database.getTable('transaction_templates')]);
+      
+      const buffer = database.exportTableToBuffer('transaction_templates');
+      await fileStorage.saveTable('transaction_templates', buffer);
+      
+      return deletedTemplate;
+    } catch (error) {
+      console.error('Error deleting transaction template:', error);
+      throw error;
+    }
+  };
+
+  const useTransactionTemplate = async (id) => {
+    try {
+      const updatedTemplate = database.useTransactionTemplate(id);
+      setTransactionTemplates([...database.getTable('transaction_templates')]);
+      
+      const buffer = database.exportTableToBuffer('transaction_templates');
+      await fileStorage.saveTable('transaction_templates', buffer);
+      
+      return updatedTemplate;
+    } catch (error) {
+      console.error('Error using transaction template:', error);
+      throw error;
+    }
+  };
+
+  const getTransactionTemplates = () => {
+    return database.getTransactionTemplates();
+  };
+
+  const getActiveTransactionTemplates = () => {
+    return database.getActiveTransactionTemplates();
+  };
+
+  const getTransactionTemplateByName = (name) => {
+    return database.getTransactionTemplateByName(name);
+  };
+
+  const getTransactionTemplateById = (id) => {
+    return database.getTransactionTemplateById(id);
+  };
+
   // Bank Configuration functions
   const addBankConfiguration = async (bankConfig) => {
     try {
@@ -830,7 +909,7 @@ export const AccountingProvider = ({ children }) => {
         'transaction_types', 'transaction_groups', 'subcategories',
         'currencies', 'exchange_rates', 'currency_settings',
         'user_preferences', 'api_usage', 'api_settings', 'database_info',
-        'payees', 'payers', 'bank_configurations'
+        'payees', 'payers', 'bank_configurations', 'transaction_templates'
       ];
       
       for (const tableName of tablesToSave) {
@@ -857,6 +936,7 @@ export const AccountingProvider = ({ children }) => {
     setCategories([]);
     setPayees([]);
     setPayers([]);
+    setTransactionTemplates([]);
     setSubcategories([]);
     setDatabaseInfo([]);
     setDatabase(new RelationalDatabase());
@@ -1535,6 +1615,16 @@ export const AccountingProvider = ({ children }) => {
     deletePayer,
     getPayers,
     getActivePayers,
+    // Transaction Template functions
+    transactionTemplates,
+    addTransactionTemplate,
+    updateTransactionTemplate,
+    deleteTransactionTemplate,
+    useTransactionTemplate,
+    getTransactionTemplates,
+    getActiveTransactionTemplates,
+    getTransactionTemplateByName,
+    getTransactionTemplateById,
     // Bank Configuration functions
     bankConfigurations,
     addBankConfiguration,
