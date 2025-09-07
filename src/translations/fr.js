@@ -792,6 +792,8 @@ export const fr = {
   reconciliationCancelled: "Réconciliation annulée",
   unreconcileSelected: "Désréconcilier sélectionnés",
   viewExistingReconciliations: "Voir Réconciliations Existantes",
+  viewTransactions: "Voir Transactions",
+  viewNotes: "Voir Notes",
   hideReconciled: "Masquer réconciliés",
   showReconciled: "Afficher réconciliés",
   showAll: "Afficher tout",

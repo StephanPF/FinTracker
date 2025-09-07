@@ -680,6 +680,27 @@ const DataManagement = () => {
             onWheel={(e) => e.target.blur()}
           />
         </div>
+        <div className="form-group">
+          <label>Notes</label>
+          <textarea
+            value={formData.notes || ''}
+            onChange={(e) => handleInputChange('notes', e.target.value)}
+            placeholder="Add notes about this account..."
+            style={{
+              backgroundColor: 'white',
+              color: '#1a202c',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              padding: '8px',
+              fontSize: '0.875rem',
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              minHeight: '60px',
+              width: '100%',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
       </form>
       <div className="form-actions" style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
         <button type="submit" form="account-form" className="btn-primary">

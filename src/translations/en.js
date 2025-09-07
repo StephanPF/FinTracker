@@ -794,6 +794,8 @@ export const en = {
   // Reconciliation Views & Filters
   viewExistingReconciliations: "View Existing Reconciliations",
   showExistingReconciliations: "Show Existing Reconciliations",
+  viewTransactions: "View Transactions",
+  viewNotes: "View Notes",
   hideReconciled: "Hide reconciled",
   showReconciled: "Show reconciled", 
   showAll: "Show all",

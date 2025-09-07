@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAccounting } from '../contexts/AccountingContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import TransactionList from './TransactionList';
 
 const AccountSummary = ({ onAccountClick }) => {
-  const { accounts, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService } = useAccounting();
+  const { accounts, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService, updateAccount } = useAccounting();
   const { t } = useLanguage();
   const summary = getSummary();
   const accountsWithTypes = getAccountsWithTypes();
   
   // State for currency display toggle
-  const [showNativeCurrency, setShowNativeCurrency] = useState(true);
+  const [showNativeCurrency, setShowNativeCurrency] = useState(false);
+  
+  // State for context menu and notes modal
+  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, account: null });
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [accountNotes, setAccountNotes] = useState('');
+  const contextMenuRef = useRef(null);
 
   const getAccountsByType = (type) => {
     return accountsWithTypes.filter(account => account.accountType && account.accountType.type === type);
@@ -255,6 +263,72 @@ const AccountSummary = ({ onAccountClick }) => {
     ));
   };
 
+  // Handle clicks outside context menu to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
+        setContextMenu({ show: false, x: 0, y: 0, account: null });
+      }
+    };
+
+    if (contextMenu.show) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [contextMenu.show]);
+
+  // Handle account click to show context menu
+  const handleAccountClick = (event, account) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX;
+    const y = event.clientY;
+    
+    setContextMenu({
+      show: true,
+      x: x,
+      y: y,
+      account: account
+    });
+  };
+
+  // Handle view transactions
+  const handleViewTransactions = () => {
+    if (contextMenu.account && onAccountClick) {
+      onAccountClick(contextMenu.account.id);
+    }
+    setContextMenu({ show: false, x: 0, y: 0, account: null });
+  };
+
+  // Handle view notes
+  const handleViewNotes = () => {
+    setSelectedAccount(contextMenu.account);
+    setAccountNotes(contextMenu.account.notes || '');
+    setShowNotesModal(true);
+    setContextMenu({ show: false, x: 0, y: 0, account: null });
+  };
+
+  // Handle save notes
+  const handleSaveNotes = async () => {
+    try {
+      await updateAccount(selectedAccount.id, {
+        ...selectedAccount,
+        notes: accountNotes
+      });
+      console.log(`Notes saved for account ${selectedAccount.name}:`, accountNotes);
+      setShowNotesModal(false);
+      setSelectedAccount(null);
+      setAccountNotes('');
+    } catch (error) {
+      console.error('Error saving account notes:', error);
+      alert('Failed to save notes. Please try again.');
+    }
+  };
+
   const [includeRetirementInAssets, setIncludeRetirementInAssets] = useState(false);
   const baseCurrencyTotals = getBaseCurrencyTotals();
 
@@ -368,9 +442,9 @@ const AccountSummary = ({ onAccountClick }) => {
                 <div 
                   key={account.id} 
                   className={`account-item ${account.accountType ? account.accountType.type.toLowerCase() : 'unknown'} ${account.accountType?.subtype === 'Retirement account' ? 'retirement' : ''} ${account.accountType?.subtype === 'Business account' ? 'business' : ''} clickable`}
-                  onClick={() => onAccountClick && onAccountClick(account.id)}
-                  style={{ cursor: onAccountClick ? 'pointer' : 'default' }}
-                  title={onAccountClick ? `View transactions for ${account.name}` : ''}
+                  onClick={(e) => handleAccountClick(e, account)}
+                  style={{ cursor: 'pointer' }}
+                  title={`Click for options: ${account.name}`}
                 >
                   <div className="account-info">
                     <span className="account-name">{account.name}</span>
@@ -406,6 +480,188 @@ const AccountSummary = ({ onAccountClick }) => {
         </div>
         <TransactionList limit={5} />
       </div>
+
+      {/* Context Menu */}
+      {contextMenu.show && createPortal(
+        <div 
+          ref={contextMenuRef}
+          className="account-context-menu"
+          style={{
+            position: 'fixed',
+            top: contextMenu.y + 'px',
+            left: contextMenu.x + 'px',
+            backgroundColor: 'white',
+            color: '#1a202c',
+            border: '1px solid #d1d5db',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            zIndex: 1000,
+            minWidth: '160px',
+            padding: '4px'
+          }}
+        >
+          <button 
+            className="context-menu-item"
+            onClick={handleViewTransactions}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              margin: '0',
+              border: 'none',
+              backgroundColor: 'white',
+              color: '#1a202c',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              borderRadius: '6px',
+              transition: 'background-color 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+          >
+            📋 {t('viewTransactions') || 'View Transactions'}
+          </button>
+          <button 
+            className="context-menu-item"
+            onClick={handleViewNotes}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              margin: '0',
+              border: 'none',
+              backgroundColor: 'white',
+              color: '#1a202c',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              borderRadius: '6px',
+              transition: 'background-color 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+          >
+            📝 {t('viewNotes') || 'View Notes'}
+          </button>
+        </div>,
+        document.body
+      )}
+
+      {/* Notes Modal */}
+      {showNotesModal && selectedAccount && createPortal(
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="modal-content" style={{
+            backgroundColor: 'white',
+            color: '#1a202c',
+            borderRadius: '12px',
+            padding: '12px',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '70vh',
+            overflow: 'auto',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div className="modal-header" style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '12px',
+              borderBottom: '1px solid #d1d5db',
+              paddingBottom: '12px'
+            }}>
+              <h3 style={{ margin: 0, color: '#1a202c', fontSize: '1.125rem' }}>
+                📝 Notes for {selectedAccount.name}
+              </h3>
+              <button 
+                onClick={() => setShowNotesModal(false)}
+                style={{
+                  backgroundColor: 'white',
+                  color: '#1a202c',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  lineHeight: '1'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body" style={{ marginBottom: '12px' }}>
+              <textarea
+                value={accountNotes}
+                onChange={(e) => setAccountNotes(e.target.value)}
+                placeholder={`Add notes about ${selectedAccount.name}...`}
+                style={{
+                  width: '100%',
+                  minHeight: '150px',
+                  padding: '8px',
+                  margin: '0',
+                  backgroundColor: 'white',
+                  color: '#1a202c',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            
+            <div className="modal-footer" style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '8px',
+              marginTop: '0',
+              paddingTop: '12px',
+              borderTop: '1px solid #d1d5db'
+            }}>
+              <button 
+                onClick={() => setShowNotesModal(false)}
+                style={{
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: 'white',
+                  color: '#1a202c',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                {t('cancel') || 'Cancel'}
+              </button>
+              <button 
+                onClick={handleSaveNotes}
+                style={{
+                  padding: '0.75rem',
+                  border: 'none',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                {t('save') || 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

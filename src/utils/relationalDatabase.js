@@ -29,7 +29,7 @@ class RelationalDatabase {
     
     // Define table schemas with headers for empty tables
     this.tableSchemas = {
-      accounts: ['id', 'name', 'accountCode', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'order', 'isActive', 'createdAt'],
+      accounts: ['id', 'name', 'accountCode', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'notes', 'order', 'isActive', 'createdAt'],
       transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'cashWithdrawal', 'isPrepaid', 'recognitionMethod', 'serviceStartDate', 'serviceEndDate', 'recognitionStatus', 'recognizedToDate', 'remainingToRecognize', 'createdAt'],
       transaction_types: ['id', 'name', 'description', 'color', 'icon', 'defaultAccountId', 'destinationAccountId', 'isActive', 'createdAt'],
       currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
@@ -188,6 +188,7 @@ class RelationalDatabase {
   generateId(prefix) {
     // Map prefix to appropriate table
     const prefixToTable = {
+      'ACC': 'accounts',
       'CUR': 'currencies',
       'ER': 'exchange_rates',
       'PAY': 'payees',
@@ -568,7 +569,7 @@ class RelationalDatabase {
     const maxOrder = Math.max(...this.tables.accounts.map(acc => acc.order || 0), 0);
     
     const newAccount = {
-      id: 'ACC' + Date.now(),
+      id: this.generateId('ACC'),
       name: accountData.name,
       accountCode: accountData.accountCode || '',
       accountTypeId: accountData.accountTypeId,
@@ -576,6 +577,7 @@ class RelationalDatabase {
       initialBalance: parseFloat(accountData.initialBalance || accountData.balance) || 0,
       balance: parseFloat(accountData.initialBalance || accountData.balance) || 0, // Start with initial balance
       description: accountData.description || '',
+      notes: accountData.notes || '', // Add notes field for account-specific notes
       includeInOverview: accountData.includeInOverview !== undefined ? accountData.includeInOverview : true,
       order: accountData.order !== undefined ? accountData.order : maxOrder + 1,
       isActive: accountData.isActive !== undefined ? accountData.isActive : true,
@@ -988,6 +990,146 @@ class RelationalDatabase {
         this.tables[tableName] = [];
       }
     }
+    
+    // Ensure existing accounts have the notes field
+    this.ensureAccountNotesField();
+    
+    // Migrate timestamp-based account IDs to sequential format
+    this.migrateAccountIdsToSequential();
+  }
+
+  // Migration method to add notes field to existing accounts
+  ensureAccountNotesField() {
+    if (this.tables.accounts && this.tables.accounts.length > 0) {
+      let updatedAny = false;
+      this.tables.accounts = this.tables.accounts.map(account => {
+        if (!account.hasOwnProperty('notes')) {
+          updatedAny = true;
+          return {
+            ...account,
+            notes: '' // Add empty notes field to existing accounts
+          };
+        }
+        return account;
+      });
+      
+      if (updatedAny) {
+        console.log('Added notes field to existing accounts');
+        this.saveTableToWorkbook('accounts');
+      }
+    }
+  }
+
+  // Migration method to convert timestamp-based account IDs to sequential format
+  migrateAccountIdsToSequential() {
+    if (!this.tables.accounts || this.tables.accounts.length === 0) {
+      return; // No accounts to migrate
+    }
+
+    // Check if any accounts still use timestamp format (ACC + numbers > 1000000000000)
+    const timestampAccounts = this.tables.accounts.filter(account => {
+      return account.id.startsWith('ACC') && 
+             account.id.length > 10 && 
+             !account.id.includes('_') &&
+             parseInt(account.id.substring(3)) > 1000000000000; // Timestamp format
+    });
+
+    if (timestampAccounts.length === 0) {
+      return; // No timestamp accounts found, migration already completed
+    }
+
+    console.log(`Migrating ${timestampAccounts.length} accounts from timestamp to sequential IDs...`);
+
+    // Create mapping from old IDs to new sequential IDs
+    const idMapping = {};
+    let sequentialCounter = 1;
+
+    // First, find the highest existing sequential ID to avoid conflicts
+    const existingSequentialAccounts = this.tables.accounts.filter(account => 
+      account.id.startsWith('ACC_')
+    );
+    
+    if (existingSequentialAccounts.length > 0) {
+      const maxSeqId = Math.max(...existingSequentialAccounts.map(account => {
+        const match = account.id.match(/ACC_(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      }));
+      sequentialCounter = maxSeqId + 1;
+    }
+
+    // Create ID mappings for timestamp accounts
+    timestampAccounts.forEach(account => {
+      const newId = `ACC_${String(sequentialCounter).padStart(3, '0')}`;
+      idMapping[account.id] = newId;
+      sequentialCounter++;
+    });
+
+    // Update account IDs
+    this.tables.accounts = this.tables.accounts.map(account => {
+      if (idMapping[account.id]) {
+        return {
+          ...account,
+          id: idMapping[account.id]
+        };
+      }
+      return account;
+    });
+
+    // Update references in transactions table
+    if (this.tables.transactions) {
+      this.tables.transactions = this.tables.transactions.map(transaction => {
+        const updates = {};
+        if (transaction.accountId && idMapping[transaction.accountId]) {
+          updates.accountId = idMapping[transaction.accountId];
+        }
+        if (transaction.destinationAccountId && idMapping[transaction.destinationAccountId]) {
+          updates.destinationAccountId = idMapping[transaction.destinationAccountId];
+        }
+        return Object.keys(updates).length > 0 ? { ...transaction, ...updates } : transaction;
+      });
+    }
+
+    // Update references in transaction_types table
+    if (this.tables.transaction_types) {
+      this.tables.transaction_types = this.tables.transaction_types.map(type => {
+        const updates = {};
+        if (type.defaultAccountId && idMapping[type.defaultAccountId]) {
+          updates.defaultAccountId = idMapping[type.defaultAccountId];
+        }
+        if (type.destinationAccountId && idMapping[type.destinationAccountId]) {
+          updates.destinationAccountId = idMapping[type.destinationAccountId];
+        }
+        return Object.keys(updates).length > 0 ? { ...type, ...updates } : type;
+      });
+    }
+
+    // Update references in transaction_templates table
+    if (this.tables.transaction_templates) {
+      this.tables.transaction_templates = this.tables.transaction_templates.map(template => {
+        const updates = {};
+        if (template.accountId && idMapping[template.accountId]) {
+          updates.accountId = idMapping[template.accountId];
+        }
+        if (template.destinationAccountId && idMapping[template.destinationAccountId]) {
+          updates.destinationAccountId = idMapping[template.destinationAccountId];
+        }
+        return Object.keys(updates).length > 0 ? { ...template, ...updates } : template;
+      });
+    }
+
+    // Save all updated tables
+    this.saveTableToWorkbook('accounts');
+    if (this.tables.transactions && this.tables.transactions.length > 0) {
+      this.saveTableToWorkbook('transactions');
+    }
+    if (this.tables.transaction_types && this.tables.transaction_types.length > 0) {
+      this.saveTableToWorkbook('transaction_types');
+    }
+    if (this.tables.transaction_templates && this.tables.transaction_templates.length > 0) {
+      this.saveTableToWorkbook('transaction_templates');
+    }
+
+    console.log(`Account ID migration completed. Updated ${Object.keys(idMapping).length} accounts and their references.`);
   }
 
   getTable(tableName) {
