@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { createAnalyticsDataService } from '../../utils/analyticsDataService';
 import ExpenseView from './ExpenseView/ExpenseView';
 import CashflowView from './CashflowView/CashflowView';
+import NetWorthEvolution from './NetWorthEvolution/NetWorthEvolution';
 import UserGuide from './UserGuide/UserGuide';
 import './AnalyticsMain.css';
 
@@ -31,7 +32,7 @@ const AnalyticsMain = ({ onNavigate }) => {
   const { t } = useLanguage();
 
   // Analytics state management
-  const [currentView, setCurrentView] = useState('expense'); // 'expense', 'cashflow', or 'userguide'
+  const [currentView, setCurrentView] = useState('expense'); // 'expense', 'cashflow', 'networth', or 'userguide'
   const [selectedPeriod, setSelectedPeriod] = useState('monthly'); // weekly, monthly, quarterly, yearly
   const [viewType, setViewType] = useState('cash'); // 'cash' or 'accrual'
   const [dateRange, setDateRange] = useState({
@@ -227,6 +228,12 @@ const AnalyticsMain = ({ onNavigate }) => {
               {t('cashflowView') || 'Cashflow View'}
             </button>
             <button 
+              className={`view-toggle-btn ${currentView === 'networth' ? 'active' : ''}`}
+              onClick={() => handleViewChange('networth')}
+            >
+              📈 {t('netWorthView') || 'Net Worth View'}
+            </button>
+            <button 
               className={`view-toggle-btn user-guide-btn ${currentView === 'userguide' ? 'active' : ''}`}
               onClick={() => handleViewChange('userguide')}
             >
@@ -247,7 +254,7 @@ const AnalyticsMain = ({ onNavigate }) => {
             </div>
           )}
 
-          {!activeBudget && (
+          {!activeBudget && currentView !== 'userguide' && currentView !== 'networth' && (
             <div className="no-budget-warning">
               <span className="warning-icon">⚠️</span>
               <span className="warning-text">
@@ -288,6 +295,10 @@ const AnalyticsMain = ({ onNavigate }) => {
 
               {currentView === 'cashflow' && (
                 <CashflowView onNavigate={onNavigate} />
+              )}
+
+              {currentView === 'networth' && (
+                <NetWorthEvolution onNavigate={onNavigate} />
               )}
 
               {currentView === 'userguide' && (

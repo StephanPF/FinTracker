@@ -15,6 +15,7 @@ const UserGuide = ({ onNavigate }) => {
     overview: true,
     expense: false,
     cashflow: false,
+    networth: false,
     navigation: false,
     features: false,
     troubleshooting: false
@@ -38,6 +39,7 @@ const UserGuide = ({ onNavigate }) => {
       overview: true,
       expense: true,
       cashflow: true,
+      networth: true,
       navigation: true,
       features: true,
       troubleshooting: true
@@ -52,6 +54,7 @@ const UserGuide = ({ onNavigate }) => {
       overview: false,
       expense: false,
       cashflow: false,
+      networth: false,
       navigation: false,
       features: false,
       troubleshooting: false
@@ -88,9 +91,10 @@ const UserGuide = ({ onNavigate }) => {
           <li><a href="#overview" onClick={(e) => {e.preventDefault(); toggleSection('overview');}}>1. {t('overview') || 'Overview'}</a></li>
           <li><a href="#expense-view" onClick={(e) => {e.preventDefault(); toggleSection('expense');}}>2. {t('expenseView') || 'Expense View'}</a></li>
           <li><a href="#cashflow-view" onClick={(e) => {e.preventDefault(); toggleSection('cashflow');}}>3. {t('cashflowView') || 'Cashflow View'}</a></li>
-          <li><a href="#navigation" onClick={(e) => {e.preventDefault(); toggleSection('navigation');}}>4. {t('navigationFiltering') || 'Navigation & Filtering'}</a></li>
-          <li><a href="#advanced-features" onClick={(e) => {e.preventDefault(); toggleSection('features');}}>5. {t('advancedFeatures') || 'Advanced Features'}</a></li>
-          <li><a href="#troubleshooting" onClick={(e) => {e.preventDefault(); toggleSection('troubleshooting');}}>6. {t('troubleshooting') || 'Troubleshooting'}</a></li>
+          <li><a href="#networth-view" onClick={(e) => {e.preventDefault(); toggleSection('networth');}}>4. {t('networthView') || 'Net Worth View'}</a></li>
+          <li><a href="#navigation" onClick={(e) => {e.preventDefault(); toggleSection('navigation');}}>5. {t('navigationFiltering') || 'Navigation & Filtering'}</a></li>
+          <li><a href="#advanced-features" onClick={(e) => {e.preventDefault(); toggleSection('features');}}>6. {t('advancedFeatures') || 'Advanced Features'}</a></li>
+          <li><a href="#troubleshooting" onClick={(e) => {e.preventDefault(); toggleSection('troubleshooting');}}>7. {t('troubleshooting') || 'Troubleshooting'}</a></li>
         </ul>
       </div>
 
@@ -323,7 +327,116 @@ const UserGuide = ({ onNavigate }) => {
           )}
         </div>
 
-        {/* 4. Navigation & Filtering Section */}
+        {/* 4. Net Worth View Section */}
+        <div className="guide-section" id="networth-view">
+          <div 
+            className="section-header" 
+            onClick={() => toggleSection('networth')}
+          >
+            <h3>
+              <span className={`expand-icon ${expandedSections.networth ? 'expanded' : ''}`}>▶</span>
+              4. {t('networthView') || 'Net Worth View'}
+            </h3>
+          </div>
+          {expandedSections.networth && (
+            <div className="section-content">
+              <p>{t('networthViewIntro') || 'The Net Worth View provides comprehensive tracking and analysis of your financial progress over time through snapshots of your total assets, liabilities, and net worth.'}</p>
+              
+              <div className="overview-cards">
+                <div className="overview-card networth-card">
+                  <div className="card-icon">📈</div>
+                  <div className="card-content">
+                    <h4>{t('networthTracking') || 'Net Worth Tracking'}</h4>
+                    <p>{t('networthTrackingDescription') || 'Track your financial progress over time with detailed snapshots that capture your total assets, liabilities, net worth, and retirement assets at specific points in time.'}</p>
+                  </div>
+                </div>
+                
+                <div className="overview-card snapshot-card">
+                  <div className="card-icon">📊</div>
+                  <div className="card-content">
+                    <h4>{t('snapshotAnalysis') || 'Snapshot Analysis'}</h4>
+                    <p>{t('snapshotAnalysisDescription') || 'Compare snapshots across different time periods to understand trends, growth patterns, and financial milestones in your wealth-building journey.'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="key-concepts">
+                <h4>{t('keyConcepts') || 'Key Concepts'}</h4>
+                <ul>
+                  <li><strong>{t('manualSnapshots') || 'Manual Snapshots'}:</strong> {t('manualSnapshotsDesc') || 'Create snapshots manually from the Overview page by clicking on any summary card and selecting "Save Snapshot"'}</li>
+                  <li><strong>{t('historicalComparison') || 'Historical Comparison'}:</strong> {t('historicalComparisonDesc') || 'Compare your current financial position with past snapshots to track progress'}</li>
+                  <li><strong>{t('currencyConsistency') || 'Currency Consistency'}:</strong> {t('currencyConsistencyDesc') || 'All snapshots are stored and displayed in your base currency for accurate comparison'}</li>
+                  <li><strong>{t('comprehensiveData') || 'Comprehensive Data'}:</strong> {t('comprehensiveDataDesc') || 'Each snapshot includes assets, liabilities, net worth, and retirement assets with timestamps'}</li>
+                </ul>
+              </div>
+
+              <div className="component-guide">
+                <div className="component-item">
+                  <h4>📋 {t('snapshotSummary') || 'Snapshot Summary Cards'}</h4>
+                  <p>{t('snapshotSummaryDesc') || 'Overview cards showing your latest net worth and the change since your first snapshot, with clear indicators of financial progress.'}</p>
+                  <div className="feature-list">
+                    <ul>
+                      <li>{t('latestNetWorthCard') || 'Latest Net Worth: Shows your most recent financial position'}</li>
+                      <li>{t('netWorthChangeCard') || 'Net Worth Change: Displays total growth or decline since tracking began'}</li>
+                      <li>{t('colorCodingPositive') || 'Green for positive changes, red for negative changes'}</li>
+                      <li>{t('dateTimestamps') || 'Clear date timestamps for each snapshot'}</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="component-item">
+                  <h4>📊 {t('historicalTable') || 'Historical Snapshots Table'}</h4>
+                  <p>{t('historicalTableDesc') || 'Detailed table showing all your snapshots in chronological order with comprehensive financial data for each point in time.'}</p>
+                  <div className="feature-list">
+                    <ul>
+                      <li>{t('chronologicalOrder') || 'Snapshots sorted by date (newest first)'}</li>
+                      <li>{t('completeBreakdown') || 'Complete breakdown: Assets, Liabilities, Net Worth, Retirement'}</li>
+                      <li>{t('currencyDisplay') || 'Currency information for each snapshot'}</li>
+                      <li>{t('colorCodedValues') || 'Color-coded values: Green for assets, red for liabilities, purple for retirement'}</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="component-item">
+                  <h4>📈 {t('interactiveChart') || 'Interactive Chart Visualization'}</h4>
+                  <p>{t('interactiveChartDesc') || 'Visual representation of your net worth progression over time with interactive elements and trend analysis.'}</p>
+                  <div className="feature-list">
+                    <ul>
+                      <li>{t('trendVisualization') || 'Clear trend lines showing financial progress over time'}</li>
+                      <li>{t('hoverDetails') || 'Hover over data points to see detailed snapshot information'}</li>
+                      <li>{t('multiSeriesData') || 'Multiple data series: Assets, Liabilities, Net Worth, Retirement'}</li>
+                      <li>{t('zoomAndPan') || 'Interactive chart with zoom and pan capabilities'}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="usage-tips">
+                <h4>{t('networthViewTips') || 'Usage Tips'}</h4>
+                <ul>
+                  <li>{t('networthTip1') || 'Create snapshots regularly (monthly or quarterly) for consistent tracking'}</li>
+                  <li>{t('networthTip2') || 'Save snapshots after major financial events (bonus, large purchase, investment gains)'}</li>
+                  <li>{t('networthTip3') || 'Use the Overview page cards context menu to quickly save snapshots'}</li>
+                  <li>{t('networthTip4') || 'Monitor the trend over time rather than focusing on individual snapshot variations'}</li>
+                  <li>{t('networthTip5') || 'Include retirement accounts to get a complete picture of your financial health'}</li>
+                </ul>
+              </div>
+
+              <div className="getting-started">
+                <h4>{t('gettingStarted') || 'Getting Started'}</h4>
+                <ol>
+                  <li>{t('step1Snapshot') || 'Go to the Overview page and click on any summary card (Assets, Liabilities, Net Worth, or Retirement)'}</li>
+                  <li>{t('step2Save') || 'Select "Save Snapshot" from the context menu'}</li>
+                  <li>{t('step3View') || 'Visit the Net Worth View to see your snapshot data and analysis'}</li>
+                  <li>{t('step4Regular') || 'Repeat this process regularly to build a comprehensive financial timeline'}</li>
+                  <li>{t('step5Analyze') || 'Use the charts and historical data to understand your financial patterns and progress'}</li>
+                </ol>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 5. Navigation & Filtering Section */}
         <div className="guide-section" id="navigation">
           <div 
             className="section-header" 
@@ -331,7 +444,7 @@ const UserGuide = ({ onNavigate }) => {
           >
             <h3>
               <span className={`expand-icon ${expandedSections.navigation ? 'expanded' : ''}`}>▶</span>
-              4. {t('navigationFiltering') || 'Navigation & Filtering'}
+              5. {t('navigationFiltering') || 'Navigation & Filtering'}
             </h3>
           </div>
           {expandedSections.navigation && (
@@ -387,7 +500,7 @@ const UserGuide = ({ onNavigate }) => {
           )}
         </div>
 
-        {/* 5. Advanced Features Section */}
+        {/* 6. Advanced Features Section */}
         <div className="guide-section" id="advanced-features">
           <div 
             className="section-header" 
@@ -395,7 +508,7 @@ const UserGuide = ({ onNavigate }) => {
           >
             <h3>
               <span className={`expand-icon ${expandedSections.features ? 'expanded' : ''}`}>▶</span>
-              5. {t('advancedFeatures') || 'Advanced Features'}
+              6. {t('advancedFeatures') || 'Advanced Features'}
             </h3>
           </div>
           {expandedSections.features && (
@@ -477,7 +590,7 @@ const UserGuide = ({ onNavigate }) => {
           )}
         </div>
 
-        {/* 6. Troubleshooting Section */}
+        {/* 7. Troubleshooting Section */}
         <div className="guide-section" id="troubleshooting">
           <div 
             className="section-header" 
@@ -485,7 +598,7 @@ const UserGuide = ({ onNavigate }) => {
           >
             <h3>
               <span className={`expand-icon ${expandedSections.troubleshooting ? 'expanded' : ''}`}>▶</span>
-              6. {t('troubleshooting') || 'Troubleshooting'}
+              7. {t('troubleshooting') || 'Troubleshooting'}
             </h3>
           </div>
           {expandedSections.troubleshooting && (

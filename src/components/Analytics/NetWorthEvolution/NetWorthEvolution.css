@@ -1,0 +1,464 @@
+.networth-evolution {
+  padding: 12px;
+  background-color: white;
+  color: #1a202c !important;
+}
+
+.networth-evolution.loading,
+.networth-evolution.empty {
+  text-align: center;
+  padding: 12px;
+}
+
+.networth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.networth-header h2 {
+  color: #1a202c;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.networth-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.snapshots-count {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.networth-summary {
+  margin-bottom: 12px;
+}
+
+.evolution-summary h3 {
+  color: #1a202c;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+
+.summary-cards {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.summary-card {
+  background-color: white !important;
+  color: #1a202c !important;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 12px;
+  flex: 1;
+  text-align: center;
+  /* Force browser to respect our styling */
+  -webkit-text-fill-color: #1a202c !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Force white background card styling like checkbox solution */
+.white-bg-card {
+  background-color: white !important;
+  color: #1a202c !important;
+  -webkit-text-fill-color: #1a202c !important;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.white-bg-card .card-value {
+  color: #1a202c !important;
+  -webkit-text-fill-color: #1a202c !important;
+  font-weight: 600;
+}
+
+.white-bg-card .card-value.positive {
+  color: #059669 !important;
+  -webkit-text-fill-color: #059669 !important;
+}
+
+.white-bg-card .card-value.negative {
+  color: #dc2626 !important;
+  -webkit-text-fill-color: #dc2626 !important;
+}
+
+.white-bg-card .card-label,
+.white-bg-card .card-date {
+  color: #6b7280 !important;
+  -webkit-text-fill-color: #6b7280 !important;
+}
+
+.card-label {
+  font-size: 0.9rem;
+  color: #6b7280 !important;
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #1a202c !important;
+  margin-bottom: 8px;
+}
+
+.card-value.positive {
+  color: #059669 !important;
+}
+
+.card-value.negative {
+  color: #dc2626 !important;
+}
+
+.card-date {
+  font-size: 0.8rem;
+  color: #6b7280 !important;
+}
+
+.networth-data h3 {
+  color: #1a202c;
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+}
+
+.snapshots-table {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr 1fr 80px;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr 1fr 1fr 80px;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: center;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row:hover {
+  background: #f9fafb;
+}
+
+.snapshot-date {
+  font-weight: 500;
+  color: #1a202c;
+}
+
+.snapshot-value {
+  text-align: right;
+  font-weight: 500;
+}
+
+.snapshot-value.assets {
+  color: #059669;
+}
+
+.snapshot-value.liabilities {
+  color: #dc2626;
+}
+
+.snapshot-value.net-worth {
+  color: #1a202c;
+  font-weight: 600;
+}
+
+.snapshot-value.retirement {
+  color: #7c3aed;
+}
+
+.snapshot-currency {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.networth-chart-placeholder {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.networth-chart-placeholder h3 {
+  color: #1a202c;
+  margin-bottom: 8px;
+}
+
+.chart-placeholder p {
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.chart-placeholder ul {
+  text-align: left;
+  display: inline-block;
+  color: #6b7280;
+}
+
+.chart-placeholder li {
+  margin-bottom: 5px;
+}
+
+/* NetWorth Chart Styles */
+.networth-chart {
+  margin-top: 12px;
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.chart-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.networth-chart-canvas {
+  cursor: crosshair;
+  border-radius: 8px;
+}
+
+.networth-chart-loading,
+.networth-chart-insufficient {
+  text-align: center;
+  padding: 12px;
+  color: #6b7280;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.legend-item {
+  display: flex;
+}
+
+.legend-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 2px solid;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.legend-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.legend-toggle.active {
+  color: white !important;
+}
+
+.legend-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chart-tooltip {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 1000;
+  max-width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  color: white;
+}
+
+.tooltip-date {
+  font-size: 0.8rem;
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tooltip-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tooltip-label {
+  color: #d1d5db;
+  font-size: 0.8rem;
+}
+
+.tooltip-value {
+  color: white;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.chart-insights {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 8px;
+}
+
+.chart-insights h4 {
+  color: #1a202c;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.insight-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  border-left: 4px solid;
+}
+
+.insight-card.success {
+  background: #ecfdf5;
+  border-left-color: #059669;
+}
+
+.insight-card.info {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.insight-card.warning {
+  background: #fef3c7;
+  border-left-color: #d97706;
+}
+
+.insight-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.insight-content {
+  flex-grow: 1;
+}
+
+.insight-title {
+  font-size: 0.9rem;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.insight-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a202c;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.insight-description {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.empty-state {
+  padding: 12px;
+}
+
+.empty-state p {
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .summary-cards {
+    flex-direction: column;
+  }
+  
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  
+  .table-header > div,
+  .table-row > div {
+    padding: 5px 0;
+  }
+  
+  .snapshot-value {
+    text-align: left;
+  }
+}

@@ -24,7 +24,8 @@ class RelationalDatabase {
       cash_allocations: [],
       budgets: [],
       budget_line_items: [],
-      transaction_templates: []
+      transaction_templates: [],
+      networth_snapshots: []
     };
     
     // Define table schemas with headers for empty tables
@@ -50,7 +51,8 @@ class RelationalDatabase {
       cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'dateSpent', 'isAutomatic', 'createdAt', 'updatedAt'],
       budgets: ['id', 'name', 'description', 'status', 'createdAt', 'lastModified', 'isDefault'],
       budget_line_items: ['id', 'budgetId', 'subcategoryId', 'subcategoryName', 'period', 'amount', 'baseCurrency'],
-      transaction_templates: ['id', 'name', 'description', 'amount', 'accountId', 'destinationAccountId', 'destinationAmount', 'currencyId', 'subcategoryId', 'groupId', 'payee', 'payer', 'reference', 'notes', 'tag', 'categoryId', 'usageCount', 'lastUsed', 'isActive', 'createdAt']
+      transaction_templates: ['id', 'name', 'description', 'amount', 'accountId', 'destinationAccountId', 'destinationAmount', 'currencyId', 'subcategoryId', 'groupId', 'payee', 'payer', 'reference', 'notes', 'tag', 'categoryId', 'usageCount', 'lastUsed', 'isActive', 'createdAt'],
+      networth_snapshots: ['id', 'snapshotDate', 'baseCurrencyId', 'totalAssets', 'totalLiabilities', 'netAssets', 'totalRetirement', 'description', 'createdAt']
     };
     
     this.workbooks = {};
@@ -113,6 +115,9 @@ class RelationalDatabase {
       }
       
       this.validateRelationships();
+      
+      // Initialize any missing tables for backward compatibility
+      this.initializeMissingTables();
       
       // After loading all data, recalculate account balances to ensure accuracy
       this.recalculateAllAccountBalances();
@@ -192,7 +197,8 @@ class RelationalDatabase {
       'CUR': 'currencies',
       'ER': 'exchange_rates',
       'PAY': 'payees',
-      'TT': 'transaction_templates'
+      'TT': 'transaction_templates',
+      'NWS': 'networth_snapshots'
     };
     
     const tableName = prefixToTable[prefix];
@@ -247,6 +253,40 @@ class RelationalDatabase {
       }
       
       XLSX.utils.book_append_sheet(this.workbooks[tableName], worksheet, tableName);
+    }
+  }
+
+  /**
+   * Initialize missing tables for backward compatibility
+   * This ensures new tables like networth_snapshots are created when loading older databases
+   */
+  initializeMissingTables() {
+    // List of tables that might be missing in older databases
+    const requiredTables = [
+      'networth_snapshots',
+      'payees',
+      'payers', 
+      'transaction_templates',
+      'api_settings',
+      'api_usage'
+    ];
+
+    for (const tableName of requiredTables) {
+      if (!this.tables[tableName] || this.tables[tableName].length === 0) {
+        console.log(`Initializing missing table: ${tableName}`);
+        this.tables[tableName] = [];
+        
+        // Create empty workbook for the table
+        this.workbooks[tableName] = XLSX.utils.book_new();
+        const schema = this.tableSchemas[tableName];
+        if (schema) {
+          const worksheet = XLSX.utils.aoa_to_sheet([schema]);
+          XLSX.utils.book_append_sheet(this.workbooks[tableName], worksheet, tableName);
+          
+          // Save the empty table to create the physical file
+          this.saveTableToWorkbook(tableName);
+        }
+      }
     }
   }
 
@@ -981,7 +1021,8 @@ class RelationalDatabase {
       'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
       'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules',
-      'cash_allocations', 'budgets', 'budget_line_items', 'transaction_templates'
+      'cash_allocations', 'budgets', 'budget_line_items', 'transaction_templates',
+      'networth_snapshots'
     ];
 
     for (const tableName of requiredTables) {
@@ -4572,6 +4613,70 @@ class RelationalDatabase {
   getTransactionTemplateByName(name) {
     return this.getTransactionTemplates().find(template => 
       template.name.toLowerCase() === name.toLowerCase() && template.isActive !== false
+    );
+  }
+
+  // NetWorth Snapshots CRUD methods
+  addNetWorthSnapshot(snapshotData) {
+    // Initialize table if it doesn't exist
+    if (!this.tables.networth_snapshots) {
+      this.tables.networth_snapshots = [];
+    }
+
+    const id = this.generateId('NWS');
+    const newSnapshot = {
+      id,
+      snapshotDate: snapshotData.snapshotDate || new Date().toISOString().split('T')[0],
+      baseCurrencyId: snapshotData.baseCurrencyId,
+      totalAssets: parseFloat(snapshotData.totalAssets) || 0,
+      totalLiabilities: parseFloat(snapshotData.totalLiabilities) || 0,
+      netAssets: parseFloat(snapshotData.netAssets) || 0,
+      totalRetirement: parseFloat(snapshotData.totalRetirement) || 0,
+      description: snapshotData.description || '',
+      createdAt: new Date().toISOString()
+    };
+
+    this.tables.networth_snapshots.push(newSnapshot);
+    this.saveTableToWorkbook('networth_snapshots');
+    return newSnapshot;
+  }
+
+  updateNetWorthSnapshot(id, snapshotData) {
+    const index = this.tables.networth_snapshots.findIndex(snapshot => snapshot.id === id);
+    if (index === -1) {
+      throw new Error(`NetWorth snapshot with id ${id} not found`);
+    }
+
+    const updatedSnapshot = {
+      ...this.tables.networth_snapshots[index],
+      ...snapshotData,
+      id: id // Ensure ID doesn't change
+    };
+
+    this.tables.networth_snapshots[index] = updatedSnapshot;
+    this.saveTableToWorkbook('networth_snapshots');
+    return updatedSnapshot;
+  }
+
+  deleteNetWorthSnapshot(id) {
+    const index = this.tables.networth_snapshots.findIndex(snapshot => snapshot.id === id);
+    if (index === -1) {
+      throw new Error(`NetWorth snapshot with id ${id} not found`);
+    }
+
+    const deletedSnapshot = this.tables.networth_snapshots[index];
+    this.tables.networth_snapshots.splice(index, 1);
+    this.saveTableToWorkbook('networth_snapshots');
+    return deletedSnapshot;
+  }
+
+  getNetWorthSnapshots() {
+    return this.tables.networth_snapshots || [];
+  }
+
+  getNetWorthSnapshotsSortedByDate() {
+    return this.getNetWorthSnapshots().sort((a, b) => 
+      new Date(a.snapshotDate) - new Date(b.snapshotDate)
     );
   }
 

@@ -73,7 +73,13 @@ const DataManagement = () => {
     deleteCurrency,
     addExchangeRate,
     numberFormatService,
-    database
+    database,
+    netWorthSnapshots,
+    addNetWorthSnapshot,
+    updateNetWorthSnapshot,
+    deleteNetWorthSnapshot,
+    getNetWorthSnapshots,
+    getActiveNetWorthSnapshots
   } = useAccounting();
   const { t } = useLanguage();
   const { formatDate, formatForInput } = useDate();
@@ -340,6 +346,9 @@ const DataManagement = () => {
           case 'transaction_templates':
             await updateTransactionTemplate(editingId, formData);
             break;
+          case 'networth_snapshots':
+            await updateNetWorthSnapshot(editingId, formData);
+            break;
           case 'transaction_types':
             await updateCategory(editingId, formData);
             break;
@@ -375,6 +384,9 @@ const DataManagement = () => {
             break;
           case 'transaction_templates':
             await addTransactionTemplate(formData);
+            break;
+          case 'networth_snapshots':
+            await addNetWorthSnapshot(formData);
             break;
           case 'transaction_types':
             await addCategory(formData);
@@ -488,6 +500,9 @@ const DataManagement = () => {
       case 'transaction_templates':
         confirmMessage = 'Are you sure you want to delete this transaction template?';
         break;
+      case 'networth_snapshots':
+        confirmMessage = 'Are you sure you want to delete this net worth snapshot?';
+        break;
       case 'transaction_types':
         confirmMessage = t('deleteCategoryConfirm');
         break;
@@ -525,6 +540,9 @@ const DataManagement = () => {
             break;
           case 'transaction_templates':
             await deleteTransactionTemplate(record.id);
+            break;
+          case 'networth_snapshots':
+            await deleteNetWorthSnapshot(record.id);
             break;
           case 'transaction_types':
             await deleteCategory(record.id);
@@ -1234,6 +1252,102 @@ const DataManagement = () => {
     </form>
   );
 
+  const renderNetWorthSnapshotForm = () => (
+    <form onSubmit={handleSubmit} className="data-form">
+      <div className="form-group">
+        <DatePicker
+          selected={formData.snapshotDate ? new Date(formData.snapshotDate + 'T12:00:00') : new Date()}
+          onChange={(date) => {
+            if (date) {
+              const isoString = dateToISOString(date);
+              handleInputChange('snapshotDate', isoString);
+            } else {
+              handleInputChange('snapshotDate', '');
+            }
+          }}
+          dateFormat={datePickerFormat}
+        />
+      </div>
+      <div className="form-group">
+        <select 
+          value={formData.baseCurrencyId || ''} 
+          onChange={(e) => handleInputChange('baseCurrencyId', e.target.value)}
+          required
+          style={{ width: '100%' }}
+        >
+          <option value="">Select currency</option>
+          {getActiveCurrencies().map(currency => (
+            <option key={currency.id} value={currency.id}>
+              {currency.symbol} {currency.code} - {currency.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-group">
+        <input
+          type="number"
+          value={formData.totalAssets || ''}
+          onChange={(e) => handleInputChange('totalAssets', e.target.value)}
+          required
+          placeholder="Enter total assets"
+          step="0.01"
+          style={{ width: '100%' }}
+          onWheel={(e) => e.target.blur()}
+        />
+      </div>
+      <div className="form-group">
+        <input
+          type="number"
+          value={formData.totalLiabilities || ''}
+          onChange={(e) => handleInputChange('totalLiabilities', e.target.value)}
+          required
+          placeholder="Enter total liabilities"
+          step="0.01"
+          style={{ width: '100%' }}
+          onWheel={(e) => e.target.blur()}
+        />
+      </div>
+      <div className="form-group">
+        <input
+          type="number"
+          value={formData.netAssets || ''}
+          onChange={(e) => handleInputChange('netAssets', e.target.value)}
+          required
+          placeholder="Enter net assets"
+          step="0.01"
+          style={{ width: '100%' }}
+          onWheel={(e) => e.target.blur()}
+        />
+      </div>
+      <div className="form-group">
+        <input
+          type="number"
+          value={formData.totalRetirement || ''}
+          onChange={(e) => handleInputChange('totalRetirement', e.target.value)}
+          required
+          placeholder="Enter total retirement assets"
+          step="0.01"
+          style={{ width: '100%' }}
+          onWheel={(e) => e.target.blur()}
+        />
+      </div>
+      <div className="form-group">
+        <textarea
+          value={formData.description || ''}
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          placeholder="Enter description (optional)"
+          style={{ width: '100%', minHeight: '60px' }}
+        />
+      </div>
+      <div className="form-actions">
+        <button type="submit" className="btn-primary">
+          {editingId ? t('updateSnapshot') || 'Update Snapshot' : t('addSnapshot') || 'Add Snapshot'}
+        </button>
+        <button type="button" onClick={resetForm} className="btn-secondary">Cancel</button>
+      </div>
+    </form>
+  );
+
   const renderCategoryForm = () => (
     <form onSubmit={handleSubmit} className="data-form">
       <div className="form-group">
@@ -1526,6 +1640,8 @@ const DataManagement = () => {
         return 'Add Payer';
       case 'transaction_templates':
         return 'Add Template';
+      case 'networth_snapshots':
+        return 'Add Snapshot';
       case 'transaction_types':
         return t('addCategory');
       case 'subcategories':
@@ -1553,6 +1669,8 @@ const DataManagement = () => {
         return 'Update Payer';
       case 'transaction_templates':
         return 'Update Template';
+      case 'networth_snapshots':
+        return 'Update Snapshot';
       case 'transaction_types':
         return t('updateCategory');
       case 'subcategories':
@@ -1844,6 +1962,59 @@ const DataManagement = () => {
             }
           ]
         };
+      case 'networth_snapshots':
+        return {
+          data: netWorthSnapshots,
+          columns: [
+            { key: 'id', label: 'ID' },
+            { 
+              key: 'snapshotDate', 
+              label: 'Date', 
+              render: (value) => formatDate(new Date(value))
+            },
+            { 
+              key: 'baseCurrencyId', 
+              label: 'Currency', 
+              render: (currencyId) => {
+                const currency = currencies.find(c => c.id === currencyId);
+                return currency ? currency.code : currencyId;
+              }
+            },
+            { 
+              key: 'totalAssets', 
+              label: t('totalAssets') || 'Total Assets', 
+              render: (amount, row) => {
+                const currency = currencies.find(c => c.id === row.baseCurrencyId);
+                return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
+              }
+            },
+            { 
+              key: 'totalLiabilities', 
+              label: t('totalLiabilities') || 'Total Liabilities', 
+              render: (amount, row) => {
+                const currency = currencies.find(c => c.id === row.baseCurrencyId);
+                return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
+              }
+            },
+            { 
+              key: 'netAssets', 
+              label: t('netWorth') || 'Net Worth', 
+              render: (amount, row) => {
+                const currency = currencies.find(c => c.id === row.baseCurrencyId);
+                return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
+              }
+            },
+            { 
+              key: 'totalRetirement', 
+              label: t('retirementAssets') || 'Retirement Assets', 
+              render: (amount, row) => {
+                const currency = currencies.find(c => c.id === row.baseCurrencyId);
+                return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
+              }
+            },
+            { key: 'description', label: t('snapshotDescription') || 'Description', render: (value) => value || '-' }
+          ]
+        };
       case 'transaction_types':
         return {
           data: categories,
@@ -2016,6 +2187,8 @@ const DataManagement = () => {
         return renderPayerForm();
       case 'transaction_templates':
         return renderTransactionTemplateForm();
+      case 'networth_snapshots':
+        return renderNetWorthSnapshotForm();
       case 'transaction_types':
         return renderCategoryForm();
       case 'subcategories':
@@ -2361,7 +2534,7 @@ const DataManagement = () => {
   return (
     <div className="data-management">
       <nav className="data-nav">
-        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'payers', 'transaction_templates', 'transactions'].map(tab => (
+        {['accounts', 'transaction_types', 'transaction_groups', 'subcategories', 'currencies', 'products', 'payees', 'payers', 'transaction_templates', 'networth_snapshots', 'transactions'].map(tab => (
           <button
             key={tab}
             className={activeTab === tab ? 'data-nav-btn active' : 'data-nav-btn'}
@@ -2373,7 +2546,7 @@ const DataManagement = () => {
               setSelectedTransactionTypeFilter('');
             }}
           >
-            {tab === 'payees' ? 'Payees' : tab === 'payers' ? 'Payers' : tab === 'transaction_templates' ? 'Transaction Templates' : t(tab)}
+            {tab === 'payees' ? 'Payees' : tab === 'payers' ? 'Payers' : tab === 'transaction_templates' ? 'Transaction Templates' : tab === 'networth_snapshots' ? 'Net Worth Snapshots' : t(tab)}
           </button>
         ))}
       </nav>
@@ -2500,7 +2673,7 @@ const DataManagement = () => {
             )}
             <div className="table-container">
             <h3>
-              {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab === 'transaction_groups' ? 'Transaction Groups' : activeTab === 'transaction_templates' ? 'Transaction Templates' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
+              {activeTab === 'transaction_types' ? 'Transaction Types' : activeTab === 'subcategories' ? 'Transaction Categories' : activeTab === 'transaction_groups' ? 'Transaction Groups' : activeTab === 'transaction_templates' ? 'Transaction Templates' : activeTab === 'networth_snapshots' ? 'Net Worth Snapshots' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ({data.length})
               {reorderingAccounts && activeTab === 'accounts' && (
                 <span className="reordering-indicator"> - Reordering...</span>
               )}

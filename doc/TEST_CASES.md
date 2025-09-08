@@ -67,6 +67,10 @@ Your accounting application has comprehensive test coverage across three main te
 - **Framework**: Browser-compatible with custom expect implementation
 - **Test Coverage**: 16 comprehensive test cases covering all transaction template functionality:
 
+## **11. NetWorth Snapshots Tests** (`networthSnapshotsTestRunner.test.js`)
+- **Framework**: Browser-compatible with custom expect implementation
+- **Test Coverage**: 15 comprehensive test cases covering all NetWorth snapshot functionality:
+
 ### **Existing Reconciliations Test Coverage:**
   - **Screen Display** (1 test): Proper display of reconciled transactions with filters
   - **Transaction Filtering** (2 tests): Filter by account, date range, reconciliation reference, amount range
@@ -89,6 +93,18 @@ Your accounting application has comprehensive test coverage across three main te
   - **Entity References** (2 tests): Maintain account references, maintain category references  
   - **Edge Cases** (2 tests): Handle duplicate names, handle special characters
   - **Performance** (1 test): Handle large number of templates efficiently
+
+### **NetWorth Snapshots Test Coverage:**
+  - **Database Schema** (1 test): Verify networth_snapshots table schema with all required fields
+  - **CRUD Operations** (4 tests): Create comprehensive snapshot, retrieve all snapshots, update existing snapshot, delete snapshot
+  - **Data Operations** (1 test): Sort snapshots chronologically by date for timeline analysis
+  - **Data Validation** (2 tests): Handle missing table initialization for backward compatibility, generate unique IDs with NWS prefix
+  - **Error Handling** (2 tests): Handle update/deletion of non-existent snapshots
+  - **Integration** (1 test): Persist snapshots to Excel workbook for file storage
+  - **Performance** (1 test): Handle large datasets efficiently (50+ snapshots)
+  - **Date Handling** (1 test): Accept and store dates in YYYY-MM-DD format consistently
+  - **Currency Integration** (1 test): Maintain currency reference integrity for multi-currency support
+  - **Financial Calculations** (1 test): Store comprehensive financial data (assets, liabilities, net worth, retirement totals)
 
 ### **Import Transactions Test Coverage:**
   - **CSV Parsing** (2 tests): Field mapping, file format validation
@@ -195,19 +211,20 @@ Your accounting application has comprehensive test coverage across three main te
 - Reference and reconciliation data handling
 
 ## **Test Coverage Statistics**:
-- **Total Test Cases**: 158+ individual test cases  
+- **Total Test Cases**: 173+ individual test cases  
 - **Data Management Sections Covered**: 9/9 (100%)
 - **Settings Sections Covered**: 4/4 (100%) - Date, Currency Format, Data, Import
 - **Transaction Form Features Covered**: 100% - All validation, creation, interactions, state management, complex logic
 - **Transaction Template Features Covered**: 100% - CRUD operations, usage tracking, search/filter, validation, entity references, edge cases, performance
+- **NetWorth Snapshots Features Covered**: 100% - CRUD operations, date handling, currency integration, performance, error handling, data validation
 - **Overview/Dashboard Features Covered**: 100% - Summary calculations, account filtering, currency breakdown, performance
 - **Import Transactions Features Covered**: 100% - CSV parsing, validation, processing rules, review queue, batch processing
 - **Reconciliation Features Covered**: 100% - Setup validation, transaction selection, balance calculations, database operations
 - **Existing Reconciliations Features Covered**: 100% - Un-reconcile operations, filtering, checkbox selection, state management
-- **Advanced Features Covered**: Investment, Transfer, Multi-Currency, References, Settings Integration, Form Validation, Overview Navigation, CSV Import, Processing Rules, Bank Reconciliation, Transaction Templates
+- **Advanced Features Covered**: Investment, Transfer, Multi-Currency, References, Settings Integration, Form Validation, Overview Navigation, CSV Import, Processing Rules, Bank Reconciliation, Transaction Templates, NetWorth Snapshot Tracking
 - **Referential Integrity Coverage**: 12 comprehensive tests for all data relationships
-- **Validation Types**: Data types, constraints, relationships, business rules, referential integrity, settings validation, form validation, overview calculations, import validation, reconciliation validation, template validation
-- **Error Scenarios**: Invalid data, missing fields, constraint violations, deletion protection, invalid settings, form errors, calculation errors, CSV parsing errors, reconciliation errors, template validation errors
+- **Validation Types**: Data types, constraints, relationships, business rules, referential integrity, settings validation, form validation, overview calculations, import validation, reconciliation validation, template validation, snapshot validation
+- **Error Scenarios**: Invalid data, missing fields, constraint violations, deletion protection, invalid settings, form errors, calculation errors, CSV parsing errors, reconciliation errors, template validation errors, snapshot validation errors
 
 ## **Referential Integrity Testing Summary**:
 The test suite now includes **comprehensive referential integrity protection** ensuring that:
@@ -522,4 +539,4 @@ The test suite now includes **comprehensive Transaction Template testing** cover
 - ✅ Memory-efficient template storage and access
 - ✅ Bulk template operation performance validation
 
-The test suite provides comprehensive coverage of all Data Management functionality, complete Settings management, **complete Transaction Form validation**, **complete Transaction Template functionality**, **complete Overview/Dashboard functionality**, **complete Import Transactions processing**, **complete Bank Reconciliation functionality**, AND **complete Existing Reconciliations functionality** with proper validation, error handling, data integrity checks, **complete referential integrity protection**, settings validation, form validation, overview calculations, multi-currency support, CSV import processing, processing rules automation, bank reconciliation workflows, transaction selection management, balance calculations, **un-reconcile operations**, **checkbox state management**, **bulk transaction processing**, **transaction template management**, and advanced feature testing including investment transactions, transfers, multi-currency operations, complex dual-transaction logic, account navigation, automated transaction classification, duplicate detection, reconciliation reference generation, bulk reconciliation operations, un-reconcile workflows, transaction filtering, template usage tracking, template creation workflows, and full application configuration management.
+The test suite provides comprehensive coverage of all Data Management functionality, complete Settings management, **complete Transaction Form validation**, **complete Transaction Template functionality**, **complete NetWorth Snapshots functionality**, **complete Overview/Dashboard functionality**, **complete Import Transactions processing**, **complete Bank Reconciliation functionality**, AND **complete Existing Reconciliations functionality** with proper validation, error handling, data integrity checks, **complete referential integrity protection**, settings validation, form validation, overview calculations, multi-currency support, CSV import processing, processing rules automation, bank reconciliation workflows, transaction selection management, balance calculations, **un-reconcile operations**, **checkbox state management**, **bulk transaction processing**, **transaction template management**, **net worth snapshot tracking**, and advanced feature testing including investment transactions, transfers, multi-currency operations, complex dual-transaction logic, account navigation, automated transaction classification, duplicate detection, reconciliation reference generation, bulk reconciliation operations, un-reconcile workflows, transaction filtering, template usage tracking, template creation workflows, snapshot CRUD operations, financial timeline analysis, currency integration testing, and full application configuration management.

@@ -1,6 +1,7 @@
 class RelationalFileStorage {
   constructor() {
     this.fileHandles = {};
+    this.directoryHandle = null;
     this.supportsFileSystemAccess = 'showOpenFilePicker' in window;
     this.dbTables = {
       accounts: 'accounts.xlsx',
@@ -24,7 +25,8 @@ class RelationalFileStorage {
       cash_allocations: 'cash_allocations.xlsx',
       budgets: 'budgets.xlsx',
       budget_line_items: 'budget_line_items.xlsx',
-      transaction_templates: 'transaction_templates.xlsx'
+      transaction_templates: 'transaction_templates.xlsx',
+      networth_snapshots: 'networth_snapshots.xlsx'
     };
   }
 
@@ -48,6 +50,7 @@ class RelationalFileStorage {
     try {
       if (this.supportsFileSystemAccess) {
         const dirHandle = await window.showDirectoryPicker();
+        this.directoryHandle = dirHandle;
         
         const loadedFiles = {};
         
@@ -257,6 +260,34 @@ class RelationalFileStorage {
   clearStoredDatabase() {
     localStorage.removeItem('accounting_relational_db');
     this.fileHandles = {};
+    this.directoryHandle = null;
+  }
+
+  /**
+   * Create file handles for missing tables (like networth_snapshots)
+   * This is called after loading existing databases to ensure all required files can be written
+   */
+  async createMissingFileHandles() {
+    if (!this.directoryHandle || !this.supportsFileSystemAccess) {
+      return;
+    }
+
+    const missingTables = [];
+    
+    for (const [table, filename] of Object.entries(this.dbTables)) {
+      if (!this.fileHandles[table]) {
+        try {
+          // Try to create the file handle for the missing file
+          this.fileHandles[table] = await this.directoryHandle.getFileHandle(filename, { create: true });
+          console.log(`Created file handle for missing table: ${table} (${filename})`);
+          missingTables.push(table);
+        } catch (err) {
+          console.error(`Could not create file handle for ${filename}:`, err);
+        }
+      }
+    }
+
+    return missingTables;
   }
 
   addToRecentDatabases(databaseInfo) {

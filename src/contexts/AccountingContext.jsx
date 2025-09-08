@@ -47,6 +47,7 @@ export const AccountingProvider = ({ children }) => {
   const [bankConfigurations, setBankConfigurations] = useState([]);
   const [processingRules, setProcessingRules] = useState({});
   const [transactionTemplates, setTransactionTemplates] = useState([]);
+  const [netWorthSnapshots, setNetWorthSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -166,6 +167,7 @@ export const AccountingProvider = ({ children }) => {
     setExchangeRates([...database.getTable('exchange_rates')]);
     setCurrencySettings([...database.getTable('currency_settings')]);
     setUserPreferences([...database.getTable('user_preferences')]);
+    setNetWorthSnapshots([...database.getTable('networth_snapshots')]);
     setApiSettings([...database.getTable('api_settings')]);
     setApiUsage(database.getTable('api_usage'));
     setDatabaseInfo(database.getTable('database_info'));
@@ -260,8 +262,15 @@ export const AccountingProvider = ({ children }) => {
       if (files && await database.loadFromFiles(files)) {
         updateStateFromDatabase();
         
-        // Initialize any missing tables (like payers for older databases)
+        // Initialize any missing tables (like networth_snapshots for older databases)
         await initializeMissingTables();
+        
+        // Create file handles for missing files (like networth_snapshots.xlsx)
+        if (typeof fileStorage.createMissingFileHandles === 'function') {
+          await fileStorage.createMissingFileHandles();
+        } else {
+          console.warn('createMissingFileHandles method not available - browser cache may need refresh');
+        }
         
         // Get database language and set UI language accordingly
         const dbLanguage = database.getDatabaseLanguage();
@@ -939,6 +948,7 @@ export const AccountingProvider = ({ children }) => {
     setTransactionTemplates([]);
     setSubcategories([]);
     setDatabaseInfo([]);
+    setNetWorthSnapshots([]);
     setDatabase(new RelationalDatabase());
     fileStorage.clearStoredDatabase();
   };
@@ -1575,6 +1585,60 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
+  // Net Worth Snapshots CRUD methods
+  const addNetWorthSnapshot = async (snapshotData) => {
+    try {
+      const newSnapshot = database.addNetWorthSnapshot(snapshotData);
+      setNetWorthSnapshots([...database.getTable('networth_snapshots')]);
+      
+      const buffer = database.exportTableToBuffer('networth_snapshots');
+      await fileStorage.saveTable('networth_snapshots', buffer);
+      
+      return newSnapshot;
+    } catch (error) {
+      console.error('Error adding net worth snapshot:', error);
+      throw error;
+    }
+  };
+
+  const updateNetWorthSnapshot = async (id, snapshotData) => {
+    try {
+      const updatedSnapshot = database.updateNetWorthSnapshot(id, snapshotData);
+      setNetWorthSnapshots([...database.getTable('networth_snapshots')]);
+      
+      const buffer = database.exportTableToBuffer('networth_snapshots');
+      await fileStorage.saveTable('networth_snapshots', buffer);
+      
+      return updatedSnapshot;
+    } catch (error) {
+      console.error('Error updating net worth snapshot:', error);
+      throw error;
+    }
+  };
+
+  const deleteNetWorthSnapshot = async (id) => {
+    try {
+      const deletedSnapshot = database.deleteNetWorthSnapshot(id);
+      setNetWorthSnapshots([...database.getTable('networth_snapshots')]);
+      
+      const buffer = database.exportTableToBuffer('networth_snapshots');
+      await fileStorage.saveTable('networth_snapshots', buffer);
+      
+      return deletedSnapshot;
+    } catch (error) {
+      console.error('Error deleting net worth snapshot:', error);
+      throw error;
+    }
+  };
+
+  const getNetWorthSnapshots = () => {
+    return database.getNetWorthSnapshots();
+  };
+
+  const getActiveNetWorthSnapshots = () => {
+    return database.getActiveNetWorthSnapshots();
+  };
+
   const value = {
     database,
     accounts,
@@ -1765,7 +1829,14 @@ export const AccountingProvider = ({ children }) => {
     // Prepaid Expense methods
     updateTransactionPrepaidSettings,
     getPrepaidTransactions,
-    updateAllPrepaidStatuses
+    updateAllPrepaidStatuses,
+    // Net Worth Snapshots methods
+    netWorthSnapshots,
+    addNetWorthSnapshot,
+    updateNetWorthSnapshot,
+    deleteNetWorthSnapshot,
+    getNetWorthSnapshots,
+    getActiveNetWorthSnapshots
   };
 
   return (

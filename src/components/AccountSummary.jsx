@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import TransactionList from './TransactionList';
 
 const AccountSummary = ({ onAccountClick }) => {
-  const { accounts, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService, updateAccount } = useAccounting();
+  const { accounts, tags, getSummary, getAccountsWithTypes, currencies, exchangeRateService, numberFormatService, updateAccount, addNetWorthSnapshot, getBaseCurrency: getBaseCurrencyFromContext } = useAccounting();
   const { t } = useLanguage();
   const summary = getSummary();
   const accountsWithTypes = getAccountsWithTypes();
@@ -14,10 +14,13 @@ const AccountSummary = ({ onAccountClick }) => {
   const [showNativeCurrency, setShowNativeCurrency] = useState(false);
   
   // State for context menu and notes modal
-  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, account: null });
+  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, account: null, card: null });
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [accountNotes, setAccountNotes] = useState('');
+  
+  // State for net worth snapshot
+  const [isSavingSnapshot, setIsSavingSnapshot] = useState(false);
   const contextMenuRef = useRef(null);
 
   const getAccountsByType = (type) => {
@@ -267,7 +270,7 @@ const AccountSummary = ({ onAccountClick }) => {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
-        setContextMenu({ show: false, x: 0, y: 0, account: null });
+        setContextMenu({ show: false, x: 0, y: 0, account: null, card: null });
       }
     };
 
@@ -279,12 +282,11 @@ const AccountSummary = ({ onAccountClick }) => {
     }
   }, [contextMenu.show]);
 
-  // Handle account click to show context menu
-  const handleAccountClick = (event, account) => {
+  // Handle card click to show context menu
+  const handleCardClick = (event, cardType) => {
     event.preventDefault();
     event.stopPropagation();
     
-    const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX;
     const y = event.clientY;
     
@@ -292,7 +294,25 @@ const AccountSummary = ({ onAccountClick }) => {
       show: true,
       x: x,
       y: y,
-      account: account
+      account: null,
+      card: cardType
+    });
+  };
+
+  // Handle account click to show context menu
+  const handleAccountClick = (event, account) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const x = event.clientX;
+    const y = event.clientY;
+    
+    setContextMenu({
+      show: true,
+      x: x,
+      y: y,
+      account: account,
+      card: null
     });
   };
 
@@ -301,7 +321,7 @@ const AccountSummary = ({ onAccountClick }) => {
     if (contextMenu.account && onAccountClick) {
       onAccountClick(contextMenu.account.id);
     }
-    setContextMenu({ show: false, x: 0, y: 0, account: null });
+    setContextMenu({ show: false, x: 0, y: 0, account: null, card: null });
   };
 
   // Handle view notes
@@ -309,7 +329,13 @@ const AccountSummary = ({ onAccountClick }) => {
     setSelectedAccount(contextMenu.account);
     setAccountNotes(contextMenu.account.notes || '');
     setShowNotesModal(true);
-    setContextMenu({ show: false, x: 0, y: 0, account: null });
+    setContextMenu({ show: false, x: 0, y: 0, account: null, card: null });
+  };
+
+  // Handle save snapshot from context menu
+  const handleSaveSnapshotFromMenu = async () => {
+    setContextMenu({ show: false, x: 0, y: 0, account: null, card: null });
+    await handleSaveSnapshot();
   };
 
   // Handle save notes
@@ -329,6 +355,48 @@ const AccountSummary = ({ onAccountClick }) => {
     }
   };
 
+  // Handle save net worth snapshot
+  const handleSaveSnapshot = async () => {
+    try {
+      setIsSavingSnapshot(true);
+      
+      // Calculate current financial totals
+      const baseCurrencyTotals = getBaseCurrencyTotals();
+      const baseCurrency = getBaseCurrencyFromContext();
+      const retirementTotal = getRetirementTotal();
+      
+      // Extract values from currency objects
+      const baseCurrencyId = baseCurrency?.id || 'CUR_001';
+      const totalAssets = baseCurrencyTotals.assets[baseCurrencyId] || 0;
+      const totalLiabilities = baseCurrencyTotals.liabilities[baseCurrencyId] || 0;
+      const netAssets = baseCurrencyTotals.netWorth[baseCurrencyId] || 0;
+      const totalRetirement = retirementTotal[baseCurrencyId] || 0;
+      
+      // Create snapshot data
+      const snapshotData = {
+        snapshotDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD
+        baseCurrencyId: baseCurrencyId,
+        totalAssets: totalAssets,
+        totalLiabilities: totalLiabilities,
+        netAssets: netAssets,
+        totalRetirement: totalRetirement,
+        description: `Snapshot taken from Overview page`
+      };
+      
+      await addNetWorthSnapshot(snapshotData);
+      
+      // Show success message
+      alert(`📊 ${t('snapshotSaved') || 'Net Worth Snapshot saved successfully!'}`);
+      console.log('Net worth snapshot saved:', snapshotData);
+      
+    } catch (error) {
+      console.error('Error saving net worth snapshot:', error);
+      alert('Failed to save net worth snapshot. Please try again.');
+    } finally {
+      setIsSavingSnapshot(false);
+    }
+  };
+
   const [includeRetirementInAssets, setIncludeRetirementInAssets] = useState(false);
   const baseCurrencyTotals = getBaseCurrencyTotals();
 
@@ -336,7 +404,12 @@ const AccountSummary = ({ onAccountClick }) => {
     <div className="account-summary">
       {/* Top Summary Cards - Base Currency Totals */}
       <div className="summary-cards">
-        <div className="summary-card assets">
+        <div 
+          className="summary-card assets clickable" 
+          onClick={(e) => handleCardClick(e, 'assets')}
+          style={{ cursor: 'pointer' }}
+          title="Click for options"
+        >
           <div className="card-header">
             <h3>💰 {t('totalAssets')}</h3>
             <span className="card-icon">📈</span>
@@ -347,7 +420,12 @@ const AccountSummary = ({ onAccountClick }) => {
           <div className="card-subtitle">{getNonRetirementAssetAccounts().length} {t('accountsCount')}</div>
         </div>
 
-        <div className="summary-card liabilities">
+        <div 
+          className="summary-card liabilities clickable" 
+          onClick={(e) => handleCardClick(e, 'liabilities')}
+          style={{ cursor: 'pointer' }}
+          title="Click for options"
+        >
           <div className="card-header">
             <h3>📋 {t('totalLiabilities')}</h3>
             <span className="card-icon">📊</span>
@@ -358,7 +436,12 @@ const AccountSummary = ({ onAccountClick }) => {
           <div className="card-subtitle">{getIncludedAccountsByType('Liability').length} {t('accountsCount')}</div>
         </div>
 
-        <div className="summary-card net-worth">
+        <div 
+          className="summary-card net-worth clickable" 
+          onClick={(e) => handleCardClick(e, 'net-worth')}
+          style={{ cursor: 'pointer' }}
+          title="Click for options"
+        >
           <div className="card-header">
             <h3>💎 Net Worth</h3>
             <span className="card-icon">🎯</span>
@@ -369,7 +452,12 @@ const AccountSummary = ({ onAccountClick }) => {
           <div className="card-subtitle">Assets - Liabilities</div>
         </div>
 
-        <div className="summary-card retirement">
+        <div 
+          className="summary-card retirement clickable" 
+          onClick={(e) => handleCardClick(e, 'retirement')}
+          style={{ cursor: 'pointer' }}
+          title="Click for options"
+        >
           <div className="card-header">
             <h3>🏦 {t('retirement')}</h3>
             <span className="card-icon">📈</span>
@@ -394,7 +482,10 @@ const AccountSummary = ({ onAccountClick }) => {
             <div className="card-toggle-control">
               <button
                 className={`mini-toggle ${includeRetirementInAssets ? 'enabled' : 'disabled'}`}
-                onClick={() => setIncludeRetirementInAssets(!includeRetirementInAssets)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent card click when clicking toggle
+                  setIncludeRetirementInAssets(!includeRetirementInAssets);
+                }}
                 title={`${includeRetirementInAssets ? 'Remove from' : 'Add to'} Total Assets`}
               >
                 {includeRetirementInAssets ? '- Exclude' : '+ Include'}
@@ -403,6 +494,7 @@ const AccountSummary = ({ onAccountClick }) => {
           </div>
         </div>
       </div>
+
 
       {/* Accounts List with Currency Toggle */}
       <div className="accounts-section">
@@ -500,48 +592,87 @@ const AccountSummary = ({ onAccountClick }) => {
             padding: '4px'
           }}
         >
-          <button 
-            className="context-menu-item"
-            onClick={handleViewTransactions}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              margin: '0',
-              border: 'none',
-              backgroundColor: 'white',
-              color: '#1a202c',
-              textAlign: 'left',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              borderRadius: '6px',
-              transition: 'background-color 0.15s ease'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-          >
-            📋 {t('viewTransactions') || 'View Transactions'}
-          </button>
-          <button 
-            className="context-menu-item"
-            onClick={handleViewNotes}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              margin: '0',
-              border: 'none',
-              backgroundColor: 'white',
-              color: '#1a202c',
-              textAlign: 'left',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              borderRadius: '6px',
-              transition: 'background-color 0.15s ease'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-          >
-            📝 {t('viewNotes') || 'View Notes'}
-          </button>
+          {/* Account-specific menu items */}
+          {contextMenu.account && (
+            <>
+              <button 
+                className="context-menu-item"
+                onClick={handleViewTransactions}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  margin: '0',
+                  border: 'none',
+                  backgroundColor: 'white',
+                  color: '#1a202c',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  borderRadius: '6px',
+                  transition: 'background-color 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+              >
+                📋 {t('viewTransactions') || 'View Transactions'}
+              </button>
+              <button 
+                className="context-menu-item"
+                onClick={handleViewNotes}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  margin: '0',
+                  border: 'none',
+                  backgroundColor: 'white',
+                  color: '#1a202c',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  borderRadius: '6px',
+                  transition: 'background-color 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+              >
+                📝 {t('viewNotes') || 'View Notes'}
+              </button>
+            </>
+          )}
+          
+          {/* Card-specific menu items */}
+          {contextMenu.card && (
+            <button 
+              className="context-menu-item"
+              onClick={handleSaveSnapshotFromMenu}
+              disabled={isSavingSnapshot}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                margin: '0',
+                border: 'none',
+                backgroundColor: isSavingSnapshot ? '#f3f4f6' : 'white',
+                color: isSavingSnapshot ? '#9CA3AF' : '#1a202c',
+                textAlign: 'left',
+                cursor: isSavingSnapshot ? 'not-allowed' : 'pointer',
+                fontSize: '0.875rem',
+                borderRadius: '6px',
+                transition: 'background-color 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSavingSnapshot) {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSavingSnapshot) {
+                  e.target.style.backgroundColor = 'white';
+                }
+              }}
+            >
+              📊 {isSavingSnapshot ? t('saving') || 'Saving...' : t('saveSnapshot') || 'Save Snapshot'}
+            </button>
+          )}
         </div>,
         document.body
       )}
