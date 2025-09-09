@@ -219,6 +219,8 @@ const DataManagement = () => {
   const [showAccountTypeTooltip, setShowAccountTypeTooltip] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTransactionTypeFilter, setSelectedTransactionTypeFilter] = useState('');
+  const [selectedTransactionGroupFilter, setSelectedTransactionGroupFilter] = useState('');
+  const [selectedAccountTypeFilter, setSelectedAccountTypeFilter] = useState('');
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [showAccountTypesExplanation, setShowAccountTypesExplanation] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -247,13 +249,27 @@ const DataManagement = () => {
     setShowAccountTypeTooltip(false);
   };
 
-  const filterData = (data, searchTerm, transactionTypeFilter = '') => {
+  const filterData = (data, searchTerm, transactionTypeFilter = '', transactionGroupFilter = '', accountTypeFilter = '') => {
     let filteredData = data;
     
     // Apply transaction type filter for transaction groups
     if (activeTab === 'transaction_groups' && transactionTypeFilter) {
       filteredData = filteredData.filter(item => 
         item.transactionTypeId === transactionTypeFilter
+      );
+    }
+    
+    // Apply transaction group filter for subcategories
+    if (activeTab === 'subcategories' && transactionGroupFilter) {
+      filteredData = filteredData.filter(item => 
+        item.groupId === transactionGroupFilter
+      );
+    }
+    
+    // Apply account type filter for accounts
+    if (activeTab === 'accounts' && accountTypeFilter) {
+      filteredData = filteredData.filter(item => 
+        item.accountTypeId === accountTypeFilter
       );
     }
     
@@ -2528,7 +2544,7 @@ const DataManagement = () => {
   };
 
   const { data: rawData, columns } = getTableData();
-  const data = filterData(rawData, searchTerm, selectedTransactionTypeFilter);
+  const data = filterData(rawData, searchTerm, selectedTransactionTypeFilter, selectedTransactionGroupFilter, selectedAccountTypeFilter);
 
 
   return (
@@ -2544,6 +2560,8 @@ const DataManagement = () => {
               setShowAccountTypeTooltip(false);
               setSearchTerm('');
               setSelectedTransactionTypeFilter('');
+              setSelectedTransactionGroupFilter('');
+              setSelectedAccountTypeFilter('');
             }}
           >
             {tab === 'payees' ? 'Payees' : tab === 'payers' ? 'Payers' : tab === 'transaction_templates' ? 'Transaction Templates' : tab === 'networth_snapshots' ? 'Net Worth Snapshots' : t(tab)}
@@ -2642,10 +2660,75 @@ const DataManagement = () => {
                           whiteSpace: 'normal'
                         }}
                       >
-                        <option value="">{t('allTransactionTypes')}</option>
+                        <option value="" style={{ backgroundColor: 'white', color: '#1a202c' }}>All Transaction Types</option>
                         {categories.map(category => (
-                          <option key={category.id} value={category.id}>
+                          <option key={category.id} value={category.id} style={{ backgroundColor: 'white', color: '#1a202c' }}>
                             {category.icon} {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {activeTab === 'subcategories' && (
+                    <div className="filter-wrapper">
+                      <select
+                        value={selectedTransactionGroupFilter}
+                        onChange={(e) => setSelectedTransactionGroupFilter(e.target.value)}
+                        className="filter-select"
+                        style={{
+                          backgroundColor: 'white',
+                          color: '#1a202c',
+                          border: '1px solid #d1d5db',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          minWidth: '220px',
+                          maxWidth: '300px',
+                          width: 'auto',
+                          height: '36px',
+                          lineHeight: '1.4',
+                          whiteSpace: 'normal'
+                        }}
+                      >
+                        <option value="" style={{ backgroundColor: 'white', color: '#1a202c' }}>All Transaction Groups</option>
+                        {transactionGroups.map(group => (
+                          <option key={group.id} value={group.id} style={{ backgroundColor: 'white', color: '#1a202c' }}>
+                            {group.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {activeTab === 'accounts' && (
+                    <div className="filter-wrapper">
+                      <select
+                        value={selectedAccountTypeFilter}
+                        onChange={(e) => setSelectedAccountTypeFilter(e.target.value)}
+                        className="filter-select account-type-filter"
+                        style={{
+                          backgroundColor: 'white',
+                          color: '#1a202c',
+                          border: '1px solid #d1d5db',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '0.875rem',
+                          minWidth: '220px',
+                          maxWidth: '300px',
+                          width: 'auto',
+                          height: '36px',
+                          lineHeight: '1.4',
+                          whiteSpace: 'normal',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                          appearance: 'none'
+                        }}
+                      >
+                        <option value="" style={{ color: '#1a202c' }}>All Account Types</option>
+                        {accountTypes.map(accountType => (
+                          <option key={accountType.id} value={accountType.id} style={{ color: '#1a202c' }}>
+                            {accountType.type} - {accountType.subtype}
                           </option>
                         ))}
                       </select>
@@ -2666,7 +2749,7 @@ const DataManagement = () => {
               </div>
             </div>
 
-            {(searchTerm || selectedTransactionTypeFilter) && (
+            {(searchTerm || selectedTransactionTypeFilter || selectedTransactionGroupFilter || selectedAccountTypeFilter) && (
               <div className="search-results-info" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
                 {data.length} of {rawData.length} {t(activeTab)} found
               </div>
