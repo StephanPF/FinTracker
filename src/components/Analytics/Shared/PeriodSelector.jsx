@@ -75,14 +75,14 @@ const PeriodSelector = () => {
   return (
     <div className="period-selector">
       <div className="period-selector-header">
-        <h3>{t('timePeriod') || 'Time Period'}</h3>
+        <h3>Time Period</h3>
       </div>
 
       <div className="period-controls">
         {/* Period Type Selector */}
         <div className="period-type-selector">
           <label htmlFor="period-type">
-            {t('periodType') || 'Period Type'}
+            Period Type
           </label>
           <select
             id="period-type"
@@ -95,23 +95,23 @@ const PeriodSelector = () => {
               border: '1px solid #d1d5db'
             }}
           >
-            <option value="weekly">{t('weekly') || 'Weekly'}</option>
-            <option value="monthly">{t('monthly') || 'Monthly'}</option>
-            <option value="quarterly">{t('quarterly') || 'Quarterly'}</option>
-            <option value="yearly">{t('yearly') || 'Yearly'}</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="yearly">Yearly</option>
           </select>
         </div>
 
         {/* Date Range Selectors */}
         <div className="date-range-selectors">
           <div className="date-selector">
-            <label>{t('startDate') || 'Start Date'}</label>
+            <label>Start Date</label>
             <DatePicker
               selected={parseDateString(dateRange.startDate)}
               onChange={handleStartDateChange}
               dateFormat="yyyy-MM-dd"
               className="form-control"
-              placeholderText={t('selectStartDate') || 'Select start date'}
+              placeholderText="Select start date"
               style={{
                 backgroundColor: 'white',
                 color: '#1a202c',
@@ -121,13 +121,13 @@ const PeriodSelector = () => {
           </div>
 
           <div className="date-selector">
-            <label>{t('endDate') || 'End Date'}</label>
+            <label>End Date</label>
             <DatePicker
               selected={parseDateString(dateRange.endDate)}
               onChange={handleEndDateChange}
               dateFormat="yyyy-MM-dd"
               className="form-control"
-              placeholderText={t('selectEndDate') || 'Select end date'}
+              placeholderText="Select end date"
               minDate={parseDateString(dateRange.startDate)}
               style={{
                 backgroundColor: 'white',
@@ -144,19 +144,19 @@ const PeriodSelector = () => {
             className="btn-filter"
             onClick={() => setSelectedPeriod('monthly')}
           >
-            {t('thisMonth') || 'This Month'}
+            This Month
           </button>
           <button
             className="btn-filter"
             onClick={() => setSelectedPeriod('quarterly')}
           >
-            {t('thisQuarter') || 'This Quarter'}
+            This Quarter
           </button>
           <button
             className="btn-filter"
             onClick={() => setSelectedPeriod('yearly')}
           >
-            {t('thisYear') || 'This Year'}
+            This Year
           </button>
         </div>
       </div>

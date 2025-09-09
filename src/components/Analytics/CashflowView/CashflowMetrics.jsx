@@ -13,7 +13,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
     return (
       <div className="cashflow-metrics">
         <div className="cashflow-loading">
-          <p>{t('calculatingCashflowMetrics') || 'Calculating cashflow metrics...'}</p>
+          <p>Calculating cashflow metrics...</p>
         </div>
       </div>
     );
@@ -23,7 +23,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
     // Net Cashflow Card
     {
       id: 'net-cashflow',
-      title: t('netCashflow') || 'Net Cashflow',
+      title: 'Net Cashflow',
       value: formatCurrency(metrics.netCashflow),
       period: getPeriodLabel(selectedPeriod),
       icon: metrics.netCashflow >= 0 ? '📈' : '📉',
@@ -39,7 +39,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
     // Total Income Card
     {
       id: 'total-income',
-      title: t('totalIncome') || 'Total Income',
+      title: 'Total Income',
       value: formatCurrency(metrics.totalIncome),
       period: getPeriodLabel(selectedPeriod),
       icon: '💰',
@@ -54,7 +54,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
     // Total Outflow Card
     {
       id: 'total-outflow',
-      title: t('totalOutflow') || 'Total Outflow',
+      title: 'Total Outflow',
       value: formatCurrency(metrics.totalExpenses),
       period: getPeriodLabel(selectedPeriod),
       icon: '💸',
@@ -69,11 +69,11 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
     // Budget Adherence Card (only show if budget is active)
     ...(activeBudget && metrics.budgetComparison ? [{
       id: 'budget-adherence',
-      title: t('budgetAdherence') || 'Budget Adherence',
+      title: 'Budget Adherence',
       value: `${Math.abs(metrics.budgetComparison.budgetAdherence).toFixed(1)}%`,
       subtitle: metrics.budgetComparison.budgetAdherence >= 0 ? 
-        (t('underBudget') || 'Under Budget') : 
-        (t('overBudget') || 'Over Budget'),
+        'Under Budget' : 
+        'Over Budget',
       icon: metrics.budgetComparison.budgetAdherence >= 0 ? '✅' : '⚠️',
       status: metrics.budgetComparison.budgetAdherence >= 0 ? 'success' : 
                Math.abs(metrics.budgetComparison.budgetAdherence) < 10 ? 'warning' : 'danger',
@@ -87,9 +87,9 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
       {/* Header */}
       <div className="cashflow-metrics-header">
         <div className="header-title">
-          <h3 style={{ color: '#1a202c' }}>{t('keyMetrics') || 'Key Metrics'}</h3>
+          <h3 style={{ color: '#1a202c' }}>Key Metrics</h3>
           <p style={{ color: '#64748b' }}>
-            {t('cashflowMetricsDescription') || 'Essential cashflow indicators with budget comparisons'}
+            Essential cashflow indicators with budget comparisons
           </p>
         </div>
       </div>
@@ -139,7 +139,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
                 <div className="budget-comparison">
                   <div className="comparison-item">
                     <span className="comparison-label" style={{ color: '#64748b' }}>
-                      {t('budgeted') || 'Budgeted'}:
+                      Budgeted:
                     </span>
                     <span className="comparison-value" style={{ color: '#1a202c' }}>
                       {card.budgetComparison.budgeted}
@@ -147,7 +147,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
                   </div>
                   <div className="comparison-item">
                     <span className="comparison-label" style={{ color: '#64748b' }}>
-                      {t('variance') || 'Variance'}:
+                      Variance:
                     </span>
                     <span 
                       className="comparison-value" 
@@ -194,7 +194,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
               <div className="card-title-section">
                 <span className="card-icon">📊</span>
                 <h4 className="card-title" style={{ color: '#1a202c' }}>
-                  {t('budgetComparison') || 'Budget Comparison'}
+                  Budget Comparison
                 </h4>
               </div>
             </div>
@@ -202,10 +202,10 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
             <div className="metric-card-content">
               <div className="no-budget-content">
                 <p style={{ color: '#64748b' }}>
-                  {t('noBudgetComparison') || 'Set up a budget to compare actual vs budgeted cashflow'}
+                  Set up a budget to compare actual vs budgeted cashflow
                 </p>
                 <button className="btn-setup-budget-small" style={{ color: 'white' }}>
-                  {t('setupBudget') || 'Setup Budget'}
+                  Setup Budget
                 </button>
               </div>
             </div>
@@ -219,7 +219,7 @@ const CashflowMetrics = ({ metrics, activeBudget, formatCurrency, selectedPeriod
           <div className="insight-card">
             <div className="insight-header">
               <span className="insight-icon">💡</span>
-              <h4 style={{ color: '#1a202c' }}>{t('cashflowInsight') || 'Cashflow Insight'}</h4>
+              <h4 style={{ color: '#1a202c' }}>Cashflow Insight</h4>
             </div>
             <div className="insight-content">
               <p style={{ color: '#64748b' }}>

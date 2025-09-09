@@ -15,14 +15,14 @@ const BudgetIndicator = ({ onNavigate }) => {
         <div className="empty-budget-content">
           <span className="empty-icon">📊</span>
           <div className="empty-text">
-            <h4>{t('noBudgetSet') || 'No Budget Set'}</h4>
-            <p>{t('noBudgetDescription') || 'Set up a budget to get personalized spending insights and comparisons'}</p>
+            <h4>No Budget Set</h4>
+            <p>Set up a budget to get personalized spending insights and comparisons</p>
           </div>
           <button
             className="btn-setup-budget"
             onClick={() => onNavigate && onNavigate('budget-setup')}
           >
-            {t('createBudget') || 'Create Budget'}
+            Create Budget
           </button>
         </div>
       </div>
@@ -45,7 +45,7 @@ const BudgetIndicator = ({ onNavigate }) => {
         <div className="budget-header">
           <span className="budget-icon">🎯</span>
           <div className="budget-title">
-            <h4>{t('activeBudget') || 'Active Budget'}</h4>
+            <h4>Active Budget</h4>
             <span className="budget-name">{activeBudget.name}</span>
           </div>
           <span className={`budget-status status-${activeBudget.status}`}>
@@ -57,7 +57,7 @@ const BudgetIndicator = ({ onNavigate }) => {
           <div className="budget-summary">
             <div className="summary-item">
               <span className="summary-label">
-                {t('categories') || 'Categories'}:
+                Categories:
               </span>
               <span className="summary-value">
                 {budgetSummary.totalCategories}
@@ -65,7 +65,7 @@ const BudgetIndicator = ({ onNavigate }) => {
             </div>
             <div className="summary-item">
               <span className="summary-label">
-                {t('monthlyBudget') || 'Monthly Budget'}:
+                Monthly Budget:
               </span>
               <span className="summary-value">
                 {formatCurrency(budgetSummary.totalMonthlyBudget)}
@@ -73,7 +73,7 @@ const BudgetIndicator = ({ onNavigate }) => {
             </div>
             <div className="summary-item">
               <span className="summary-label">
-                {t('yearlyProjection') || 'Yearly Projection'}:
+                Yearly Projection:
               </span>
               <span className="summary-value">
                 {formatCurrency(budgetSummary.totalMonthlyBudget * 12)}
@@ -93,11 +93,11 @@ const BudgetIndicator = ({ onNavigate }) => {
             className="btn-secondary btn-small"
             onClick={() => onNavigate && onNavigate('budget-setup')}
           >
-            {t('manageBudget') || 'Manage Budget'}
+            Manage Budget
           </button>
           {activeBudget.lastModified && (
             <span className="last-modified">
-              {t('lastUpdated') || 'Last updated'}: {formatDate(activeBudget.lastModified)}
+              Last updated: {formatDate(activeBudget.lastModified)}
             </span>
           )}
         </div>

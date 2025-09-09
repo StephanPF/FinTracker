@@ -18,7 +18,8 @@
 /* View Toggle */
 .analytics-view-toggle {
   display: flex;
-  gap: 4px;
+  justify-content: center;
+  gap: 8px;
   margin-bottom: 8px;
 }
 

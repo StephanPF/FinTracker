@@ -1357,7 +1357,7 @@ const DataManagement = () => {
       </div>
       <div className="form-actions">
         <button type="submit" className="btn-primary">
-          {editingId ? t('updateSnapshot') || 'Update Snapshot' : t('addSnapshot') || 'Add Snapshot'}
+          {editingId ? 'Update Snapshot' : 'Add Snapshot'}
         </button>
         <button type="button" onClick={resetForm} className="btn-secondary">Cancel</button>
       </div>
@@ -1998,7 +1998,7 @@ const DataManagement = () => {
             },
             { 
               key: 'totalAssets', 
-              label: t('totalAssets') || 'Total Assets', 
+              label: 'Total Assets', 
               render: (amount, row) => {
                 const currency = currencies.find(c => c.id === row.baseCurrencyId);
                 return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
@@ -2006,7 +2006,7 @@ const DataManagement = () => {
             },
             { 
               key: 'totalLiabilities', 
-              label: t('totalLiabilities') || 'Total Liabilities', 
+              label: 'Total Liabilities', 
               render: (amount, row) => {
                 const currency = currencies.find(c => c.id === row.baseCurrencyId);
                 return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
@@ -2014,7 +2014,7 @@ const DataManagement = () => {
             },
             { 
               key: 'netAssets', 
-              label: t('netWorth') || 'Net Worth', 
+              label: 'Net Worth', 
               render: (amount, row) => {
                 const currency = currencies.find(c => c.id === row.baseCurrencyId);
                 return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
@@ -2022,13 +2022,13 @@ const DataManagement = () => {
             },
             { 
               key: 'totalRetirement', 
-              label: t('retirementAssets') || 'Retirement Assets', 
+              label: 'Retirement Assets', 
               render: (amount, row) => {
                 const currency = currencies.find(c => c.id === row.baseCurrencyId);
                 return currency ? `${currency.symbol}${amount.toFixed(2)}` : amount.toFixed(2);
               }
             },
-            { key: 'description', label: t('snapshotDescription') || 'Description', render: (value) => value || '-' }
+            { key: 'description', label: 'Description', render: (value) => value || '-' }
           ]
         };
       case 'transaction_types':
@@ -2573,7 +2573,7 @@ const DataManagement = () => {
       {activeTab === 'accounts' && (
         <div className="account-types-explanation">
           <div className="account-types-header">
-            <h3>{t('accountTypesExplained') || 'Account Types Explained'}</h3>
+            <h3>Account Types Explained</h3>
             <button 
               className="toggle-explanation-btn"
               onClick={() => setShowAccountTypesExplanation(!showAccountTypesExplanation)}

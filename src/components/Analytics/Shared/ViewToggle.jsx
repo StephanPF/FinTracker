@@ -19,9 +19,9 @@ const ViewToggle = () => {
   return (
     <div className="view-toggle">
       <div className="view-toggle-header">
-        <h3>{t('viewType') || 'View Type'}</h3>
+        <h3>View Type</h3>
         <p className="view-toggle-description">
-          {t('viewTypeDescription') || 'Choose between cash-based or accrual-based accounting view'}
+          Choose between cash-based or accrual-based accounting view
         </p>
       </div>
 
@@ -34,10 +34,10 @@ const ViewToggle = () => {
           >
             <div className="toggle-option-content">
               <span className="toggle-title">
-                {t('cashBased') || 'Cash-Based'}
+                Cash-Based
               </span>
               <span className="toggle-description">
-                {t('cashBasedDescription') || 'Records when money actually changes hands'}
+                Records when money actually changes hands
               </span>
             </div>
           </button>
@@ -51,10 +51,10 @@ const ViewToggle = () => {
           >
             <div className="toggle-option-content">
               <span className="toggle-title">
-                {t('accrualBased') || 'Accrual-Based'}
+                Accrual-Based
               </span>
               <span className="toggle-description">
-                {t('accrualBasedDescription') || 'Records when transactions occur'}
+                Records when transactions occur
               </span>
             </div>
           </button>
@@ -63,31 +63,31 @@ const ViewToggle = () => {
         {/* Prominent Toggle Switch */}
         <div className="prominent-toggle">
           <span className={`toggle-label ${viewType === 'cash' ? 'active' : ''}`}>
-            {t('cash') || 'Cash'}
+            Cash
           </span>
           <button
             className="toggle-switch"
             onClick={handleToggle}
-            aria-label={t('toggleViewType') || 'Toggle between Cash and Accrual view'}
+            aria-label="Toggle between Cash and Accrual view"
           >
             <div className={`toggle-slider ${viewType === 'accrual' ? 'active' : ''}`}>
               <div className="toggle-handle" />
             </div>
           </button>
           <span className={`toggle-label ${viewType === 'accrual' ? 'active' : ''}`}>
-            {t('accrual') || 'Accrual'}
+            Accrual
           </span>
         </div>
 
         {/* Current Selection Indicator */}
         <div className="current-selection">
           <span className="selection-label">
-            {t('currentView') || 'Current View'}:
+            Current View:
           </span>
           <span className={`selection-value ${viewType}`}>
             {viewType === 'cash' 
-              ? (t('cashBased') || 'Cash-Based')
-              : (t('accrualBased') || 'Accrual-Based')
+              ? 'Cash-Based'
+              : 'Accrual-Based'
             }
           </span>
         </div>

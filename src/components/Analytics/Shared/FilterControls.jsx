@@ -116,16 +116,16 @@ const FilterControls = () => {
   return (
     <div className="filter-controls">
       <div className="filter-controls-header">
-        <h3>{t('filters') || 'Filters'}</h3>
+        <h3>Filters</h3>
         <span className="filter-summary">
-          {getSelectedCount()} of {accounts.length} {t('accountsSelected') || 'accounts selected'}
+          {getSelectedCount()} of {accounts.length} accounts selected
         </span>
       </div>
 
       <div className="filter-sections">
         {/* Account Selection */}
         <div className="filter-section">
-          <h4>{t('accounts') || 'Accounts'}</h4>
+          <h4>Accounts</h4>
           
           {/* Quick Selection */}
           <div className="quick-selection">
@@ -139,8 +139,8 @@ const FilterControls = () => {
                 border: '1px solid #d1d5db'
               }}
             >
-              <option value="all">{t('allAccounts') || 'All Accounts'}</option>
-              <option value="custom">{t('selectAccounts') || 'Select Accounts'}</option>
+              <option value="all">All Accounts</option>
+              <option value="custom">Select Accounts</option>
             </select>
           </div>
 
@@ -190,9 +190,9 @@ const FilterControls = () => {
           {/* No Accounts Message */}
           {accounts.length === 0 && (
             <div className="no-accounts-message">
-              <p>{t('noAccountsAvailable') || 'No accounts available for analytics'}</p>
+              <p>No accounts available for analytics</p>
               <p className="help-text">
-                {t('analyticsAccountsHelp') || 'Only bank accounts and current liability accounts are included in analytics'}
+                Only bank accounts and current liability accounts are included in analytics
               </p>
             </div>
           )}
@@ -200,17 +200,17 @@ const FilterControls = () => {
 
         {/* Transaction Type Filter (Future Enhancement) */}
         <div className="filter-section">
-          <h4>{t('transactionTypes') || 'Transaction Types'}</h4>
+          <h4>Transaction Types</h4>
           <div className="transaction-type-info">
             <p className="info-text">
-              {t('analyticsTransactionTypes') || 'Analytics includes Income and Expense transactions only'}
+              Analytics includes Income and Expense transactions only
             </p>
             <div className="included-types">
               <span className="type-badge type-income">
-                {t('income') || 'Income'}
+                Income
               </span>
               <span className="type-badge type-expense">
-                {t('expenses') || 'Expenses'}
+                Expenses
               </span>
             </div>
           </div>
@@ -223,7 +223,7 @@ const FilterControls = () => {
           className="btn-secondary btn-small"
           onClick={() => setSelectedAccounts('all')}
         >
-          {t('resetFilters') || 'Reset Filters'}
+          Reset Filters
         </button>
       </div>
     </div>

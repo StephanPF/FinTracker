@@ -16,19 +16,19 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
     return (
       <div className="budget-progress">
         <div className="progress-header">
-          <h3>{t('budgetProgress') || 'Budget Progress'}</h3>
+          <h3>Budget Progress</h3>
           <p className="progress-subtitle">
-            {t('budgetProgressDescription') || 'Track spending against budget targets'}
+            Track spending against budget targets
           </p>
         </div>
 
         <div className="no-budget-progress">
           <div className="no-budget-content">
             <span className="no-budget-icon">📊</span>
-            <h4>{t('noBudgetActive') || 'No Active Budget'}</h4>
-            <p>{t('budgetProgressHelp') || 'Set up a budget to track your spending progress and see how you\'re doing against your targets.'}</p>
+            <h4>No Active Budget</h4>
+            <p>Set up a budget to track your spending progress and see how you're doing against your targets.</p>
             <button className="btn-setup-budget">
-              {t('setupBudget') || 'Setup Budget'}
+              Setup Budget
             </button>
           </div>
         </div>
@@ -43,14 +43,14 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
     return (
       <div className="budget-progress">
         <div className="progress-header">
-          <h3>{t('budgetProgress') || 'Budget Progress'}</h3>
+          <h3>Budget Progress</h3>
           <p className="progress-subtitle">
-            {activeBudget.name} • {t('noBudgetedCategories') || 'No budgeted categories found'}
+            {activeBudget.name} • No budgeted categories found
           </p>
         </div>
 
         <div className="no-progress-data">
-          <p>{t('noProgressData') || 'No spending data available for budgeted categories in this period.'}</p>
+          <p>No spending data available for budgeted categories in this period.</p>
         </div>
       </div>
     );
@@ -110,15 +110,15 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
     <div className="budget-progress">
       <div className="progress-header">
         <div className="header-title">
-          <h3>{t('budgetProgress') || 'Budget Progress'}</h3>
+          <h3>Budget Progress</h3>
           <p className="progress-subtitle">
-            {activeBudget.name} • {displayCategories.length} {t('categories') || 'categories'}
+            {activeBudget.name} • {displayCategories.length} categories
           </p>
         </div>
 
         <div className="header-controls">
           <div className="sort-control">
-            <label htmlFor="progress-sort">{t('sortBy') || 'Sort by'}:</label>
+            <label htmlFor="progress-sort">Sort by:</label>
             <select
               id="progress-sort"
               value={sortBy}
@@ -130,10 +130,10 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
                 border: '1px solid #d1d5db'
               }}
             >
-              <option value="variance">{t('variance') || 'Variance'}</option>
-              <option value="amount">{t('amountSpent') || 'Amount Spent'}</option>
-              <option value="percentage">{t('percentageUsed') || 'Percentage Used'}</option>
-              <option value="name">{t('categoryName') || 'Category Name'}</option>
+              <option value="variance">Variance</option>
+              <option value="amount">Amount Spent</option>
+              <option value="percentage">Percentage Used</option>
+              <option value="name">Category Name</option>
             </select>
           </div>
 
@@ -142,8 +142,8 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
             className={`btn-filter ${showOnlyProblems ? 'active' : ''}`}
           >
             {showOnlyProblems ? 
-              (t('showAll') || 'Show All') : 
-              (t('showProblems') || 'Show Problems')
+              'Show All' : 
+              'Show Problems'
             }
           </button>
         </div>
@@ -153,16 +153,16 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
       {budgetSummary && (
         <div className="budget-summary-progress">
           <div className="summary-item">
-            <span className="summary-label">{t('totalBudgeted') || 'Total Budgeted'}:</span>
+            <span className="summary-label">Total Budgeted:</span>
             <span className="summary-value">{formatCurrency(budgetSummary.totalBudgeted)}</span>
           </div>
           <div className="summary-item">
-            <span className="summary-label">{t('totalSpent') || 'Total Spent'}:</span>
+            <span className="summary-label">Total Spent:</span>
             <span className="summary-value">{formatCurrency(budgetSummary.totalSpent)}</span>
           </div>
           <div className="summary-item">
             <span className="summary-label">
-              {budgetSummary.isOverBudget ? (t('overBy') || 'Over by') : (t('remaining') || 'Remaining')}:
+              {budgetSummary.isOverBudget ? 'Over by' : 'Remaining'}:
             </span>
             <span className={`summary-value ${budgetSummary.isOverBudget ? 'over-budget' : 'under-budget'}`}>
               {formatCurrency(Math.abs(budgetSummary.budgetRemaining))}
@@ -192,7 +192,7 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
 
                 <div className="progress-details">
                   <span className={`progress-percentage status-${status}`}>
-                    {category.variancePercentage.toFixed(0)}% {t('used') || 'used'}
+                    {category.variancePercentage.toFixed(0)}% used
                   </span>
                   {category.variance !== 0 && (
                     <span className={`progress-variance ${category.variance > 0 ? 'over-budget' : 'under-budget'}`}>
@@ -245,35 +245,35 @@ const BudgetProgress = ({ analyticsData, activeBudget, budgetSummary, formatCurr
         <div className="no-problems">
           <div className="no-problems-content">
             <span className="success-icon">🎉</span>
-            <h4>{t('noBudgetProblems') || 'No Budget Problems!'}</h4>
-            <p>{t('allCategoriesOnTrack') || 'All budget categories are on track or under budget.'}</p>
+            <h4>No Budget Problems!</h4>
+            <p>All budget categories are on track or under budget.</p>
           </div>
         </div>
       )}
 
       {/* Progress Legend */}
       <div className="progress-legend">
-        <h4>{t('progressStatus') || 'Progress Status'}</h4>
+        <h4>Progress Status</h4>
         <div className="legend-items">
           <div className="legend-item">
             <div className="legend-bar status-excellent" />
-            <span>0-60% {t('excellent') || 'Excellent'}</span>
+            <span>0-60% Excellent</span>
           </div>
           <div className="legend-item">
             <div className="legend-bar status-good" />
-            <span>60-80% {t('good') || 'Good'}</span>
+            <span>60-80% Good</span>
           </div>
           <div className="legend-item">
             <div className="legend-bar status-warning" />
-            <span>80-90% {t('warning') || 'Warning'}</span>
+            <span>80-90% Warning</span>
           </div>
           <div className="legend-item">
             <div className="legend-bar status-critical" />
-            <span>90-100% {t('critical') || 'Critical'}</span>
+            <span>90-100% Critical</span>
           </div>
           <div className="legend-item">
             <div className="legend-bar status-over" />
-            <span>100%+ {t('overBudget') || 'Over Budget'}</span>
+            <span>100%+ Over Budget</span>
           </div>
         </div>
       </div>

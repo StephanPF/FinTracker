@@ -117,8 +117,8 @@ const BudgetStatusBreakdown = ({ expenseData, activeBudget, formatCurrency }) =>
     return (
       <div className="category-breakdown">
         <div className="breakdown-header">
-          <h3>💰 {t('budgetStatusBreakdown') || 'Budget Status Breakdown'}</h3>
-          <p className="breakdown-subtitle">{t('noBudgetStatusData') || 'No budget status data available for selected period'}</p>
+          <h3>💰 Budget Status Breakdown</h3>
+          <p className="breakdown-subtitle">No budget status data available for selected period</p>
         </div>
       </div>
     );
@@ -128,8 +128,8 @@ const BudgetStatusBreakdown = ({ expenseData, activeBudget, formatCurrency }) =>
     return (
       <div className="category-breakdown">
         <div className="breakdown-header">
-          <h3>💰 {t('budgetStatusBreakdown') || 'Budget Status Breakdown'}</h3>
-          <p className="breakdown-subtitle">{t('noBudgetAvailable') || 'No active budget - budget status breakdown not available'}</p>
+          <h3>💰 Budget Status Breakdown</h3>
+          <p className="breakdown-subtitle">No active budget - budget status breakdown not available</p>
         </div>
       </div>
     );
@@ -138,9 +138,9 @@ const BudgetStatusBreakdown = ({ expenseData, activeBudget, formatCurrency }) =>
   return (
     <div className="category-breakdown budget-status-breakdown">
       <div className="breakdown-header">
-        <h3>💰 {t('budgetStatusBreakdown') || 'Budget Status Breakdown'}</h3>
+        <h3>💰 Budget Status Breakdown</h3>
         <p className="breakdown-subtitle">
-          {t('expensesByBudgetStatus') || 'Expense distribution by budget performance'}
+          Expense distribution by budget performance
         </p>
       </div>
 
@@ -205,7 +205,7 @@ const BudgetStatusBreakdown = ({ expenseData, activeBudget, formatCurrency }) =>
                   )}
                   {!category.hasBudget && (
                     <span className="legend-budget-status status-no-budget">
-                      {t('noBudgetSet') || 'No budget set'}
+                      No budget set
                     </span>
                   )}
                 </div>
@@ -217,23 +217,23 @@ const BudgetStatusBreakdown = ({ expenseData, activeBudget, formatCurrency }) =>
 
       {/* Budget Status Legend */}
       <div className="budget-status-legend">
-        <h4>{t('budgetStatusColors') || 'Budget Status Colors'}</h4>
+        <h4>Budget Status Colors</h4>
         <div className="budget-legend-items">
           <div className="budget-legend-item">
             <div className="legend-color" style={{ backgroundColor: '#10b981' }} />
-            <span>{t('withinBudget') || 'Within Budget'}</span>
+            <span>Within Budget</span>
           </div>
           <div className="budget-legend-item">
             <div className="legend-color" style={{ backgroundColor: '#f59e0b' }} />
-            <span>{t('closeToBudget') || 'Close to Budget'}</span>
+            <span>Close to Budget</span>
           </div>
           <div className="budget-legend-item">
             <div className="legend-color" style={{ backgroundColor: '#ef4444' }} />
-            <span>{t('overBudget') || 'Over Budget'}</span>
+            <span>Over Budget</span>
           </div>
           <div className="budget-legend-item">
             <div className="legend-color" style={{ backgroundColor: '#6b7280' }} />
-            <span>{t('noBudget') || 'No Budget'}</span>
+            <span>No Budget</span>
           </div>
         </div>
       </div>

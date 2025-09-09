@@ -431,7 +431,7 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
       <div className="waterfall-chart-loading">
         <div className="loading-content">
           <div className="loading-spinner"></div>
-          <p>{t('loadingWaterfallData') || 'Loading waterfall data...'}</p>
+          <p>Loading waterfall data...</p>
         </div>
       </div>
     );
@@ -442,9 +442,9 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
       {/* Header */}
       <div className="waterfall-chart-header">
         <div className="header-title">
-          <h3 style={{ color: '#1a202c' }}>{t('cashflowWaterfall') || 'Cashflow Waterfall'}</h3>
+          <h3 style={{ color: '#1a202c' }}>Cashflow Waterfall</h3>
           <p style={{ color: '#64748b' }}>
-            {t('waterfallDescription') || 'Visual flow from starting balance through income and expenses to ending balance'}
+            Visual flow from starting balance through income and expenses to ending balance
           </p>
         </div>
         
@@ -455,7 +455,7 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
               className={`btn-toggle ${showBudgetOverlay ? 'active' : ''}`}
               style={{ color: showBudgetOverlay ? 'white' : '#374151' }}
             >
-              {t('budgetOverlay') || 'Budget Overlay'}
+              Budget Overlay
             </button>
           )}
         </div>
@@ -478,20 +478,20 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
       <div className="waterfall-legend">
         <div className="legend-item">
           <div className="legend-color income"></div>
-          <span style={{ color: '#1a202c' }}>{t('income') || 'Income'}</span>
+          <span style={{ color: '#1a202c' }}>Income</span>
         </div>
         <div className="legend-item">
           <div className="legend-color expenses"></div>
-          <span style={{ color: '#1a202c' }}>{t('expenses') || 'Expenses'}</span>
+          <span style={{ color: '#1a202c' }}>Expenses</span>
         </div>
         <div className="legend-item">
           <div className="legend-color balance"></div>
-          <span style={{ color: '#1a202c' }}>{t('balance') || 'Balance'}</span>
+          <span style={{ color: '#1a202c' }}>Balance</span>
         </div>
         {activeBudget && showBudgetOverlay && (
           <div className="legend-item">
             <div className="legend-line budget"></div>
-            <span style={{ color: '#1a202c' }}>{t('budgetLine') || 'Budget Line'}</span>
+            <span style={{ color: '#1a202c' }}>Budget Line</span>
           </div>
         )}
       </div>
@@ -504,8 +504,8 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
             <div className="detail-row">
               <span style={{ color: '#64748b' }}>
                 {waterfallData[hoveredStep].type === 'start' || waterfallData[hoveredStep].type === 'end' ? 
-                  (t('cumulativeValue') || 'Cumulative Value') : 
-                  (t('changeAmount') || 'Change Amount')}:
+                  'Cumulative Value' : 
+                  'Change Amount'}:
               </span>
               <span style={{ color: '#1a202c', fontWeight: '600' }}>
                 {waterfallData[hoveredStep].type === 'start' || waterfallData[hoveredStep].type === 'end' ?
@@ -515,7 +515,7 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
             </div>
             {waterfallData[hoveredStep].budgetValue && (
               <div className="detail-row">
-                <span style={{ color: '#64748b' }}>{t('budgetedAmount') || 'Budgeted Amount'}:</span>
+                <span style={{ color: '#64748b' }}>Budgeted Amount:</span>
                 <span style={{ color: '#f59e0b', fontWeight: '600' }}>
                   {formatCurrency(waterfallData[hoveredStep].budgetValue)}
                 </span>
@@ -534,8 +534,8 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
                 <h3>{drillDownData?.step?.label || 'Transaction Details'}</h3>
                 <p>
                   {drillDownData?.step?.type === 'positive' ? 
-                    (t('incomeBreakdown') || 'Income breakdown and analysis') :
-                    (t('expenseBreakdown') || 'Expense breakdown and analysis')
+                    'Income breakdown and analysis' :
+                    'Expense breakdown and analysis'
                   }
                 </p>
               </div>
@@ -550,25 +550,25 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
                 <div className="drill-down-summary">
                   <div className="summary-cards">
                     <div className="summary-card">
-                      <div className="card-label">{t('totalAmount') || 'Total Amount'}</div>
+                      <div className="card-label">Total Amount</div>
                       <div className="card-value">{formatCurrency(drillDownData.summary.totalAmount)}</div>
                     </div>
                     <div className="summary-card">
-                      <div className="card-label">{t('totalTransactions') || 'Transactions'}</div>
+                      <div className="card-label">Transactions</div>
                       <div className="card-value">{drillDownData.totalTransactions}</div>
                     </div>
                     <div className="summary-card">
-                      <div className="card-label">{t('averageTransaction') || 'Average'}</div>
+                      <div className="card-label">Average</div>
                       <div className="card-value">{formatCurrency(drillDownData.summary.averageTransaction)}</div>
                     </div>
                     {activeBudget && (
                       <>
                         <div className="summary-card">
-                          <div className="card-label">{t('budgetTotal') || 'Budget Total'}</div>
+                          <div className="card-label">Budget Total</div>
                           <div className="card-value">{formatCurrency(drillDownData.summary.budgetTotal)}</div>
                         </div>
                         <div className="summary-card">
-                          <div className="card-label">{t('overBudgetCategories') || 'Over Budget'}</div>
+                          <div className="card-label">Over Budget</div>
                           <div className="card-value">{drillDownData.summary.overBudgetCategories}</div>
                         </div>
                       </>
@@ -579,7 +579,7 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
                 {/* Category Breakdown */}
                 <div className="drill-down-categories">
                   <div className="section-header">
-                    <h4>{t('categoryBreakdown') || 'Category Breakdown'}</h4>
+                    <h4>Category Breakdown</h4>
                   </div>
                   
                   <div className="categories-grid">
@@ -592,24 +592,24 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
                         
                         <div className="category-details">
                           <div className="detail-row">
-                            <span>{t('transactions') || 'Transactions'}:</span>
+                            <span>Transactions:</span>
                             <span>{category.transactionCount}</span>
                           </div>
                           
                           {category.hasBudget && (
                             <>
                               <div className="detail-row">
-                                <span>{t('budgeted') || 'Budgeted'}:</span>
+                                <span>Budgeted:</span>
                                 <span>{formatCurrency(category.budgetAmount)}</span>
                               </div>
                               <div className="detail-row">
-                                <span>{t('variance') || 'Variance'}:</span>
+                                <span>Variance:</span>
                                 <span className={category.variance >= 0 ? 'negative' : 'positive'}>
                                   {category.variance >= 0 ? '+' : ''}{formatCurrency(category.variance)}
                                 </span>
                               </div>
                               <div className="detail-row">
-                                <span>{t('adherence') || 'Adherence'}:</span>
+                                <span>Adherence:</span>
                                 <span className={category.adherence <= 100 ? 'positive' : 'negative'}>
                                   {category.adherence?.toFixed(1) || '0'}%
                                 </span>
@@ -634,7 +634,7 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
                   
                   {drillDownData.subcategories.length > 8 && (
                     <div className="more-categories">
-                      +{drillDownData.subcategories.length - 8} {t('moreCategories') || 'more categories'}
+                      +{drillDownData.subcategories.length - 8} more categories
                     </div>
                   )}
                 </div>
@@ -642,15 +642,15 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
                 {/* Top Transactions */}
                 <div className="drill-down-transactions">
                   <div className="section-header">
-                    <h4>{t('topTransactions') || 'Top Transactions'}</h4>
+                    <h4>Top Transactions</h4>
                   </div>
                   
                   <div className="transactions-table">
                     <div className="table-header">
-                      <div className="col-date">{t('date') || 'Date'}</div>
-                      <div className="col-description">{t('description') || 'Description'}</div>
-                      <div className="col-category">{t('category') || 'Category'}</div>
-                      <div className="col-amount">{t('amount') || 'Amount'}</div>
+                      <div className="col-date">Date</div>
+                      <div className="col-description">Description</div>
+                      <div className="col-category">Category</div>
+                      <div className="col-amount">Amount</div>
                     </div>
                     
                     <div className="table-body">
@@ -660,10 +660,10 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
                             {new Date(transaction.date).toLocaleDateString()}
                           </div>
                           <div className="col-description">
-                            {transaction.description || (t('noDescription') || 'No description')}
+                            {transaction.description || 'No description'}
                           </div>
                           <div className="col-category">
-                            {transaction.subcategoryName || (t('uncategorized') || 'Uncategorized')}
+                            {transaction.subcategoryName || 'Uncategorized'}
                           </div>
                           <div className={`col-amount ${transaction.categoryId === 'CAT_001' ? 'income' : 'expense'}`}>
                             {formatCurrency(Math.abs(transaction.amount))}
@@ -681,7 +681,7 @@ const WaterfallChart = ({ waterfallData, activeBudget, formatCurrency, selectedP
             ) : (
               <div className="drill-down-loading">
                 <div className="loading-spinner"></div>
-                <p>{t('loadingDetails') || 'Loading details...'}</p>
+                <p>Loading details...</p>
               </div>
             )}
           </div>

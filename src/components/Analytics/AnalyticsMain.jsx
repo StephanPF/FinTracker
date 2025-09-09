@@ -203,7 +203,7 @@ const AnalyticsMain = ({ onNavigate }) => {
   if (!analyticsService) {
     return (
       <div className="analytics-loading">
-        <p>{t('loadingAnalytics') || 'Loading Analytics...'}</p>
+        <p>Loading Analytics...</p>
       </div>
     );
   }
@@ -216,40 +216,40 @@ const AnalyticsMain = ({ onNavigate }) => {
           {/* View Toggle */}
           <div className="analytics-view-toggle">
             <button 
-              className={`view-toggle-btn ${currentView === 'expense' ? 'active' : ''}`}
+              className={`data-nav-btn ${currentView === 'expense' ? 'active' : ''}`}
               onClick={() => handleViewChange('expense')}
             >
-              {t('expenseView') || 'Expense View'}
+              Expense View
             </button>
             <button 
-              className={`view-toggle-btn ${currentView === 'cashflow' ? 'active' : ''}`}
+              className={`data-nav-btn ${currentView === 'cashflow' ? 'active' : ''}`}
               onClick={() => handleViewChange('cashflow')}
             >
-              {t('cashflowView') || 'Cashflow View'}
+              Cashflow View
             </button>
             <button 
-              className={`view-toggle-btn ${currentView === 'networth' ? 'active' : ''}`}
+              className={`data-nav-btn ${currentView === 'networth' ? 'active' : ''}`}
               onClick={() => handleViewChange('networth')}
             >
-              📈 {t('netWorthView') || 'Net Worth View'}
+              📈 Net Worth View
             </button>
             <button 
-              className={`view-toggle-btn user-guide-btn ${currentView === 'userguide' ? 'active' : ''}`}
+              className={`data-nav-btn ${currentView === 'userguide' ? 'active' : ''}`}
               onClick={() => handleViewChange('userguide')}
             >
-              📖 {t('userGuide') || 'User Guide'}
+              📖 User Guide
             </button>
           </div>
 
           {/* Budget Indicator */}
-          {activeBudget && (
+          {activeBudget && currentView !== 'userguide' && currentView !== 'networth' && (
             <div className="budget-indicator">
               <span className="budget-label">
-                {t('usingBudget') || 'Using Budget'}:
+                Using Budget:
               </span>
               <span className="budget-name">{activeBudget.name}</span>
               <span className={`budget-status status-${activeBudget.status}`}>
-                {t(activeBudget.status) || activeBudget.status}
+                {activeBudget.status}
               </span>
             </div>
           )}
@@ -258,13 +258,13 @@ const AnalyticsMain = ({ onNavigate }) => {
             <div className="no-budget-warning">
               <span className="warning-icon">⚠️</span>
               <span className="warning-text">
-                {t('noBudgetActive') || 'No active budget - set up a budget for better insights'}
+                No active budget - set up a budget for better insights
               </span>
               <button 
                 className="btn-setup-budget"
                 onClick={() => onNavigate && onNavigate('budget-setup')}
               >
-                {t('setupBudget') || 'Setup Budget'}
+                Setup Budget
               </button>
             </div>
           )}
@@ -274,7 +274,7 @@ const AnalyticsMain = ({ onNavigate }) => {
         <div className="analytics-content">
           {loading && (
             <div className="analytics-loading">
-              <p>{t('loadingData') || 'Loading data...'}</p>
+              <p>Loading data...</p>
             </div>
           )}
 
@@ -282,7 +282,7 @@ const AnalyticsMain = ({ onNavigate }) => {
             <div className="analytics-error">
               <p>{error}</p>
               <button onClick={loadAnalyticsData} className="btn-retry">
-                {t('retry') || 'Retry'}
+                Retry
               </button>
             </div>
           )}

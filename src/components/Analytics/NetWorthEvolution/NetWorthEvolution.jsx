@@ -128,10 +128,10 @@ const NetWorthEvolution = ({ onNavigate }) => {
   return (
     <div className="networth-evolution">
       <div className="networth-header">
-        <h2>📈 {t('netWorthView') || 'Net Worth View'}</h2>
+        <h2>📈 Net Worth View</h2>
         <div className="networth-controls">
           <span className="snapshots-count">
-            {snapshots.length} {snapshots.length === 1 ? 'snapshot' : t('snapshotsFound') || 'snapshots found'}
+            {snapshots.length} {snapshots.length === 1 ? 'snapshot' : 'snapshots found'}
           </span>
         </div>
       </div>

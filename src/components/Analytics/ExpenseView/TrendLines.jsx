@@ -301,7 +301,7 @@ const TrendLines = ({ expenseData, activeBudget, selectedPeriod, formatCurrency 
       <div className="trend-lines-loading">
         <div className="loading-content">
           <div className="loading-spinner"></div>
-          <p>{t('loadingTrendData') || 'Loading trend data...'}</p>
+          <p>Loading trend data...</p>
         </div>
       </div>
     );
@@ -312,9 +312,9 @@ const TrendLines = ({ expenseData, activeBudget, selectedPeriod, formatCurrency 
       {/* Header */}
       <div className="trend-lines-header">
         <div className="header-title">
-          <h3 style={{ color: '#1a202c' }}>{t('spendingTrends') || 'Spending Trends'}</h3>
+          <h3 style={{ color: '#1a202c' }}>Spending Trends</h3>
           <p style={{ color: '#64748b' }}>
-            {t('trendAnalysisDescription') || 'Historical spending patterns with budget comparisons'}
+            Historical spending patterns with budget comparisons
           </p>
         </div>
         
@@ -325,7 +325,7 @@ const TrendLines = ({ expenseData, activeBudget, selectedPeriod, formatCurrency 
               className={`btn-toggle ${showBudgetLines ? 'active' : ''}`}
               style={{ color: showBudgetLines ? 'white' : '#374151' }}
             >
-              {t('budgetLines') || 'Budget Lines'}
+              Budget Lines
             </button>
           )}
         </div>
@@ -359,7 +359,7 @@ const TrendLines = ({ expenseData, activeBudget, selectedPeriod, formatCurrency 
             </span>
             {category.hasBudget && (
               <span className="legend-budget" style={{ color: '#64748b' }}>
-                ({t('budgeted') || 'Budgeted'}: {formatCurrency(category.budgetAmount)})
+                (Budgeted: {formatCurrency(category.budgetAmount)})
               </span>
             )}
           </div>
@@ -369,7 +369,7 @@ const TrendLines = ({ expenseData, activeBudget, selectedPeriod, formatCurrency 
       {/* Insights */}
       {activeBudget && (
         <div className="trend-insights">
-          <h4 style={{ color: '#1a202c' }}>{t('trendInsights') || 'Trend Insights'}</h4>
+          <h4 style={{ color: '#1a202c' }}>Trend Insights</h4>
           <div className="insights-list">
             {generateTrendInsights().map((insight, index) => (
               <div key={index} className={`insight-item ${insight.type}`}>

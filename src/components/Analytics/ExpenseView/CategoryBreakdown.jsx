@@ -121,16 +121,16 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
     return (
       <div className="category-breakdown">
         <div className="breakdown-header">
-          <h3>📊 {t('categoryBreakdown') || 'Category Breakdown'}</h3>
+          <h3>📊 Category Breakdown</h3>
           <p className="breakdown-subtitle">
-            {t('expenseDistribution') || 'Expense distribution by category'}
+            Expense distribution by category
           </p>
         </div>
 
         <div className="breakdown-empty">
           <div className="empty-chart">
             <span className="empty-icon">📊</span>
-            <p>{t('noExpenseCategories') || 'No expense categories to display'}</p>
+            <p>No expense categories to display</p>
           </div>
         </div>
       </div>
@@ -142,9 +142,9 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
   return (
     <div className="category-breakdown">
       <div className="breakdown-header">
-        <h3>📊 {t('categoryBreakdown') || 'Category Breakdown'}</h3>
+        <h3>📊 Category Breakdown</h3>
         <p className="breakdown-subtitle">
-          {t('expenseDistribution') || 'Expense distribution by category'}
+          Expense distribution by category
         </p>
       </div>
 
@@ -182,7 +182,7 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
             
             {/* Center text */}
             <text x="120" y="115" textAnchor="middle" className="chart-center-text">
-              <tspan className="center-label">{t('totalExpenses') || 'Total'}</tspan>
+              <tspan className="center-label">Total</tspan>
             </text>
             <text x="120" y="135" textAnchor="middle" className="chart-center-text">
               <tspan className="center-value">
@@ -224,7 +224,7 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
                   )}
                   {!category.hasBudget && (
                     <span className="legend-no-budget">
-                      {t('noBudget') || 'No budget'}
+                      No budget
                     </span>
                   )}
                 </div>
@@ -247,34 +247,34 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
             </div>
             <div className="details-content">
               <div className="detail-row">
-                <span className="detail-label">{t('totalSpent') || 'Total Spent'}:</span>
+                <span className="detail-label">Total Spent:</span>
                 <span className="detail-value">{formatCurrency(selectedCategory.actualSpent)}</span>
               </div>
               <div className="detail-row">
-                <span className="detail-label">{t('percentageOfTotal') || '% of Total'}:</span>
+                <span className="detail-label">% of Total:</span>
                 <span className="detail-value">{selectedCategory.percentage.toFixed(1)}%</span>
               </div>
               {selectedCategory.hasBudget && (
                 <>
                   <div className="detail-row">
-                    <span className="detail-label">{t('budgeted') || 'Budgeted'}:</span>
+                    <span className="detail-label">Budgeted:</span>
                     <span className="detail-value">{formatCurrency(selectedCategory.budgetAmount)}</span>
                   </div>
                   <div className="detail-row">
-                    <span className="detail-label">{t('variance') || 'Variance'}:</span>
+                    <span className="detail-label">Variance:</span>
                     <span className={`detail-value ${selectedCategory.variance > 0 ? 'over-budget' : 'under-budget'}`}>
                       {selectedCategory.variance > 0 ? '+' : ''}{formatCurrency(selectedCategory.variance)}
                     </span>
                   </div>
                   <div className="detail-row">
-                    <span className="detail-label">{t('budgetUtilization') || 'Budget Used'}:</span>
+                    <span className="detail-label">Budget Used:</span>
                     <span className="detail-value">{selectedCategory.variancePercentage.toFixed(1)}%</span>
                   </div>
                 </>
               )}
               {!selectedCategory.hasBudget && (
                 <div className="detail-row">
-                  <span className="detail-note">{t('categoryNotBudgeted') || 'This category is not included in your budget'}</span>
+                  <span className="detail-note">This category is not included in your budget</span>
                 </div>
               )}
             </div>

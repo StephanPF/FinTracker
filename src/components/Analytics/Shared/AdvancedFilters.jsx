@@ -193,37 +193,37 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
       {/* Filter Header */}
       <div className="filters-header">
         <div className="header-title">
-          <h4>{t('advancedFilters') || 'Advanced Filters'}</h4>
+          <h4>Advanced Filters</h4>
           <span className="filter-count">
-            {activeFilterCount > 0 && `${activeFilterCount} ${t('active') || 'active'}`}
+            {activeFilterCount > 0 && `${activeFilterCount} active`}
           </span>
         </div>
         
         <div className="header-actions">
           <button onClick={resetFilters} className="btn-reset">
-            {t('resetFilters') || 'Reset Filters'}
+            Reset Filters
           </button>
         </div>
       </div>
 
       {/* Quick Presets */}
       <div className="filter-presets">
-        <div className="presets-label">{t('quickFilters') || 'Quick Filters'}:</div>
+        <div className="presets-label">Quick Filters:</div>
         <div className="preset-buttons">
           <button onClick={() => applyPreset('over-budget')} className="preset-btn">
-            {t('overBudget') || 'Over Budget'}
+            Over Budget
           </button>
           <button onClick={() => applyPreset('large-transactions')} className="preset-btn">
-            {t('largeTransactions') || 'Large Transactions'}
+            Large Transactions
           </button>
           <button onClick={() => applyPreset('recent-activity')} className="preset-btn">
-            {t('recentActivity') || 'Recent Activity'}
+            Recent Activity
           </button>
           <button onClick={() => applyPreset('recurring-patterns')} className="preset-btn">
-            {t('recurringPatterns') || 'Recurring'}
+            Recurring
           </button>
           <button onClick={() => applyPreset('spending-anomalies')} className="preset-btn">
-            {t('anomalies') || 'Anomalies'}
+            Anomalies
           </button>
         </div>
       </div>
@@ -233,28 +233,28 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
         {/* Budget Status Filter */}
         {activeBudget && (
           <div className="filter-group">
-            <label className="filter-label">{t('budgetStatus') || 'Budget Status'}</label>
+            <label className="filter-label">Budget Status</label>
             <select 
               value={filters.budgetStatus}
               onChange={(e) => handleFilterChange('budgetStatus', e.target.value)}
               className="filter-select"
             >
-              <option value="all">{t('allStatuses') || 'All Statuses'}</option>
-              <option value="over-budget">{t('overBudget') || 'Over Budget'}</option>
-              <option value="under-budget">{t('underBudget') || 'Under Budget'}</option>
-              <option value="on-track">{t('onTrack') || 'On Track'}</option>
-              <option value="no-budget">{t('noBudgetSet') || 'No Budget Set'}</option>
+              <option value="all">All Statuses</option>
+              <option value="over-budget">Over Budget</option>
+              <option value="under-budget">Under Budget</option>
+              <option value="on-track">On Track</option>
+              <option value="no-budget">No Budget Set</option>
             </select>
           </div>
         )}
 
         {/* Amount Range Filter */}
         <div className="filter-group">
-          <label className="filter-label">{t('amountRange') || 'Amount Range'}</label>
+          <label className="filter-label">Amount Range</label>
           <div className="range-inputs">
             <input
               type="number"
-              placeholder={t('min') || 'Min'}
+              placeholder="Min"
               value={filters.amountRange.min}
               onChange={(e) => handleFilterChange('amountRange', { 
                 ...filters.amountRange, 
@@ -266,7 +266,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
             <span className="range-separator">-</span>
             <input
               type="number"
-              placeholder={t('max') || 'Max'}
+              placeholder="Max"
               value={filters.amountRange.max}
               onChange={(e) => handleFilterChange('amountRange', { 
                 ...filters.amountRange, 
@@ -280,7 +280,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
 
         {/* Transaction Type Filter */}
         <div className="filter-group">
-          <label className="filter-label">{t('transactionTypes') || 'Transaction Types'}</label>
+          <label className="filter-label">Transaction Types</label>
           <div className="checkbox-group">
             <label className="checkbox-label">
               <input
@@ -288,7 +288,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
                 checked={filters.transactionTypes.includes('CAT_001')}
                 onChange={(e) => handleArrayFilterChange('transactionTypes', 'CAT_001', e.target.checked)}
               />
-              <span>{t('income') || 'Income'}</span>
+              <span>Income</span>
             </label>
             <label className="checkbox-label">
               <input
@@ -296,17 +296,17 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
                 checked={filters.transactionTypes.includes('CAT_002')}
                 onChange={(e) => handleArrayFilterChange('transactionTypes', 'CAT_002', e.target.checked)}
               />
-              <span>{t('expenses') || 'Expenses'}</span>
+              <span>Expenses</span>
             </label>
           </div>
         </div>
 
         {/* Categories Filter */}
         <div className="filter-group">
-          <label className="filter-label">{t('categories') || 'Categories'}</label>
+          <label className="filter-label">Categories</label>
           <div className="category-selector">
             {filterOptions.loading ? (
-              <div className="loading-text">{t('loading') || 'Loading...'}</div>
+              <div className="loading-text">Loading...</div>
             ) : (
               <div className="checkbox-grid">
                 {filterOptions.categories.slice(0, 6).map(category => (
@@ -321,7 +321,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
                 ))}
                 {filterOptions.categories.length > 6 && (
                   <div className="more-categories">
-                    +{filterOptions.categories.length - 6} {t('more') || 'more'}
+                    +{filterOptions.categories.length - 6} more
                   </div>
                 )}
               </div>
@@ -331,7 +331,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
 
         {/* Date Range Filter */}
         <div className="filter-group">
-          <label className="filter-label">{t('dateRange') || 'Date Range'}</label>
+          <label className="filter-label">Date Range</label>
           <div className="date-range">
             <input
               type="date"
@@ -342,7 +342,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
               })}
               className="filter-input date-input"
             />
-            <span className="range-separator">{t('to') || 'to'}</span>
+            <span className="range-separator">to</span>
             <input
               type="date"
               value={filters.dateRange.end}
@@ -357,7 +357,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
 
         {/* Special Filters */}
         <div className="filter-group">
-          <label className="filter-label">{t('specialFilters') || 'Special Filters'}</label>
+          <label className="filter-label">Special Filters</label>
           <div className="checkbox-group">
             <label className="checkbox-label">
               <input
@@ -365,7 +365,7 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
                 checked={filters.recurringOnly}
                 onChange={(e) => handleFilterChange('recurringOnly', e.target.checked)}
               />
-              <span>{t('recurringOnly') || 'Recurring transactions only'}</span>
+              <span>Recurring transactions only</span>
             </label>
             <label className="checkbox-label">
               <input
@@ -373,24 +373,24 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
                 checked={filters.anomaliesOnly}
                 onChange={(e) => handleFilterChange('anomaliesOnly', e.target.checked)}
               />
-              <span>{t('anomaliesOnly') || 'Anomalies only'}</span>
+              <span>Anomalies only</span>
             </label>
           </div>
         </div>
 
         {/* Sort Options */}
         <div className="filter-group">
-          <label className="filter-label">{t('sortBy') || 'Sort By'}</label>
+          <label className="filter-label">Sort By</label>
           <div className="sort-controls">
             <select 
               value={filters.sortBy}
               onChange={(e) => handleFilterChange('sortBy', e.target.value)}
               className="filter-select sort-select"
             >
-              <option value="date">{t('date') || 'Date'}</option>
-              <option value="amount">{t('amount') || 'Amount'}</option>
-              <option value="category">{t('category') || 'Category'}</option>
-              <option value="budget-variance">{t('budgetVariance') || 'Budget Variance'}</option>
+              <option value="date">Date</option>
+              <option value="amount">Amount</option>
+              <option value="category">Category</option>
+              <option value="budget-variance">Budget Variance</option>
             </select>
             <button
               onClick={() => handleFilterChange('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -406,35 +406,35 @@ const AdvancedFilters = ({ onFiltersChange, initialFilters = {} }) => {
       {/* Filter Summary */}
       {activeFilterCount > 0 && (
         <div className="filter-summary">
-          <div className="summary-label">{t('activeFilters') || 'Active filters'}:</div>
+          <div className="summary-label">Active filters:</div>
           <div className="filter-tags">
             {filters.budgetStatus !== 'all' && (
               <div className="filter-tag">
-                {t('budgetStatus') || 'Budget'}: {t(filters.budgetStatus) || filters.budgetStatus}
+                Budget: {filters.budgetStatus}
                 <button onClick={() => handleFilterChange('budgetStatus', 'all')}>×</button>
               </div>
             )}
             {(filters.amountRange.min || filters.amountRange.max) && (
               <div className="filter-tag">
-                {t('amount') || 'Amount'}: {filters.amountRange.min || '0'} - {filters.amountRange.max || '∞'}
+                Amount: {filters.amountRange.min || '0'} - {filters.amountRange.max || '∞'}
                 <button onClick={() => handleFilterChange('amountRange', { min: '', max: '' })}>×</button>
               </div>
             )}
             {filters.categories.length > 0 && (
               <div className="filter-tag">
-                {filters.categories.length} {t('categories') || 'categories'}
+                {filters.categories.length} categories
                 <button onClick={() => handleFilterChange('categories', [])}>×</button>
               </div>
             )}
             {filters.recurringOnly && (
               <div className="filter-tag">
-                {t('recurringOnly') || 'Recurring only'}
+                Recurring only
                 <button onClick={() => handleFilterChange('recurringOnly', false)}>×</button>
               </div>
             )}
             {filters.anomaliesOnly && (
               <div className="filter-tag">
-                {t('anomaliesOnly') || 'Anomalies only'}
+                Anomalies only
                 <button onClick={() => handleFilterChange('anomaliesOnly', false)}>×</button>
               </div>
             )}

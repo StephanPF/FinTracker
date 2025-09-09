@@ -13,7 +13,7 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
     return (
       <div className="overview-cards">
         <div className="overview-loading">
-          <p>{t('calculatingMetrics') || 'Calculating metrics...'}</p>
+          <p>Calculating metrics...</p>
         </div>
       </div>
     );
@@ -23,7 +23,7 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
     // Total Expenses Card
     {
       id: 'total-expenses',
-      title: t('totalExpenses') || 'Total Expenses',
+      title: 'Total Expenses',
       value: formatCurrency(metrics.totalExpenses || 0),
       period: getPeriodLabel(selectedPeriod),
       icon: '💸',
@@ -34,11 +34,11 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
     // Budget Status Card (only show if budget is active)
     ...(activeBudget && metrics.budgetMetrics ? [{
       id: 'budget-status',
-      title: t('budgetStatus') || 'Budget Status',
+      title: 'Budget Status',
       value: formatCurrency(Math.abs(metrics.budgetMetrics.budgetRemaining)),
       subtitle: metrics.budgetMetrics.isOverBudget ? 
-        (t('overBudget') || 'Over Budget') : 
-        (t('remaining') || 'Remaining'),
+        'Over Budget' : 
+        'Remaining',
       icon: metrics.budgetMetrics.isOverBudget ? '⚠️' : '✅',
       status: metrics.budgetMetrics.isOverBudget ? 'warning' : 'success',
       type: 'budget-status',
@@ -49,9 +49,9 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
     // Largest Expense Card
     {
       id: 'largest-expense',
-      title: t('largestExpense') || 'Largest Expense',
+      title: 'Largest Expense',
       value: formatCurrency(metrics.largestExpense?.amount || 0),
-      subtitle: metrics.largestExpense?.subcategoryName || (t('noExpenses') || 'No expenses'),
+      subtitle: metrics.largestExpense?.subcategoryName || 'No expenses',
       icon: '🔝',
       type: 'largest-expense',
       category: metrics.largestExpense?.subcategoryName
@@ -60,11 +60,11 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
     // Budget Variance Card (only show if budget is active)
     ...(activeBudget && metrics.budgetMetrics ? [{
       id: 'budget-variance',
-      title: t('vsBudget') || 'vs Budget',
+      title: 'vs Budget',
       value: `${metrics.budgetMetrics.budgetVariancePercentage >= 0 ? '+' : ''}${metrics.budgetMetrics.budgetVariancePercentage.toFixed(1)}%`,
       subtitle: metrics.budgetMetrics.isOverBudget ? 
-        (t('overBudgetBy') || 'Over budget by') : 
-        (t('underBudgetBy') || 'Under budget by'),
+        'Over budget by' : 
+        'Under budget by',
       icon: metrics.budgetMetrics.isOverBudget ? '📈' : '📉',
       status: getVarianceStatus(metrics.budgetMetrics.budgetVariancePercentage),
       type: 'budget-variance',
@@ -135,11 +135,11 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
           {card.type === 'budget-status' && metrics.budgetMetrics && (
             <div className="card-context">
               <div className="context-item">
-                <span className="context-label" style={{ color: '#64748b' }}>{t('budgeted') || 'Budgeted'}:</span>
+                <span className="context-label" style={{ color: '#64748b' }}>Budgeted:</span>
                 <span className="context-value" style={{ color: '#1a202c' }}>{formatCurrency(metrics.budgetMetrics.totalBudgeted)}</span>
               </div>
               <div className="context-item">
-                <span className="context-label" style={{ color: '#64748b' }}>{t('spent') || 'Spent'}:</span>
+                <span className="context-label" style={{ color: '#64748b' }}>Spent:</span>
                 <span className="context-value" style={{ color: '#1a202c' }}>{formatCurrency(metrics.budgetMetrics.totalSpent)}</span>
               </div>
             </div>
@@ -148,7 +148,7 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
           {card.type === 'budget-variance' && metrics.budgetMetrics && (
             <div className="card-context">
               <div className="context-item">
-                <span className="context-label" style={{ color: '#64748b' }}>{t('categoriesOverBudget') || 'Over Budget'}:</span>
+                <span className="context-label" style={{ color: '#64748b' }}>Over Budget:</span>
                 <span className="context-value" style={{ color: '#1a202c' }}>
                   {metrics.budgetMetrics.categoriesOverBudget} / {metrics.budgetMetrics.categoriesWithBudget}
                 </span>
@@ -164,15 +164,15 @@ const OverviewCards = ({ metrics, activeBudget, formatCurrency, selectedPeriod }
           <div className="card-header">
             <div className="card-title-section">
               <span className="card-icon">📊</span>
-              <h3 className="card-title" style={{ color: '#1a202c' }}>{t('budgetInsights') || 'Budget Insights'}</h3>
+              <h3 className="card-title" style={{ color: '#1a202c' }}>Budget Insights</h3>
             </div>
           </div>
 
           <div className="card-content">
             <div className="no-budget-content">
-              <p style={{ color: '#64748b' }}>{t('noBudgetInsights') || 'Set up a budget to see spending insights and variance analysis'}</p>
+              <p style={{ color: '#64748b' }}>Set up a budget to see spending insights and variance analysis</p>
               <button className="btn-setup-budget-small" style={{ color: 'white' }}>
-                {t('setupBudget') || 'Setup Budget'}
+                Setup Budget
               </button>
             </div>
           </div>

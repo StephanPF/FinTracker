@@ -125,7 +125,7 @@ const ExpenseView = ({ onNavigate }) => {
       <div className="expense-view-loading">
         <div className="loading-content">
           <div className="loading-spinner"></div>
-          <p>{t('loadingExpenseData') || 'Loading expense data...'}</p>
+          <p>Loading expense data...</p>
         </div>
       </div>
     );
@@ -136,10 +136,10 @@ const ExpenseView = ({ onNavigate }) => {
       <div className="expense-view-error">
         <div className="error-content">
           <span className="error-icon">⚠️</span>
-          <h3>{t('errorLoadingData') || 'Error Loading Data'}</h3>
+          <h3>Error Loading Data</h3>
           <p>{error}</p>
           <button onClick={handleRefreshData} className="btn-primary">
-            {t('retryLoading') || 'Retry Loading'}
+            Retry Loading
           </button>
         </div>
       </div>
@@ -151,9 +151,9 @@ const ExpenseView = ({ onNavigate }) => {
       {/* Expense View Header */}
       <div className="expense-view-header">
         <div className="header-title">
-          <h2>{t('expenseAnalysis') || 'Expense Analysis'}</h2>
+          <h2>Expense Analysis</h2>
           <p className="header-subtitle">
-            {t('expenseAnalysisDescription') || 'Comprehensive view of your spending patterns and budget performance'}
+            Comprehensive view of your spending patterns and budget performance
           </p>
         </div>
 
@@ -162,14 +162,10 @@ const ExpenseView = ({ onNavigate }) => {
             onClick={handleToggleFilters}
             className={`btn-filter ${showFilters ? 'active' : ''}`}
           >
-            {t('filters') || 'Filters'}
+            Filters
             <span className="filter-count">
               {analyticsData ? analyticsData.length : 0}
             </span>
-          </button>
-          
-          <button onClick={handleRefreshData} className="btn-secondary">
-            {t('refresh') || 'Refresh'}
           </button>
         </div>
       </div>
@@ -280,14 +276,14 @@ const ExpenseView = ({ onNavigate }) => {
         <div className="expense-view-empty">
           <div className="empty-content">
             <span className="empty-icon">📊</span>
-            <h3>{t('noExpenseData') || 'No Expense Data'}</h3>
-            <p>{t('noExpenseDataDescription') || 'No expense transactions found for the selected period and filters.'}</p>
+            <h3>No Expense Data</h3>
+            <p>No expense transactions found for the selected period and filters.</p>
             <div className="empty-actions">
               <button onClick={() => onNavigate && onNavigate('transaction-form')} className="btn-primary">
-                {t('addTransaction') || 'Add Transaction'}
+                Add Transaction
               </button>
               <button onClick={handleRefreshData} className="btn-secondary">
-                {t('adjustFilters') || 'Adjust Filters'}
+                Adjust Filters
               </button>
             </div>
           </div>

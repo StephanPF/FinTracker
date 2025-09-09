@@ -141,7 +141,7 @@ const CashflowView = ({ onNavigate }) => {
     
     // Starting balance (assume 0 for simplicity in Phase 4)
     waterfallSteps.push({
-      label: t('startingBalance') || 'Starting Balance',
+      label: 'Starting Balance',
       value: 0,
       type: 'start',
       cumulative: 0
@@ -149,7 +149,7 @@ const CashflowView = ({ onNavigate }) => {
 
     // Income additions
     waterfallSteps.push({
-      label: t('totalIncome') || 'Total Income',
+      label: 'Total Income',
       value: totals.totalIncome,
       type: 'positive',
       cumulative: totals.totalIncome,
@@ -158,7 +158,7 @@ const CashflowView = ({ onNavigate }) => {
 
     // Expense deductions
     waterfallSteps.push({
-      label: t('totalExpenses') || 'Total Expenses',
+      label: 'Total Expenses',
       value: -totals.totalExpenses,
       type: 'negative',
       cumulative: totals.totalIncome - totals.totalExpenses,
@@ -167,7 +167,7 @@ const CashflowView = ({ onNavigate }) => {
 
     // Ending balance
     waterfallSteps.push({
-      label: t('endingBalance') || 'Ending Balance',
+      label: 'Ending Balance',
       value: totals.totalIncome - totals.totalExpenses,
       type: 'end',
       cumulative: totals.totalIncome - totals.totalExpenses,
@@ -266,7 +266,7 @@ const CashflowView = ({ onNavigate }) => {
       <div className="cashflow-view-loading">
         <div className="loading-content">
           <div className="loading-spinner"></div>
-          <p>{t('loadingCashflowData') || 'Loading cashflow data...'}</p>
+          <p>Loading cashflow data...</p>
         </div>
       </div>
     );
@@ -277,10 +277,10 @@ const CashflowView = ({ onNavigate }) => {
       <div className="cashflow-view-error">
         <div className="error-content">
           <span className="error-icon">⚠️</span>
-          <h3>{t('errorLoadingData') || 'Error Loading Data'}</h3>
+          <h3>Error Loading Data</h3>
           <p>{error}</p>
           <button onClick={handleRefreshData} className="btn-primary">
-            {t('retryLoading') || 'Retry Loading'}
+            Retry Loading
           </button>
         </div>
       </div>
@@ -292,9 +292,9 @@ const CashflowView = ({ onNavigate }) => {
       {/* Cashflow View Header */}
       <div className="cashflow-view-header">
         <div className="header-title">
-          <h2>{t('cashflowAnalysis') || 'Cashflow Analysis'}</h2>
+          <h2>Cashflow Analysis</h2>
           <p className="header-subtitle">
-            {t('cashflowAnalysisDescription') || 'Monitor income, expenses, and net cashflow with budget comparisons'}
+            Monitor income, expenses, and net cashflow with budget comparisons
           </p>
         </div>
 
@@ -305,19 +305,19 @@ const CashflowView = ({ onNavigate }) => {
               onClick={() => handleViewChange('overview')}
               className={`view-btn ${currentView === 'overview' ? 'active' : ''}`}
             >
-              {t('overview') || 'Overview'}
+              Overview
             </button>
             <button
               onClick={() => handleViewChange('calendar')}
               className={`view-btn ${currentView === 'calendar' ? 'active' : ''}`}
             >
-              {t('calendar') || 'Calendar'}
+              Calendar
             </button>
             <button
               onClick={() => handleViewChange('forecast')}
               className={`view-btn ${currentView === 'forecast' ? 'active' : ''}`}
             >
-              {t('forecast') || 'Forecast'}
+              Forecast
             </button>
           </div>
 
@@ -326,7 +326,7 @@ const CashflowView = ({ onNavigate }) => {
             onClick={handleToggleFilters}
             className={`btn-filter ${showFilters ? 'active' : ''}`}
           >
-            {t('filters') || 'Filters'}
+            Filters
             <span className="filter-count">
               {Object.keys(activeFilters).length || '0'}
             </span>
@@ -336,23 +336,23 @@ const CashflowView = ({ onNavigate }) => {
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             className={`btn-advanced-filter ${showAdvancedFilters ? 'active' : ''}`}
           >
-            {t('advancedFilters') || 'Advanced'}
+            Advanced
           </button>
 
           {/* Export Controls */}
           <div className="export-dropdown">
             <button className="btn-export" disabled={exportLoading}>
-              {exportLoading ? (t('exporting') || 'Exporting...') : (t('export') || 'Export')}
+              {exportLoading ? 'Exporting...' : 'Export'}
             </button>
             <div className="export-options">
-              <button onClick={() => handleExport('json')}>{t('exportJSON') || 'Export JSON'}</button>
-              <button onClick={() => handleExport('csv')}>{t('exportCSV') || 'Export CSV'}</button>
-              <button onClick={() => handleExport('transactions')}>{t('exportTransactions') || 'Export Transactions'}</button>
+              <button onClick={() => handleExport('json')}>Export JSON</button>
+              <button onClick={() => handleExport('csv')}>Export CSV</button>
+              <button onClick={() => handleExport('transactions')}>Export Transactions</button>
             </div>
           </div>
           
           <button onClick={handleRefreshData} className="btn-secondary">
-            {t('refresh') || 'Refresh'}
+            Refresh
           </button>
         </div>
       </div>
@@ -454,14 +454,14 @@ const CashflowView = ({ onNavigate }) => {
         <div className="cashflow-view-empty">
           <div className="empty-content">
             <span className="empty-icon">💰</span>
-            <h3>{t('noCashflowData') || 'No Cashflow Data'}</h3>
-            <p>{t('noCashflowDataDescription') || 'No income or expense transactions found for the selected period and filters.'}</p>
+            <h3>No Cashflow Data</h3>
+            <p>No income or expense transactions found for the selected period and filters.</p>
             <div className="empty-actions">
               <button onClick={() => onNavigate && onNavigate('transaction-form')} className="btn-primary">
-                {t('addTransaction') || 'Add Transaction'}
+                Add Transaction
               </button>
               <button onClick={handleRefreshData} className="btn-secondary">
-                {t('adjustFilters') || 'Adjust Filters'}
+                Adjust Filters
               </button>
             </div>
           </div>

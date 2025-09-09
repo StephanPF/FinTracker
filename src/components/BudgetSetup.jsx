@@ -165,14 +165,14 @@ const BudgetSetup = ({ onNavigate }) => {
 
   const handleNewBudgetSubmit = () => {
     if (!newBudgetForm.name.trim()) {
-      alert(t('budgetNameRequired') || 'Budget name is required');
+      alert('Budget name is required');
       return;
     }
 
     // Check for duplicate names
     const existingNames = budgets.map(b => b.name.toLowerCase());
     if (existingNames.includes(newBudgetForm.name.toLowerCase())) {
-      alert(t('budgetNameExists') || 'A budget with this name already exists');
+      alert('A budget with this name already exists');
       return;
     }
 
@@ -195,20 +195,20 @@ const BudgetSetup = ({ onNavigate }) => {
 
   const handleAddLineItem = () => {
     if (!newLineItem.subcategoryId || !newLineItem.amount) {
-      alert(t('fillAllFields') || 'Please fill all required fields');
+      alert('Please fill all required fields');
       return;
     }
 
     const amount = parseFloat(newLineItem.amount);
     if (amount <= 0) {
-      alert(t('amountGreaterZero') || 'Amount must be greater than zero');
+      alert('Amount must be greater than zero');
       return;
     }
 
     // Check for duplicate subcategory
     const existingSubcategory = budgetLineItems.find(item => item.subcategoryId === newLineItem.subcategoryId);
     if (existingSubcategory) {
-      alert(t('subcategoryAlreadyExists') || 'This subcategory is already in the budget');
+      alert('This subcategory is already in the budget');
       return;
     }
 
@@ -304,7 +304,7 @@ const BudgetSetup = ({ onNavigate }) => {
       ]);
 
       setHasUnsavedChanges(false);
-      alert(t('budgetSaved') || `Budget saved as ${status}`);
+      alert(`Budget saved as ${status}`);
       
       // Redirect based on action
       if (status === 'active') {
@@ -320,13 +320,13 @@ const BudgetSetup = ({ onNavigate }) => {
       }
     } catch (error) {
       console.error('Error saving budget:', error);
-      alert(t('errorSavingBudget') || 'Error saving budget. Please try again.');
+      alert('Error saving budget. Please try again.');
     }
   };
 
   const handleCancel = () => {
     if (hasUnsavedChanges) {
-      if (window.confirm(t('unsavedChangesWarning') || 'You have unsaved changes. Are you sure you want to cancel?')) {
+      if (window.confirm('You have unsaved changes. Are you sure you want to cancel?')) {
         if (onNavigate) {
           onNavigate('overview');
         }
@@ -340,7 +340,7 @@ const BudgetSetup = ({ onNavigate }) => {
 
   const handleBack = () => {
     if (hasUnsavedChanges) {
-      if (window.confirm(t('unsavedChangesWarning') || 'You have unsaved changes. Are you sure you want to go back?')) {
+      if (window.confirm('You have unsaved changes. Are you sure you want to go back?')) {
         setCurrentStep(1);
         setSelectedBudget(null);
         setBudgetLineItems([]);
@@ -365,8 +365,8 @@ const BudgetSetup = ({ onNavigate }) => {
         <div className="budget-setup-header">
           <h1 className="page-title">
             {currentStep === 1 
-              ? (t('budgetSetup') || 'Budget Setup')
-              : `${t('budgetConfiguration') || 'Budget Configuration'} - ${selectedBudget?.name}`
+              ? 'Budget Setup'
+              : `Budget Configuration - ${selectedBudget?.name}`
             }
           </h1>
         </div>
@@ -376,17 +376,17 @@ const BudgetSetup = ({ onNavigate }) => {
             {!isCreatingNew ? (
               <div className="budget-options">
                 <div className="budget-option">
-                  <h3>{t('createNewBudget') || 'Create New Budget'}</h3>
-                  <p>{t('createNewBudgetDesc') || 'Start fresh with a new budget plan'}</p>
+                  <h3>Create New Budget</h3>
+                  <p>Start fresh with a new budget plan</p>
                   <button onClick={handleCreateNew} className="btn-primary">
-                    {t('createNew') || 'Create New'}
+                    Create New
                   </button>
                 </div>
 
                 {budgets.length > 0 && (
                   <div className="budget-option">
-                    <h3>{t('modifyExistingBudget') || 'Modify Existing Budget'}</h3>
-                    <p>{t('modifyExistingBudgetDesc') || 'Edit an existing budget'}</p>
+                    <h3>Modify Existing Budget</h3>
+                    <p>Edit an existing budget</p>
                     <div className="existing-budgets">
                       {budgets.map(budget => {
                         const lineItems = database.getTable('budget_line_items')?.filter(item => item.budgetId === budget.id) || [];
@@ -414,14 +414,14 @@ const BudgetSetup = ({ onNavigate }) => {
               </div>
             ) : (
               <div className="new-budget-form">
-                <h3>{t('createNewBudget') || 'Create New Budget'}</h3>
+                <h3>Create New Budget</h3>
                 <div className="form-group">
-                  <label>{t('budgetName') || 'Budget Name'} *</label>
+                  <label>Budget Name *</label>
                   <input
                     type="text"
                     value={newBudgetForm.name}
                     onChange={(e) => setNewBudgetForm(prev => ({...prev, name: e.target.value}))}
-                    placeholder={t('enterBudgetName') || 'Enter budget name'}
+                    placeholder="Enter budget name"
                     style={{
                       backgroundColor: 'white',
                       color: '#1a202c',
@@ -432,11 +432,11 @@ const BudgetSetup = ({ onNavigate }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>{t('description') || 'Description'} ({t('optional') || 'Optional'})</label>
+                  <label>Description (Optional)</label>
                   <textarea
                     value={newBudgetForm.description}
                     onChange={(e) => setNewBudgetForm(prev => ({...prev, description: e.target.value}))}
-                    placeholder={t('enterDescription') || 'Enter description'}
+                    placeholder="Enter description"
                     rows="3"
                     style={{
                       backgroundColor: 'white',
@@ -453,10 +453,10 @@ const BudgetSetup = ({ onNavigate }) => {
                     className="btn-secondary"
                     style={{marginRight: '8px'}}
                   >
-                    {t('back') || 'Back'}
+                    Back
                   </button>
                   <button onClick={handleNewBudgetSubmit} className="btn-primary">
-                    {t('continue') || 'Continue'}
+                    Continue
                   </button>
                 </div>
               </div>
@@ -467,7 +467,7 @@ const BudgetSetup = ({ onNavigate }) => {
         {currentStep === 2 && (
           <div className="budget-configuration-step">
             <div className="budget-table-container">
-              <h3>{t('budgetLineItems') || 'Budget Line Items'}</h3>
+              <h3>Budget Line Items</h3>
               
               <div className="add-line-item">
                 <div className="line-item-form">
@@ -482,7 +482,7 @@ const BudgetSetup = ({ onNavigate }) => {
                       marginRight: '8px'
                     }}
                   >
-                    <option value="">{t('selectSubcategory') || 'Select Subcategory'}</option>
+                    <option value="">Select Subcategory</option>
                     {expenseSubcategories.map(sub => (
                       <option key={sub.id} value={sub.id}>
                         {sub.name}
@@ -501,10 +501,10 @@ const BudgetSetup = ({ onNavigate }) => {
                       marginRight: '8px'
                     }}
                   >
-                    <option value="weekly">{t('weekly') || 'Weekly'}</option>
-                    <option value="monthly">{t('monthly') || 'Monthly'}</option>
-                    <option value="quarterly">{t('quarterly') || 'Quarterly'}</option>
-                    <option value="yearly">{t('yearly') || 'Yearly'}</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="yearly">Yearly</option>
                   </select>
 
                   <div className="amount-input-container">
@@ -529,7 +529,7 @@ const BudgetSetup = ({ onNavigate }) => {
                   </div>
 
                   <button onClick={handleAddLineItem} className="btn-primary">
-                    {t('add') || 'Add'}
+                    Add
                   </button>
                 </div>
               </div>
@@ -539,14 +539,14 @@ const BudgetSetup = ({ onNavigate }) => {
                   <table>
                     <thead>
                       <tr>
-                        <th>{t('subcategory') || 'Subcategory'}</th>
-                        <th>{t('amount') || 'Amount'}</th>
-                        <th>{t('period') || 'Period'}</th>
-                        <th>{t('weekly') || 'Weekly'}</th>
-                        <th>{t('monthly') || 'Monthly'}</th>
-                        <th>{t('yearly') || 'Yearly'}</th>
-                        <th>{t('percentage') || '% of Budget'}</th>
-                        <th>{t('actions') || 'Actions'}</th>
+                        <th>Subcategory</th>
+                        <th>Amount</th>
+                        <th>Period</th>
+                        <th>Weekly</th>
+                        <th>Monthly</th>
+                        <th>Yearly</th>
+                        <th>% of Budget</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -569,7 +569,7 @@ const BudgetSetup = ({ onNavigate }) => {
                               onClick={() => handleRemoveLineItem(item.id)}
                               className="btn-remove"
                             >
-                              {t('remove') || 'Remove'}
+                              Remove
                             </button>
                           </td>
                         </tr>
@@ -583,11 +583,11 @@ const BudgetSetup = ({ onNavigate }) => {
                 <div className="budget-totals">
                   <div className="total-item">
                     <strong>
-                      {t('totalBudget') || 'Total Budget'}: {formatCurrency(totals.monthly)}/month
+                      Total Budget: {formatCurrency(totals.monthly)}/month
                     </strong>
                   </div>
                   <div className="total-item">
-                    {t('annualProjection') || 'Annual Projection'}: {formatCurrency(totals.yearly)}
+                    Annual Projection: {formatCurrency(totals.yearly)}
                   </div>
                 </div>
               </div>
@@ -596,21 +596,21 @@ const BudgetSetup = ({ onNavigate }) => {
             <div className="configuration-actions">
               {hasUnsavedChanges && (
                 <div className="unsaved-indicator">
-                  ⚠️ {t('unsavedChanges') || 'You have unsaved changes'}
+                  ⚠️ You have unsaved changes
                 </div>
               )}
               <div className="action-buttons">
                 <button onClick={handleBack} className="btn-secondary">
-                  {t('back') || 'Back'}
+                  Back
                 </button>
                 <button onClick={handleSaveDraft} className="btn-secondary">
-                  {t('saveAsDraft') || 'Save as Draft'}
+                  Save as Draft
                 </button>
                 <button onClick={handleSaveAndActivate} className="btn-primary">
-                  {t('saveAndActivate') || 'Save & Activate'}
+                  Save & Activate
                 </button>
                 <button onClick={handleCancel} className="btn-secondary">
-                  {t('cancel') || 'Cancel'}
+                  Cancel
                 </button>
               </div>
             </div>
