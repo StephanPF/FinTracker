@@ -37,9 +37,11 @@ const FilterControls = () => {
         analyticsAccountTypes.includes(type.id)
       );
       
-      // Filter accounts to only include those with relevant account types
+      // Filter accounts to only include those with relevant account types and Analytics enabled
       const filteredAccounts = allAccounts.filter(account => 
-        analyticsAccountTypes.includes(account.accountTypeId) && account.isActive
+        analyticsAccountTypes.includes(account.accountTypeId) && 
+        account.isActive && 
+        account.includeInOverview !== false
       );
 
       setAccounts(filteredAccounts);

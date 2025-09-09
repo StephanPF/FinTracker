@@ -43,27 +43,30 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
   }, [transactionsList]);
 
   const getStatusIcon = (transaction) => {
+    if (transaction.isDuplicate) return '🔵'; // Duplicate takes priority over error
     if (transaction.status === 'error') return '🔴';
-    if (transaction.isDuplicate) return '🔵';
     if (transaction.status === 'warning') return '🟡';
     return '🟢';
   };
 
   const getStatusText = (transaction) => {
+    if (transaction.isDuplicate) return t('duplicate'); // Duplicate takes priority over error
     if (transaction.status === 'error') return t('error');
-    if (transaction.isDuplicate) return t('duplicate');
     if (transaction.status === 'warning') return t('needsAttention');
     return t('ready');
   };
 
-  const formatAmount = (amount, currencyId = 'CUR_002') => {
+  const formatAmount = (amount, currencyId) => {
+    // If no currencyId provided, use default base currency
+    const finalCurrencyId = currencyId || 'CUR_001';
+    
     // Use the application's number format service
-    if (numberFormatService && currencyId) {
-      return numberFormatService.formatCurrency(amount, currencyId);
+    if (numberFormatService && finalCurrencyId) {
+      return numberFormatService.formatCurrency(amount, finalCurrencyId);
     }
     
     // Fallback to Intl.NumberFormat
-    const currency = currencies.find(c => c.id === currencyId);
+    const currency = currencies.find(c => c.id === finalCurrencyId);
     const currencyCode = currency?.code || 'USD';
     
     return new Intl.NumberFormat('en-US', {
@@ -389,7 +392,7 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
                   <span className="transaction-date">{transaction.date}</span>
                   <span className="transaction-description">{transaction.description}</span>
                   <span className="transaction-amount">
-                    {formatAmount(transaction.amount)}
+                    {formatAmount(transaction.amount, transaction.currencyId)}
                   </span>
                 </div>
                 <div className="transaction-secondary">
@@ -435,7 +438,7 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
               </div>
               <div className="preview-field">
                 <label>{t('amount')}</label>
-                <span>{formatAmount(selectedTransaction.amount)}</span>
+                <span>{formatAmount(selectedTransaction.amount, selectedTransaction.currencyId)}</span>
               </div>
               {selectedTransaction.reference && (
                 <div className="preview-field">

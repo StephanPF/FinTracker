@@ -121,7 +121,7 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
     return (
       <div className="category-breakdown">
         <div className="breakdown-header">
-          <h3>{t('categoryBreakdown') || 'Category Breakdown'}</h3>
+          <h3>📊 {t('categoryBreakdown') || 'Category Breakdown'}</h3>
           <p className="breakdown-subtitle">
             {t('expenseDistribution') || 'Expense distribution by category'}
           </p>
@@ -142,14 +142,9 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
   return (
     <div className="category-breakdown">
       <div className="breakdown-header">
-        <h3>{t('categoryBreakdown') || 'Category Breakdown'}</h3>
+        <h3>📊 {t('categoryBreakdown') || 'Category Breakdown'}</h3>
         <p className="breakdown-subtitle">
           {t('expenseDistribution') || 'Expense distribution by category'}
-          {activeBudget && (
-            <span className="budget-integration-note">
-              • {t('budgetHighlighted') || 'Budget status highlighted'}
-            </span>
-          )}
         </p>
       </div>
 
@@ -287,30 +282,6 @@ const CategoryBreakdown = ({ expenseData, activeBudget, formatCurrency }) => {
         )}
       </div>
 
-      {/* Budget Legend */}
-      {activeBudget && (
-        <div className="budget-legend">
-          <h4>{t('budgetStatus') || 'Budget Status'}</h4>
-          <div className="budget-legend-items">
-            <div className="budget-legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#10b981' }} />
-              <span>{t('withinBudget') || 'Within Budget'}</span>
-            </div>
-            <div className="budget-legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#f59e0b' }} />
-              <span>{t('closeToBudget') || 'Close to Budget'}</span>
-            </div>
-            <div className="budget-legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#ef4444' }} />
-              <span>{t('overBudget') || 'Over Budget'}</span>
-            </div>
-            <div className="budget-legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#6b7280' }} />
-              <span>{t('noBudget') || 'No Budget'}</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

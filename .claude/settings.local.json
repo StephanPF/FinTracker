@@ -170,7 +170,8 @@
       "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)",
       "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)",
       "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)",
-      "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)"
+      "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)",
+      "Bash(del test_analytics_toggle.js)"
     ],
     "deny": [],
     "ask": []

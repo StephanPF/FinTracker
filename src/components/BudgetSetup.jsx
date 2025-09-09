@@ -12,7 +12,8 @@ const BudgetSetup = ({ onNavigate }) => {
     currencies,
     getActiveCurrencies,
     numberFormatService,
-    getCurrencyFormatPreferences
+    getCurrencyFormatPreferences,
+    getBaseCurrency
   } = useAccounting();
   const { t } = useLanguage();
 
@@ -51,10 +52,6 @@ const BudgetSetup = ({ onNavigate }) => {
     }
   };
 
-  const getBaseCurrency = () => {
-    const activeCurrencies = getActiveCurrencies();
-    return activeCurrencies.find(c => c.id === 'CUR_001') || activeCurrencies[0];
-  };
 
   // Format currency amount using the site's standard formatting service
   const formatCurrency = (amount, currencyId = null) => {

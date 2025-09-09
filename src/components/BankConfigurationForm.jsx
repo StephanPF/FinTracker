@@ -37,7 +37,7 @@ const getSystemFields = (t) => [
 
 
 const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => {
-  const { addProcessingRule, updateProcessingRule, getActiveCurrencies } = useAccounting();
+  const { addProcessingRule, updateProcessingRule, getActiveCurrencies, accounts } = useAccounting();
   const { t } = useLanguage();
   const SYSTEM_FIELDS = getSystemFields(t);
   
@@ -51,7 +51,8 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
       delimiter: ',',
       hasHeaders: true,
       encoding: 'UTF-8',
-      amountHandling: 'signed'
+      amountHandling: 'signed',
+      accountId: ''
     }
   });
   
@@ -347,6 +348,22 @@ const BankConfigurationForm = ({ initialData, onSave, onCancel, isEditing }) => 
                   {getActiveCurrencies().map((currency) => (
                     <option key={currency.id} value={currency.code}>
                       {currency.code} - {currency.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="accountId">{t('defaultAccount')}</label>
+                <select
+                  id="accountId"
+                  value={formData.settings.accountId}
+                  onChange={(e) => handleSettingChange('accountId', e.target.value)}
+                >
+                  <option value="">{t('selectAccount')}</option>
+                  {accounts?.filter(account => account.isActive).map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} ({account.accountNumber || account.id})
                     </option>
                   ))}
                 </select>

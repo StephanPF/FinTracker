@@ -52,7 +52,7 @@ export class AnalyticsDataService {
     try {
       const allowedTransactionTypes = ['CAT_001', 'CAT_002'];
       
-      // Get accounts table to check account types
+      // Get accounts table to check account types and Analytics inclusion
       const accounts = this.database.getTable('accounts') || [];
       const allowedAccountTypes = ['ACCT_TYPE_001', 'ACCT_TYPE_006']; // Bank Account, Current Liability
 
@@ -61,6 +61,23 @@ export class AnalyticsDataService {
         // Check both categoryId and transactionTypeId for compatibility
         const transactionType = transaction.categoryId || transaction.transactionTypeId;
         if (!allowedTransactionTypes.includes(transactionType)) {
+          return false;
+        }
+
+        // Check Analytics inclusion toggle - exclude accounts where includeInOverview is false
+        let relatedAccount = null;
+        
+        // Find the related account for Analytics inclusion check
+        if (transaction.accountId) {
+          relatedAccount = accounts.find(acc => acc.id === transaction.accountId);
+        } else if (transaction.debitAccountId) {
+          relatedAccount = accounts.find(acc => acc.id === transaction.debitAccountId);
+        } else if (transaction.creditAccountId) {
+          relatedAccount = accounts.find(acc => acc.id === transaction.creditAccountId);
+        }
+        
+        // Exclude transaction if related account has Analytics toggle disabled
+        if (relatedAccount && relatedAccount.includeInOverview === false) {
           return false;
         }
 

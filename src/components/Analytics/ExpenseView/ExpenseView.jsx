@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAnalytics } from '../AnalyticsMain';
 import OverviewCards from './OverviewCards';
 import CategoryBreakdown from './CategoryBreakdown';
+import BudgetStatusBreakdown from './BudgetStatusBreakdown';
 import BudgetProgress from './BudgetProgress';
 import TrendLines from './TrendLines';
 import TransactionTable from './TransactionTable';
@@ -205,9 +206,9 @@ const ExpenseView = ({ onNavigate }) => {
           />
         </div>
 
-        {/* Row 2: Main Charts Split Layout */}
+        {/* Row 2: Main Charts Split Layout - Two Expense Breakdowns */}
         <div className="content-row charts-row">
-          {/* Category Breakdown - 60% width */}
+          {/* Category Breakdown (Transaction Group Colors) - 50% width */}
           <div className="chart-container category-container">
             <CategoryBreakdown
               expenseData={expenseData}
@@ -216,8 +217,30 @@ const ExpenseView = ({ onNavigate }) => {
             />
           </div>
 
+          {/* Budget Status Breakdown (Budget Status Colors) - 50% width */}
+          <div className="chart-container budget-status-container">
+            <BudgetStatusBreakdown
+              expenseData={expenseData}
+              activeBudget={activeBudget}
+              formatCurrency={formatCurrency}
+            />
+          </div>
+        </div>
+
+        {/* Row 3: Trend Analysis and Budget Progress */}
+        <div className="content-row trend-row">
+          {/* Trend Lines - 60% width */}
+          <div className="trend-container">
+            <TrendLines
+              expenseData={expenseData}
+              activeBudget={activeBudget}
+              selectedPeriod={selectedPeriod}
+              formatCurrency={formatCurrency}
+            />
+          </div>
+
           {/* Budget Progress - 40% width */}
-          <div className="chart-container budget-container">
+          <div className="budget-progress-container">
             <BudgetProgress
               analyticsData={analyticsData}
               activeBudget={activeBudget}
@@ -226,16 +249,6 @@ const ExpenseView = ({ onNavigate }) => {
               selectedPeriod={selectedPeriod}
             />
           </div>
-        </div>
-
-        {/* Row 3: Trend Analysis */}
-        <div className="content-row trend-row">
-          <TrendLines
-            expenseData={expenseData}
-            activeBudget={activeBudget}
-            selectedPeriod={selectedPeriod}
-            formatCurrency={formatCurrency}
-          />
         </div>
 
         {/* Row 4: Transaction Details and Budget Analysis */}

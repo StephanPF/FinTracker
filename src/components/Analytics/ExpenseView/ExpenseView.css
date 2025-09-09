@@ -134,13 +134,15 @@
 }
 
 .charts-row {
-  display: grid;
-  grid-template-columns: 1fr 0.7fr;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
   gap: 12px;
 }
 
 .trend-row {
-  /* Trend analysis row - full width */
+  display: grid;
+  grid-template-columns: 1fr 0.7fr;
+  gap: 12px;
 }
 
 .details-row {
@@ -158,6 +160,24 @@
 
 .category-container {
   /* Category breakdown container */
+}
+
+.budget-status-container {
+  /* Budget status breakdown container */
+}
+
+.trend-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.budget-progress-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
 .budget-container {
@@ -401,6 +421,7 @@
 .card-subtitle {
   font-size: 12px;
   color: #64748b !important;
+  text-align: left !important;
 }
 
 .card-subtitle.status-success {
@@ -2345,6 +2366,15 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
+}
+
+@media (min-width: 769px) {
+  .charts-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+    display: grid !important;
+  }
+}
   
   .filters-grid {
     grid-template-columns: 1fr;

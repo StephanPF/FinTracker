@@ -7,7 +7,7 @@ import { applyProcessingRules } from '../utils/ruleProcessor';
 import './ImportTransactions.css';
 
 const ImportTransactions = () => {
-  const { bankConfigurations = [], transactions = [], currencies = [], getActiveProcessingRules } = useAccounting();
+  const { bankConfigurations = [], transactions = [], currencies = [], getActiveProcessingRules, database } = useAccounting();
   const { t } = useLanguage();
 
   // Helper function to convert Date object to YYYY-MM-DD string (timezone-safe)
@@ -27,6 +27,9 @@ const ImportTransactions = () => {
   const [processing, setProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [ruleProcessingStats, setRuleProcessingStats] = useState(null);
+  const [processingErrors, setProcessingErrors] = useState([]);
+  const [processingWarnings, setProcessingWarnings] = useState([]);
+  const [noValidTransactions, setNoValidTransactions] = useState(false);
 
   const handleBankSelect = (bank) => {
     setSelectedBank(bank);
@@ -97,6 +100,10 @@ const ImportTransactions = () => {
     setParsedTransactions([]);
     setProcessing(false);
     setProcessingProgress(0);
+    setProcessingErrors([]);
+    setProcessingWarnings([]);
+    setNoValidTransactions(false);
+    setRuleProcessingStats(null);
     setStep(1);
   };
 
@@ -156,8 +163,27 @@ const ImportTransactions = () => {
   };
 
   const detectDuplicates = (newTransaction) => {
-    // Simple duplicate detection based on amount, date, and description similarity
-    const matches = transactions.filter(existing => {
+    // Get fresh transaction data directly from database
+    const allTransactions = database ? database.getTable('transactions') || [] : transactions;
+    
+    console.log('🔍 Checking duplicates against', allTransactions.length, 'existing transactions');
+    console.log('🔍 New transaction reference:', newTransaction.reference);
+
+    // Primary duplicate detection: Check reference number first (most reliable)
+    if (newTransaction.reference && newTransaction.reference.trim() !== '') {
+      const referenceMatches = allTransactions.filter(existing => 
+        existing.reference && 
+        existing.reference.trim().toLowerCase() === newTransaction.reference.trim().toLowerCase()
+      );
+      if (referenceMatches.length > 0) {
+        console.log('🔍 Duplicate found by reference:', newTransaction.reference, 'Matches:', referenceMatches.length);
+        console.log('🔍 Matching transactions:', referenceMatches.map(t => ({ id: t.id, reference: t.reference, date: t.date, amount: t.amount })));
+        return true;
+      }
+    }
+
+    // Fallback duplicate detection: Check amount, date, and description similarity
+    const matches = allTransactions.filter(existing => {
       const amountMatch = Math.abs(existing.amount - newTransaction.amount) < 0.01;
       const dateMatch = existing.date === newTransaction.date;
       const descMatch = existing.description && newTransaction.description &&
@@ -166,7 +192,14 @@ const ImportTransactions = () => {
       return amountMatch && dateMatch && descMatch;
     });
 
-    return matches.length > 0;
+    if (matches.length > 0) {
+      console.log('🔍 Duplicate found by amount/date/description match. Matches:', matches.length);
+      console.log('🔍 Matching transactions:', matches.map(t => ({ id: t.id, reference: t.reference, date: t.date, amount: t.amount })));
+      return true;
+    }
+
+    console.log('🔍 No duplicates found for transaction');
+    return false;
   };
 
   const validateTransaction = (transaction) => {
@@ -197,6 +230,8 @@ const ImportTransactions = () => {
     // Account mapping - required for successful import but can be assigned during review
     if (!transaction.fromAccountId && !transaction.toAccountId && !transaction.accountId) {
       warnings.push('No account mapping - will need manual assignment during review');
+    } else if (transaction.fromAccountId) {
+      warnings.push(`✓ Account pre-populated from bank configuration`);
     }
 
     // Transaction type-specific validations
@@ -274,13 +309,30 @@ const ImportTransactions = () => {
   };
 
   const processFiles = async () => {
-    if (!selectedBank || uploadedFiles.length === 0) return;
+    console.log('🚀 Starting processFiles');
+    console.log('Selected bank:', selectedBank);
+    console.log('Uploaded files count:', uploadedFiles.length);
+    
+    // Clear previous errors and warnings
+    setProcessingErrors([]);
+    setProcessingWarnings([]);
+    setNoValidTransactions(false);
+    
+    if (!selectedBank || uploadedFiles.length === 0) {
+      console.log('❌ Early return: missing bank or files');
+      const error = !selectedBank ? 'No bank configuration selected' : 'No files uploaded';
+      setProcessingErrors([error]);
+      return;
+    }
 
     // Initialize skipped transactions counter
     window.totalSkippedTransactions = 0;
 
     setProcessing(true);
     setProcessingProgress(0);
+    
+    const errors = [];
+    const warnings = [];
     
     try {
       const allParsedTransactions = [];
@@ -297,6 +349,22 @@ const ImportTransactions = () => {
             skipEmptyLines: true,
             complete: (results) => {
               try {
+                // Check for CSV parsing errors
+                if (results.errors && results.errors.length > 0) {
+                  results.errors.forEach(error => {
+                    errors.push(`CSV parsing error in ${file.name}: ${error.message}`);
+                  });
+                }
+                
+                // Check if we have any data
+                if (!results.data || results.data.length === 0) {
+                  errors.push(`No data found in file ${file.name}. Please check that the file contains transaction data.`);
+                  resolve();
+                  return;
+                }
+                
+                console.log(`📁 Processing file: ${file.name} (${results.data.length} rows)`);
+                
                 const fileTransactions = results.data.map((row, index) => {
                   // Map CSV fields to transaction fields using persistent database field mappings
                   // This includes all the new fields: transactionType, transactionGroup, subcategoryId,
@@ -312,7 +380,7 @@ const ImportTransactions = () => {
                     
                     // Account mappings
                     accountId: row[fieldMapping.account] || null, // Primary account from CSV
-                    fromAccountId: null, // Will be assigned during review
+                    fromAccountId: selectedBank.settings?.accountId || null, // Pre-populate from bank configuration
                     toAccountId: null,   // Will be assigned during review
                     destinationAccountId: row[fieldMapping.destinationAccountId] || null,
                     destinationAmount: row[fieldMapping.destinationAmount] ? parseFloat(row[fieldMapping.destinationAmount]) : null,
@@ -364,6 +432,15 @@ const ImportTransactions = () => {
                   const validation = validateTransaction(processedTransaction);
                   const isDuplicate = detectDuplicates(processedTransaction);
 
+                  // Add duplicate warning to validation if found
+                  if (isDuplicate) {
+                    if (processedTransaction.reference && processedTransaction.reference.trim() !== '') {
+                      validation.warnings.push(`⚠️ Potential duplicate found (matching reference: ${processedTransaction.reference})`);
+                    } else {
+                      validation.warnings.push(`⚠️ Potential duplicate found (matching amount/date/description)`);
+                    }
+                  }
+
                   // Determine status
                   let status = 'ready';
                   if (validation.errors.length > 0) {
@@ -407,10 +484,58 @@ const ImportTransactions = () => {
         });
       }
 
-      // Filter out completely invalid rows
-      const validTransactions = allParsedTransactions.filter(t => 
-        t.date && t.description && !isNaN(t.amount)
-      );
+      // Analyze processing results and provide detailed feedback
+      console.log('🔍 Debug: Processing results');
+      console.log('Total parsed transactions:', allParsedTransactions.length);
+      
+      if (allParsedTransactions.length === 0) {
+        errors.push('No transactions were found in the uploaded files. Please check:');
+        errors.push('• File contains transaction data');
+        errors.push('• Date column matches expected format (' + (selectedBank.settings?.dateFormat || 'YYYY-MM-DD') + ')');
+        errors.push('• Amount column contains numeric values');
+        errors.push('• Field mappings in bank configuration are correct');
+      } else {
+        console.log('Sample transaction:', allParsedTransactions[0]);
+      }
+      
+      const validTransactions = [];
+      const invalidTransactions = [];
+      
+      allParsedTransactions.forEach((t, index) => {
+        const validationIssues = [];
+        
+        if (!t.date) {
+          validationIssues.push('Missing or invalid date');
+        }
+        if (!t.description) {
+          validationIssues.push('Missing description');
+        }
+        if (isNaN(t.amount) || t.amount === null || t.amount === undefined) {
+          validationIssues.push('Invalid amount value');
+        }
+        
+        if (validationIssues.length === 0) {
+          validTransactions.push(t);
+        } else {
+          invalidTransactions.push({
+            rowIndex: index + 1,
+            fileName: t.fileName,
+            issues: validationIssues,
+            rawData: t.rawData
+          });
+        }
+      });
+      
+      // Report validation issues
+      if (invalidTransactions.length > 0) {
+        warnings.push(`${invalidTransactions.length} transactions were skipped due to validation issues:`);
+        invalidTransactions.slice(0, 5).forEach(invalid => {
+          warnings.push(`• Row ${invalid.rowIndex} in ${invalid.fileName}: ${invalid.issues.join(', ')}`);
+        });
+        if (invalidTransactions.length > 5) {
+          warnings.push(`... and ${invalidTransactions.length - 5} more rows with issues`);
+        }
+      }
 
       // Calculate rule processing statistics
       const totalRules = allParsedTransactions.reduce((sum, t) => sum + (t.rulesApplied?.length || 0), 0);
@@ -425,12 +550,30 @@ const ImportTransactions = () => {
       });
 
       setProcessingProgress(100);
-      setParsedTransactions(validTransactions);
-      setStep(4); // Move to review step
+      
+      // Set error and warning states for UI display
+      setProcessingErrors(errors);
+      setProcessingWarnings(warnings);
+      
+      if (validTransactions.length === 0) {
+        setNoValidTransactions(true);
+        // Stay on step 3 to show errors and allow user to fix issues
+      } else {
+        setParsedTransactions(validTransactions);
+        setStep(4); // Move to review step only if we have valid transactions
+      }
 
     } catch (error) {
       console.error('Error processing files:', error);
-      alert('Error processing files: ' + error.message);
+      setProcessingErrors([
+        'An unexpected error occurred while processing the files:',
+        error.message,
+        '',
+        'Please check:',
+        '• File format is supported (CSV, XLS, XLSX)',
+        '• File is not corrupted or password protected',
+        '• Bank configuration matches your file format'
+      ]);
     } finally {
       setProcessing(false);
     }
@@ -440,7 +583,7 @@ const ImportTransactions = () => {
     return (
       <div className="import-transactions">
         <div className="import-header">
-          <h2>📥 Import Transactions</h2>
+          <h2>Import Transactions</h2>
         </div>
         
         <div className="no-banks-configured">
@@ -458,7 +601,7 @@ const ImportTransactions = () => {
   return (
     <div className="import-transactions">
       <div className="import-header">
-        <h2>📥 {t('importTransactionsTitle')}</h2>
+        <h2>{t('importTransactionsTitle')}</h2>
         {step > 1 && (
           <button className="btn btn-secondary" onClick={resetImport}>
             {t('startOver')}
@@ -587,6 +730,65 @@ const ImportTransactions = () => {
               Files will be parsed and prepared for review before importing.
             </p>
           </div>
+          
+          {/* Display Processing Errors */}
+          {processingErrors.length > 0 && (
+            <div className="processing-feedback error-feedback">
+              <h4>❌ Processing Errors</h4>
+              <ul className="feedback-list">
+                {processingErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Display Processing Warnings */}
+          {processingWarnings.length > 0 && (
+            <div className="processing-feedback warning-feedback">
+              <h4>⚠️ Processing Warnings</h4>
+              <ul className="feedback-list">
+                {processingWarnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* No Valid Transactions Message */}
+          {noValidTransactions && (
+            <div className="processing-feedback error-feedback">
+              <h4>🚫 No Valid Transactions Found</h4>
+              <p>All transactions were filtered out due to validation issues. Please:</p>
+              <ul className="feedback-list">
+                <li>Check your bank configuration field mappings</li>
+                <li>Verify the date format matches your CSV file</li>
+                <li>Ensure amount columns contain numeric values</li>
+                <li>Make sure description fields are not empty</li>
+                <li>Try a different bank configuration if available</li>
+              </ul>
+              <div className="feedback-actions">
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => setStep(1)}
+                >
+                  Choose Different Bank Config
+                </button>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setUploadedFiles([]);
+                    setProcessingErrors([]);
+                    setProcessingWarnings([]);
+                    setNoValidTransactions(false);
+                    setStep(2);
+                  }}
+                >
+                  Upload Different Files
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
