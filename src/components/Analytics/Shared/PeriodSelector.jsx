@@ -74,10 +74,6 @@ const PeriodSelector = () => {
 
   return (
     <div className="period-selector">
-      <div className="period-selector-header">
-        <h3>Time Period</h3>
-      </div>
-
       <div className="period-controls">
         {/* Period Type Selector */}
         <div className="period-type-selector">

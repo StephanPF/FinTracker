@@ -3303,16 +3303,7 @@ class RelationalDatabase {
       },
       {
         id: 'ER_002',
-        fromCurrencyId: 'CUR_003', // AED
-        toCurrencyId: 'CUR_001',   // EUR (base)
-        rate: 0.25,
-        date: today,
-        source: 'manual',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'ER_003',
-        fromCurrencyId: 'CUR_004', // GBP
+        fromCurrencyId: 'CUR_003', // GBP
         toCurrencyId: 'CUR_001',   // EUR (base)
         rate: 1.15,
         date: today,
@@ -3320,8 +3311,26 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
+        id: 'ER_003',
+        fromCurrencyId: 'CUR_004', // JPY
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 0.0065,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
         id: 'ER_004',
-        fromCurrencyId: 'CUR_005', // AUD
+        fromCurrencyId: 'CUR_005', // CAD
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 0.67,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_005',
+        fromCurrencyId: 'CUR_006', // AUD
         toCurrencyId: 'CUR_001',   // EUR (base)
         rate: 0.62,
         date: today,
@@ -3329,7 +3338,16 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'ER_005',
+        id: 'ER_006',
+        fromCurrencyId: 'CUR_007', // AED
+        toCurrencyId: 'CUR_001',   // EUR (base)
+        rate: 0.25,
+        date: today,
+        source: 'manual',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'ER_007',
         fromCurrencyId: 'CUR_006', // BTC
         toCurrencyId: 'CUR_001',   // EUR (base)
         rate: 40900,
@@ -3338,7 +3356,7 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'ER_006',
+        id: 'ER_008',
         fromCurrencyId: 'CUR_007', // ETH
         toCurrencyId: 'CUR_001',   // EUR (base)
         rate: 2270,
@@ -3347,7 +3365,7 @@ class RelationalDatabase {
         createdAt: new Date().toISOString()
       },
       {
-        id: 'ER_007',
+        id: 'ER_009',
         fromCurrencyId: 'CUR_008', // CHF
         toCurrencyId: 'CUR_001',   // EUR (base)
         rate: 0.93,

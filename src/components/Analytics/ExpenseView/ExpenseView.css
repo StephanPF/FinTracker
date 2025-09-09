@@ -37,9 +37,18 @@
 }
 
 .header-controls {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  justify-content: flex-end;
+}
+
+/* Ensure buttons display inline within header controls */
+.expense-view .header-controls .btn-filter {
+  display: inline-flex !important;
+  flex-direction: row !important;
 }
 
 .btn-filter {
@@ -96,24 +105,597 @@
   border-color: #9ca3af;
 }
 
-/* Filter Panel */
+/* Filter Panel - New Individual Panel Design */
 .expense-view-filters {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 12px;
 }
 
-.filters-grid {
+.filter-panel {
+  padding: 0;
+}
+
+.filter-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 8px 8px 0 0;
+}
+
+.filter-panel-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.close-panel-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-panel-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.filter-panel-content {
+  padding: 20px;
+  width: 100%;
+}
+
+/* Individual Panel Styling */
+.time-panel .filter-panel-header {
+  background: #eff6ff;
+  border-bottom-color: #dbeafe;
+}
+
+.time-panel .filter-panel-header h4 {
+  color: #1d4ed8;
+}
+
+/* Time Panel Horizontal Layout */
+.time-panel .period-selector {
+  width: 100%;
+}
+
+.time-panel .period-selector-header {
+  margin-bottom: 16px;
+}
+
+.time-panel .period-selector-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.time-panel .period-controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: 200px 1fr auto;
+  gap: 24px;
+  align-items: end;
 }
 
-.filter-column {
+.time-panel .period-type-selector {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.time-panel .period-type-selector label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.time-panel .date-range-selectors {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+}
+
+.time-panel .date-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.time-panel .date-selector label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.time-panel .quick-periods {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.time-panel .quick-periods .btn-filter {
+  padding: 8px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Form Controls in Time Panel */
+.time-panel .form-control {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #1a202c;
+  font-size: 13px;
+  width: 100%;
+}
+
+.time-panel .form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Responsive adjustments for time panel */
+@media (max-width: 768px) {
+  .time-panel .period-controls {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .time-panel .date-range-selectors {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .time-panel .quick-periods {
+    justify-content: flex-start;
+  }
+}
+
+.view-panel .filter-panel-header {
+  background: #f0fdf4;
+  border-bottom-color: #dcfce7;
+}
+
+.view-panel .filter-panel-header h4 {
+  color: #166534;
+}
+
+.accounts-panel .filter-panel-header {
+  background: #fef3c7;
+  border-bottom-color: #fed7aa;
+}
+
+.accounts-panel .filter-panel-header h4 {
+  color: #92400e;
+}
+
+.budget-panel .filter-panel-header {
+  background: #fdf2f8;
+  border-bottom-color: #fce7f3;
+}
+
+.budget-panel .filter-panel-header h4 {
+  color: #be185d;
+}
+
+/* View Panel Horizontal Layout */
+.view-panel .view-toggle-controls {
+  display: flex;
+  justify-content: center;
+}
+
+.view-panel .toggle-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+}
+
+.view-panel .toggle-option {
+  flex: 1;
+  padding: 24px 32px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-panel .toggle-option:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.view-panel .toggle-option.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.view-panel .toggle-option:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.view-panel .toggle-option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-panel .toggle-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1a202c;
+}
+
+.view-panel .toggle-description {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+/* Accounts Panel Clean Layout */
+.accounts-panel .account-filter-main {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 20px;
+  align-items: start;
+  min-height: 200px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.accounts-panel .account-selection-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.accounts-panel .selection-option {
+  width: 100%;
+}
+
+.accounts-panel .option-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.accounts-panel .option-label:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.accounts-panel .option-label:has(:checked) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.accounts-panel .option-radio {
+  margin-top: 2px;
+  accent-color: #3b82f6;
+  background-color: white !important;
+  border: 2px solid #d1d5db !important;
+  width: 16px;
+  height: 16px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 50%;
+  position: relative;
+}
+
+.accounts-panel .option-radio:checked {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.accounts-panel .option-radio:checked::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.accounts-panel .option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.accounts-panel .option-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a202c;
+}
+
+.accounts-panel .option-description {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.accounts-panel .account-multiselect-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 200px;
+}
+
+.accounts-panel .account-multiselect {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  padding: 16px;
+  flex: 1;
+}
+
+.accounts-panel .account-multiselect-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 24px;
+  flex: 1;
+}
+
+.accounts-panel .placeholder-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+}
+
+.accounts-panel .placeholder-icon {
+  font-size: 36px;
+  color: #10b981;
+  opacity: 0.8;
+}
+
+.accounts-panel .placeholder-text h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.accounts-panel .placeholder-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.accounts-panel .multiselect-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.accounts-panel .multiselect-label {
+  font-weight: 500;
+  font-size: 13px;
+  color: #374151;
+}
+
+.accounts-panel .account-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.accounts-panel .account-checkbox {
+  border-bottom: 1px solid #f8fafc;
+  padding-bottom: 8px;
+}
+
+.accounts-panel .account-checkbox:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.accounts-panel .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.accounts-panel .account-check {
+  accent-color: #3b82f6;
+  background-color: white !important;
+  border: 2px solid #d1d5db !important;
+  min-width: 16px;
+  min-height: 16px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 3px;
+  position: relative;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.accounts-panel .account-check:checked {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.accounts-panel .account-check:checked::after {
+  content: '✓';
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+}
+
+.accounts-panel .account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.accounts-panel .account-name {
+  font-weight: 500;
+  font-size: 13px;
+  color: #1a202c;
+}
+
+.accounts-panel .account-type {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.accounts-panel .no-accounts-message {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.accounts-panel .no-accounts-icon {
+  font-size: 36px;
+  opacity: 0.6;
+}
+
+.accounts-panel .no-accounts-text h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.accounts-panel .no-accounts-text p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Budget Panel Horizontal Layout */
+.budget-panel .budget-indicator-active {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+  align-items: start;
+}
+
+.budget-panel .budget-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.budget-panel .budget-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+.budget-panel .budget-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+/* Responsive adjustments for filter panels */
+@media (max-width: 768px) {
+  .view-panel .toggle-container {
+    flex-direction: column;
+  }
+  
+  .accounts-panel .account-filter-main {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .accounts-panel .account-selection-options {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .accounts-panel .account-checkboxes {
+    grid-template-columns: 1fr;
+  }
+  
+  .accounts-panel .account-multiselect {
+    padding: 12px;
+  }
+  
+  .budget-panel .budget-indicator-active {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .budget-panel .budget-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .budget-panel .budget-actions {
+    align-items: center;
+  }
 }
 
 /* Content Grid */
@@ -2359,7 +2941,16 @@
   }
   
   .header-controls {
+    display: flex !important;
+    flex-direction: row !important;
     justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .expense-view .header-controls .btn-filter {
+    display: inline-flex !important;
+    flex-direction: row !important;
   }
   
   .charts-row {

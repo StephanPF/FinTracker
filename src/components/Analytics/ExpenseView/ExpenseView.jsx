@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAnalytics } from '../AnalyticsMain';
 import OverviewCards from './OverviewCards';
 import CategoryBreakdown from './CategoryBreakdown';
@@ -30,6 +30,8 @@ const ExpenseView = ({ onNavigate }) => {
     loadAnalyticsData,
     analyticsService,
     formatCurrency,
+    activeFilterPanel,
+    setActiveFilterPanel,
     t
   } = useAnalytics();
 
@@ -37,7 +39,6 @@ const ExpenseView = ({ onNavigate }) => {
   const [expenseData, setExpenseData] = useState(null);
   const [budgetSummary, setBudgetSummary] = useState(null);
   const [overviewMetrics, setOverviewMetrics] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
 
   // Load expense-specific data when analytics data changes
   useEffect(() => {
@@ -45,6 +46,8 @@ const ExpenseView = ({ onNavigate }) => {
       calculateExpenseMetrics();
     }
   }, [analyticsData, analyticsService, activeBudget]);
+
+  // Disable automatic panel closing - panels only close via X button or switching panels
 
   /**
    * Calculate expense-specific metrics and summaries
@@ -107,10 +110,10 @@ const ExpenseView = ({ onNavigate }) => {
   };
 
   /**
-   * Handle filter toggle
+   * Handle filter panel toggle - only opens panels, doesn't close them
    */
-  const handleToggleFilters = () => {
-    setShowFilters(!showFilters);
+  const handleToggleFilterPanel = (panelType) => {
+    setActiveFilterPanel(panelType);
   };
 
   /**
@@ -159,31 +162,109 @@ const ExpenseView = ({ onNavigate }) => {
 
         <div className="header-controls">
           <button
-            onClick={handleToggleFilters}
-            className={`btn-filter ${showFilters ? 'active' : ''}`}
+            onClick={() => handleToggleFilterPanel('time')}
+            className={`btn-filter ${activeFilterPanel === 'time' ? 'active' : ''}`}
           >
-            Filters
-            <span className="filter-count">
-              {analyticsData ? analyticsData.length : 0}
-            </span>
+            Time Period
+          </button>
+          
+          <button
+            onClick={() => handleToggleFilterPanel('view')}
+            className={`btn-filter ${activeFilterPanel === 'view' ? 'active' : ''}`}
+          >
+            Cash vs Accrual
+          </button>
+          
+          <button
+            onClick={() => handleToggleFilterPanel('accounts')}
+            className={`btn-filter ${activeFilterPanel === 'accounts' ? 'active' : ''}`}
+          >
+            Account Filters
+          </button>
+          
+          <button
+            onClick={() => handleToggleFilterPanel('budget')}
+            className={`btn-filter ${activeFilterPanel === 'budget' ? 'active' : ''}`}
+          >
+            Budget
           </button>
         </div>
       </div>
 
-      {/* Filter Panel */}
-      {showFilters && (
+      {/* Time Period Filter Panel */}
+      {activeFilterPanel === 'time' && (
         <div className="expense-view-filters">
-          <div className="filters-grid">
-            <div className="filter-column">
+          <div className="filter-panel time-panel">
+            <div className="filter-panel-header">
+              <h4>Time Period Selection</h4>
+              <button 
+                onClick={() => setActiveFilterPanel(null)}
+                className="close-panel-btn"
+              >
+                ×
+              </button>
+            </div>
+            <div className="filter-panel-content">
               <PeriodSelector />
             </div>
-            <div className="filter-column">
+          </div>
+        </div>
+      )}
+
+      {/* View Type Filter Panel */}
+      {activeFilterPanel === 'view' && (
+        <div className="expense-view-filters">
+          <div className="filter-panel view-panel">
+            <div className="filter-panel-header">
+              <h4>View Type Settings</h4>
+              <button 
+                onClick={() => setActiveFilterPanel(null)}
+                className="close-panel-btn"
+              >
+                ×
+              </button>
+            </div>
+            <div className="filter-panel-content">
               <ViewToggle />
             </div>
-            <div className="filter-column">
+          </div>
+        </div>
+      )}
+
+      {/* Account Filters Panel */}
+      {activeFilterPanel === 'accounts' && (
+        <div className="expense-view-filters">
+          <div className="filter-panel accounts-panel">
+            <div className="filter-panel-header">
+              <h4>Account Filters</h4>
+              <button 
+                onClick={() => setActiveFilterPanel(null)}
+                className="close-panel-btn"
+              >
+                ×
+              </button>
+            </div>
+            <div className="filter-panel-content">
               <FilterControls />
             </div>
-            <div className="filter-column">
+          </div>
+        </div>
+      )}
+
+      {/* Budget Panel */}
+      {activeFilterPanel === 'budget' && (
+        <div className="expense-view-filters">
+          <div className="filter-panel budget-panel">
+            <div className="filter-panel-header">
+              <h4>Budget Settings</h4>
+              <button 
+                onClick={() => setActiveFilterPanel(null)}
+                className="close-panel-btn"
+              >
+                ×
+              </button>
+            </div>
+            <div className="filter-panel-content">
               <BudgetIndicator onNavigate={onNavigate} />
             </div>
           </div>

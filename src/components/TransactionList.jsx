@@ -218,24 +218,26 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       if (transaction.currencyId !== exchangeRateService.getBaseCurrencyId()) {
         const baseCurrency = currencies.find(c => c.id === exchangeRateService.getBaseCurrencyId());
         
-        // Calculate base currency amount using the transaction's stored exchange rate
-        let baseCurrencyAmount = transaction.amount || 0;
-        if (transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
-          // Handle exchange rate as object or number
-          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
-            ? transaction.exchangeRate.rate 
-            : transaction.exchangeRate;
-          baseCurrencyAmount = (transaction.amount || 0) * rate;
+        try {
+          // Use live exchange rate service instead of stored transaction rate
+          const convertedAmount = exchangeRateService.convertToBaseCurrency(
+            transaction.amount || 0, 
+            transaction.currencyId,
+            transaction.date
+          );
+          
+          // Apply negative sign if needed before formatting
+          const displayBaseCurrencyAmount = shouldShowNegative ? -convertedAmount : convertedAmount;
+          let formattedConvertedAmount = exchangeRateService.formatAmount(
+            displayBaseCurrencyAmount, 
+            baseCurrency?.id
+          );
+          
+          return `${primaryAmount} (≈ ${formattedConvertedAmount})`;
+        } catch (error) {
+          console.warn('Currency conversion failed for transaction:', transaction.id, error.message);
+          return primaryAmount; // Show only primary currency if conversion fails
         }
-        
-        // Apply negative sign if needed before formatting
-        const displayBaseCurrencyAmount = shouldShowNegative ? -baseCurrencyAmount : baseCurrencyAmount;
-        let convertedAmount = exchangeRateService.formatAmount(
-          displayBaseCurrencyAmount, 
-          baseCurrency?.id
-        );
-        
-        return `${primaryAmount} (≈ ${convertedAmount})`;
       }
       return primaryAmount;
     }
@@ -257,33 +259,37 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       const displayAmount = shouldShowNegative ? -(transaction.amount || 0) : (transaction.amount || 0);
       let primaryAmount = exchangeRateService.formatAmount(displayAmount, currency.id);
       
-      // If not in base currency, also show converted amount using stored exchange rate
+      // If not in base currency, also show converted amount using live exchange rate
       if (transaction.currencyId !== exchangeRateService.getBaseCurrencyId()) {
         const baseCurrency = currencies.find(c => c.id === exchangeRateService.getBaseCurrencyId());
         
-        // Calculate base currency amount using the transaction's stored exchange rate
-        let baseCurrencyAmount = transaction.amount || 0;
-        if (transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
-          // Handle exchange rate as object or number
-          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
-            ? transaction.exchangeRate.rate 
-            : transaction.exchangeRate;
-          baseCurrencyAmount = (transaction.amount || 0) * rate;
-        }
-        
-        // Apply negative sign if needed before formatting
-        const displayBaseCurrencyAmount = shouldShowNegative ? -baseCurrencyAmount : baseCurrencyAmount;
-        let convertedAmount = exchangeRateService.formatAmount(
-          displayBaseCurrencyAmount, 
-          baseCurrency?.id
-        );
-        
-        return (
-          <div className="amount-with-conversion" style={{ color: 'inherit' }}>
+        try {
+          // Use live exchange rate service instead of stored transaction rate
+          const convertedAmount = exchangeRateService.convertToBaseCurrency(
+            transaction.amount || 0, 
+            transaction.currencyId,
+            transaction.date
+          );
+          
+          // Apply negative sign if needed before formatting
+          const displayBaseCurrencyAmount = shouldShowNegative ? -convertedAmount : convertedAmount;
+          let formattedConvertedAmount = exchangeRateService.formatAmount(
+            displayBaseCurrencyAmount, 
+            baseCurrency?.id
+          );
+          
+          return (
+            <div className="amount-with-conversion" style={{ color: 'inherit' }}>
+              <div className="primary-amount" style={{ color: 'inherit' }}>{primaryAmount}</div>
+              <div className="converted-amount" style={{ color: 'inherit' }}>≈ {formattedConvertedAmount}</div>
+            </div>
+          );
+        } catch (error) {
+          console.warn('Currency conversion failed for transaction:', transaction.id, error.message);
+          return (
             <div className="primary-amount" style={{ color: 'inherit' }}>{primaryAmount}</div>
-            <div className="converted-amount" style={{ color: 'inherit' }}>≈ {convertedAmount}</div>
-          </div>
-        );
+          ); // Show only primary currency if conversion fails
+        }
       }
       return <div className="primary-amount" style={{ color: 'inherit' }}>{primaryAmount}</div>;
     }
@@ -347,13 +353,18 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       filtered = filtered.filter(transaction => {
         let baseAmount = parseFloat(transaction.amount) || 0;
         
-        // Convert to base currency if needed
-        if (transaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && 
-            transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
-          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
-            ? transaction.exchangeRate.rate 
-            : transaction.exchangeRate;
-          baseAmount = baseAmount * rate;
+        // Convert to base currency using live exchange rate service
+        if (transaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && exchangeRateService) {
+          try {
+            baseAmount = exchangeRateService.convertToBaseCurrency(
+              baseAmount, 
+              transaction.currencyId,
+              transaction.date
+            );
+          } catch (error) {
+            console.warn('Currency conversion failed for filtering:', transaction.id, error.message);
+            // Use original amount if conversion fails
+          }
         }
         
         return baseAmount >= parseFloat(filterAmountMin);
@@ -363,13 +374,18 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       filtered = filtered.filter(transaction => {
         let baseAmount = parseFloat(transaction.amount) || 0;
         
-        // Convert to base currency if needed
-        if (transaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && 
-            transaction.exchangeRate && transaction.exchangeRate !== 1.0) {
-          const rate = typeof transaction.exchangeRate === 'object' && transaction.exchangeRate.rate !== undefined 
-            ? transaction.exchangeRate.rate 
-            : transaction.exchangeRate;
-          baseAmount = baseAmount * rate;
+        // Convert to base currency using live exchange rate service
+        if (transaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && exchangeRateService) {
+          try {
+            baseAmount = exchangeRateService.convertToBaseCurrency(
+              baseAmount, 
+              transaction.currencyId,
+              transaction.date
+            );
+          } catch (error) {
+            console.warn('Currency conversion failed for filtering:', transaction.id, error.message);
+            // Use original amount if conversion fails
+          }
         }
         
         return baseAmount <= parseFloat(filterAmountMax);

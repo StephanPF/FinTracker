@@ -44,6 +44,7 @@ const AnalyticsMain = ({ onNavigate }) => {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [activeFilterPanel, setActiveFilterPanel] = useState(null);
 
   // Analytics data service instance
   const [analyticsService, setAnalyticsService] = useState(null);
@@ -184,6 +185,7 @@ const AnalyticsMain = ({ onNavigate }) => {
     loading,
     error,
     analyticsService,
+    activeFilterPanel,
     
     // Actions
     setCurrentView: handleViewChange,
@@ -192,6 +194,7 @@ const AnalyticsMain = ({ onNavigate }) => {
     setDateRange: handleDateRangeChange,
     setSelectedAccounts,
     loadAnalyticsData,
+    setActiveFilterPanel,
     
     // Utilities
     formatCurrency,

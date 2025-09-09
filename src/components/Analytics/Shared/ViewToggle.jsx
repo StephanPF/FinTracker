@@ -18,13 +18,6 @@ const ViewToggle = () => {
 
   return (
     <div className="view-toggle">
-      <div className="view-toggle-header">
-        <h3>View Type</h3>
-        <p className="view-toggle-description">
-          Choose between cash-based or accrual-based accounting view
-        </p>
-      </div>
-
       <div className="view-toggle-controls">
         <div className="toggle-container">
           <button
@@ -60,37 +53,7 @@ const ViewToggle = () => {
           </button>
         </div>
 
-        {/* Prominent Toggle Switch */}
-        <div className="prominent-toggle">
-          <span className={`toggle-label ${viewType === 'cash' ? 'active' : ''}`}>
-            Cash
-          </span>
-          <button
-            className="toggle-switch"
-            onClick={handleToggle}
-            aria-label="Toggle between Cash and Accrual view"
-          >
-            <div className={`toggle-slider ${viewType === 'accrual' ? 'active' : ''}`}>
-              <div className="toggle-handle" />
-            </div>
-          </button>
-          <span className={`toggle-label ${viewType === 'accrual' ? 'active' : ''}`}>
-            Accrual
-          </span>
-        </div>
 
-        {/* Current Selection Indicator */}
-        <div className="current-selection">
-          <span className="selection-label">
-            Current View:
-          </span>
-          <span className={`selection-value ${viewType}`}>
-            {viewType === 'cash' 
-              ? 'Cash-Based'
-              : 'Accrual-Based'
-            }
-          </span>
-        </div>
       </div>
     </div>
   );

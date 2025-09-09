@@ -14,7 +14,7 @@ const FilterControls = () => {
     t 
   } = useAnalytics();
   
-  const { database } = useAccounting();
+  const { database, getAccountTypes } = useAccounting();
   const [accounts, setAccounts] = useState([]);
   const [accountTypes, setAccountTypes] = useState([]);
 
@@ -29,13 +29,10 @@ const FilterControls = () => {
   const loadAccounts = () => {
     try {
       const allAccounts = database.getTable('accounts') || [];
-      const allAccountTypes = database.getTable('account_types') || [];
+      const allAccountTypes = getAccountTypes() || [];
       
-      // Filter to only include analytics-relevant account types
+      // Filter to only include analytics-relevant account types for accounts
       const analyticsAccountTypes = ['ACCT_TYPE_001', 'ACCT_TYPE_006']; // Bank Account, Current Liability
-      const filteredAccountTypes = allAccountTypes.filter(type => 
-        analyticsAccountTypes.includes(type.id)
-      );
       
       // Filter accounts to only include those with relevant account types and Analytics enabled
       const filteredAccounts = allAccounts.filter(account => 
@@ -43,9 +40,10 @@ const FilterControls = () => {
         account.isActive && 
         account.includeInOverview !== false
       );
-
+      
+      // Get all account types (not filtered) so we can display proper names
       setAccounts(filteredAccounts);
-      setAccountTypes(filteredAccountTypes);
+      setAccountTypes(allAccountTypes);
     } catch (error) {
       console.error('Error loading accounts for analytics:', error);
       setAccounts([]);
@@ -88,11 +86,28 @@ const FilterControls = () => {
   };
 
   /**
-   * Get account type name by ID
+   * Get account type name by ID with enhanced formatting
    */
   const getAccountTypeName = (accountTypeId) => {
     const accountType = accountTypes.find(type => type.id === accountTypeId);
-    return accountType?.name || 'Unknown';
+    
+    console.log('Debug - Looking for accountTypeId:', accountTypeId);
+    console.log('Debug - Available accountTypes:', accountTypes.map(at => ({id: at.id, type: at.type, subtype: at.subtype})));
+    console.log('Debug - Found accountType:', accountType);
+    
+    if (!accountType) return `Unknown (ID: ${accountTypeId})`;
+    
+    // Use the correct fields: type and subtype (matching DataManagement component)
+    const type = accountType.type || '';
+    const subtype = accountType.subtype || '';
+    
+    console.log('Debug - type:', type, 'subtype:', subtype);
+    
+    if (type && subtype) {
+      return `${type} - ${subtype}`;
+    }
+    
+    return type || subtype || 'Unknown Account Type';
   };
 
   /**
@@ -115,116 +130,101 @@ const FilterControls = () => {
 
   return (
     <div className="filter-controls">
-      <div className="filter-controls-header">
-        <h3>Filters</h3>
-        <span className="filter-summary">
-          {getSelectedCount()} of {accounts.length} accounts selected
-        </span>
-      </div>
-
-      <div className="filter-sections">
-        {/* Account Selection */}
-        <div className="filter-section">
-          <h4>Accounts</h4>
-          
-          {/* Quick Selection */}
-          <div className="quick-selection">
-            <select
-              value={selectedAccounts === 'all' ? 'all' : 'custom'}
-              onChange={handleAccountSelectionChange}
-              className="form-control"
-              style={{
-                backgroundColor: 'white',
-                color: '#1a202c',
-                border: '1px solid #d1d5db'
-              }}
-            >
-              <option value="all">All Accounts</option>
-              <option value="custom">Select Accounts</option>
-            </select>
+      <div className="account-filter-main">
+        {/* Account Selection Radio Buttons */}
+        <div className="account-selection-options">
+          <div className="selection-option">
+            <label className="option-label">
+              <input
+                type="radio"
+                name="account-filter"
+                value="all"
+                checked={selectedAccounts === 'all'}
+                onChange={() => setSelectedAccounts('all')}
+                className="option-radio"
+              />
+              <div className="option-content">
+                <span className="option-title">All Accounts</span>
+                <span className="option-description">
+                  Include all {accounts.length} accounts with Analytics enabled
+                </span>
+              </div>
+            </label>
           </div>
 
-          {/* Individual Account Selection */}
-          {selectedAccounts !== 'all' && accounts.length > 0 && (
-            <div className="account-list">
-              {accountTypes.map(accountType => {
-                const typeAccounts = accounts.filter(acc => acc.accountTypeId === accountType.id);
-                if (typeAccounts.length === 0) return null;
-
-                return (
-                  <div key={accountType.id} className="account-type-group">
-                    <h5 className="account-type-title">
-                      {getAccountTypeName(accountType.id)}
-                    </h5>
-                    <div className="account-checkboxes">
-                      {typeAccounts.map(account => (
-                        <div key={account.id} className="account-checkbox">
-                          <label className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={isAccountSelected(account.id)}
-                              onChange={() => handleAccountToggle(account.id)}
-                              style={{
-                                backgroundColor: 'white',
-                                color: '#1a202c',
-                                accentColor: '#1a202c',
-                                border: '1px solid #d1d5db'
-                              }}
-                            />
-                            <span className="account-name">{account.name}</span>
-                            {account.description && (
-                              <span className="account-description">
-                                {account.description}
-                              </span>
-                            )}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <div className="selection-option">
+            <label className="option-label">
+              <input
+                type="radio"
+                name="account-filter"
+                value="custom"
+                checked={selectedAccounts !== 'all'}
+                onChange={() => setSelectedAccounts(accounts.length > 0 ? [accounts[0].id] : [])}
+                className="option-radio"
+              />
+              <div className="option-content">
+                <span className="option-title">Select Specific Accounts</span>
+                <span className="option-description">
+                  Choose which accounts to include in analytics
+                </span>
+              </div>
+            </label>
+          </div>
 
           {/* No Accounts Message */}
           {accounts.length === 0 && (
             <div className="no-accounts-message">
-              <p>No accounts available for analytics</p>
-              <p className="help-text">
-                Only bank accounts and current liability accounts are included in analytics
-              </p>
+              <span className="no-accounts-icon">🏦</span>
+              <div className="no-accounts-text">
+                <h4>No Accounts Available</h4>
+                <p>Enable Analytics for accounts in Account Management to see them here</p>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Transaction Type Filter (Future Enhancement) */}
-        <div className="filter-section">
-          <h4>Transaction Types</h4>
-          <div className="transaction-type-info">
-            <p className="info-text">
-              Analytics includes Income and Expense transactions only
-            </p>
-            <div className="included-types">
-              <span className="type-badge type-income">
-                Income
-              </span>
-              <span className="type-badge type-expense">
-                Expenses
-              </span>
+        {/* Multi-Select Area - Always present but conditionally visible */}
+        <div className="account-multiselect-area">
+          {selectedAccounts !== 'all' && accounts.length > 0 ? (
+            <div className="account-multiselect">
+              <div className="multiselect-header">
+                <span className="multiselect-label">Selected Accounts ({getSelectedCount()})</span>
+              </div>
+              <div className="account-checkboxes">
+                {accounts.map(account => (
+                  <div key={account.id} className="account-checkbox">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={isAccountSelected(account.id)}
+                        onChange={() => handleAccountToggle(account.id)}
+                        className="account-check"
+                      />
+                      <span className="account-info">
+                        <span className="account-name">{account.name}</span>
+                        <span className="account-type">
+                          {getAccountTypeName(account.accountTypeId)}
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="account-multiselect-placeholder">
+              {selectedAccounts === 'all' ? (
+                <div className="placeholder-content">
+                  <span className="placeholder-icon">✓</span>
+                  <div className="placeholder-text">
+                    <h4>All Accounts Selected</h4>
+                    <p>Analytics will include data from all {accounts.length} accounts with Analytics enabled.</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
-      </div>
-
-      {/* Reset Filters */}
-      <div className="filter-actions">
-        <button
-          className="btn-secondary btn-small"
-          onClick={() => setSelectedAccounts('all')}
-        >
-          Reset Filters
-        </button>
       </div>
     </div>
   );
