@@ -1,0 +1,386 @@
+/* Database Migrations Page Styles */
+
+.database-migrations {
+  padding: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.migrations-header {
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.migrations-header h1 {
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 2rem;
+}
+
+.migrations-description {
+  color: #6c757d;
+  font-size: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.migrations-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.migration-section {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.migration-section h2 {
+  color: #2c3e50;
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 8px;
+}
+
+/* Migration History */
+.no-migrations {
+  text-align: center;
+  padding: 12px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.migration-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.migration-history-item {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
+}
+
+.migration-history-item .migration-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.migration-history-item .migration-info strong {
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.migration-version {
+  background: #007bff;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.migration-meta {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+
+.migration-history-item .migration-description {
+  margin: 0;
+  color: #495057;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Available Migrations */
+.migrations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.migration-card {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.migration-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.migration-card.applied {
+  border-color: #28a745;
+  background: linear-gradient(135deg, #f8fff9 0%, #ffffff 100%);
+}
+
+.migration-card.pending {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, #fffef8 0%, #ffffff 100%);
+}
+
+.migration-header {
+  padding: 12px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.migration-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.migration-title h3 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.migration-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.version-badge {
+  background: #007bff;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.risk-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.applied-badge {
+  background: #28a745;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.migration-body {
+  padding: 12px;
+}
+
+.migration-body .migration-description {
+  color: #495057;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.migration-details {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.affected-tables {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.affected-tables strong {
+  color: #2c3e50;
+  min-width: 100px;
+}
+
+.table-list {
+  color: #495057;
+  font-family: monospace;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+/* Migration Results */
+.migration-result {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 3px solid;
+}
+
+.migration-result.success {
+  background: #d4edda;
+  border-left-color: #28a745;
+}
+
+.migration-result.error {
+  background: #f8d7da;
+  border-left-color: #dc3545;
+}
+
+.success-result strong {
+  color: #155724;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.error-result strong {
+  color: #721c24;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.result-details {
+  color: #155724;
+}
+
+.result-details ul {
+  margin: 8px 0 0 0;
+  padding-left: 16px;
+}
+
+.result-details li {
+  margin-bottom: 4px;
+}
+
+.error-result p {
+  color: #721c24;
+  margin: 0;
+}
+
+/* Action Buttons - Following BUILD_NEW_FEATURE_GUIDE.md */
+.migration-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.run-migration-btn,
+.rollback-migration-btn,
+.refresh-page-btn {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  background-color: white;
+  color: #1a202c;
+}
+
+.run-migration-btn {
+  background: #007bff;
+  color: white;
+}
+
+.run-migration-btn:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.run-migration-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.rollback-migration-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.rollback-migration-btn:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.rollback-migration-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.refresh-page-btn {
+  background: #28a745;
+  color: white;
+}
+
+.refresh-page-btn:hover {
+  background: #218838;
+}
+
+/* Warning Section */
+.warning-section {
+  border-left: 3px solid #ffc107;
+  background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+}
+
+.warning-section h2 {
+  color: #856404;
+  border-bottom-color: #ffc107;
+}
+
+.warning-content ul {
+  color: #495057;
+  line-height: 1.5;
+}
+
+.warning-content li {
+  margin-bottom: 8px;
+}
+
+.warning-content strong {
+  color: #2c3e50;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .database-migrations {
+    padding: 8px;
+  }
+  
+  .migrations-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .migration-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .migration-actions {
+    flex-direction: column;
+  }
+  
+  .run-migration-btn,
+  .rollback-migration-btn,
+  .refresh-page-btn {
+    width: 100%;
+  }
+  
+  .affected-tables {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

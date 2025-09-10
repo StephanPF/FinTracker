@@ -6,7 +6,6 @@ class RelationalDatabase {
       accounts: [],
       transactions: [],
       tags: [],
-      todos: [],
       transaction_types: [],
       transaction_groups: [],
       subcategories: [],
@@ -39,7 +38,6 @@ class RelationalDatabase {
       user_preferences: ['id', 'userId', 'category', 'settings', 'createdAt', 'updatedAt'],
       database_info: ['id', 'key', 'value', 'createdAt', 'updatedAt'],
       tags: ['id', 'name', 'description', 'isActive', 'createdAt'],
-      todos: ['id', 'title', 'description', 'category', 'status', 'priority', 'estimatedHours', 'completedAt', 'createdAt'],
       transaction_groups: ['id', 'name', 'description', 'color', 'order', 'isActive', 'transactionTypeId', 'createdAt'],
       subcategories: ['id', 'name', 'description', 'groupId', 'isActive', 'isCashWithdrawal', 'createdAt'],
       payees: ['id', 'name', 'description', 'isActive', 'createdAt'],
@@ -137,7 +135,6 @@ class RelationalDatabase {
       accounts: defaultData.accounts,
       transactions: [],
       tags: defaultData.tags,
-      todos: defaultData.todos,
       transaction_types: this.generateCategories(language),
       transaction_groups: this.generateTransactionGroups(language, preset),
       subcategories: this.generateSubcategories(language, preset),
@@ -897,7 +894,6 @@ class RelationalDatabase {
     this.tables.accounts = [];
     this.tables.transactions = [];
     this.tables.tags = [];
-    this.tables.todos = [];
     this.tables.transaction_types = [];
     this.tables.transaction_groups = [];
     this.tables.subcategories = [];
@@ -1017,7 +1013,7 @@ class RelationalDatabase {
   // Ensure all required tables exist, even for older databases
   ensureAllTablesExist() {
     const requiredTables = [
-      'accounts', 'transactions', 'tags', 'todos', 'transaction_types',
+      'accounts', 'transactions', 'tags', 'transaction_types',
       'transaction_groups', 'subcategories', 'currencies', 'exchange_rates',
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
       'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules',
@@ -1512,59 +1508,6 @@ class RelationalDatabase {
     return deletedProduct;
   }
 
-  // Todo CRUD methods
-  addTodo(todoData) {
-    const newTodo = {
-      id: 'TODO' + Date.now(),
-      title: todoData.title,
-      description: todoData.description || '',
-      category: todoData.category || 'General',
-      status: todoData.status || 'pending',
-      priority: todoData.priority || 'medium',
-      estimatedHours: parseInt(todoData.estimatedHours) || 1,
-      completedAt: todoData.completedAt || null,
-      createdAt: new Date().toISOString()
-    };
-
-    this.tables.todos.push(newTodo);
-    this.saveTableToWorkbook('todos');
-    return newTodo;
-  }
-
-  updateTodo(id, todoData) {
-    const todoIndex = this.tables.todos.findIndex(todo => todo.id === id);
-    if (todoIndex === -1) {
-      throw new Error(`Todo with id ${id} not found`);
-    }
-
-    const updatedTodo = {
-      ...this.tables.todos[todoIndex],
-      title: todoData.title !== undefined ? todoData.title : this.tables.todos[todoIndex].title,
-      description: todoData.description !== undefined ? todoData.description : this.tables.todos[todoIndex].description,
-      category: todoData.category !== undefined ? todoData.category : this.tables.todos[todoIndex].category,
-      status: todoData.status !== undefined ? todoData.status : this.tables.todos[todoIndex].status,
-      priority: todoData.priority !== undefined ? todoData.priority : this.tables.todos[todoIndex].priority,
-      estimatedHours: todoData.estimatedHours !== undefined ? parseInt(todoData.estimatedHours) : this.tables.todos[todoIndex].estimatedHours,
-      completedAt: todoData.completedAt !== undefined ? todoData.completedAt : this.tables.todos[todoIndex].completedAt
-    };
-
-    this.tables.todos[todoIndex] = updatedTodo;
-    this.saveTableToWorkbook('todos');
-    return updatedTodo;
-  }
-
-  deleteTodo(id) {
-    const todoIndex = this.tables.todos.findIndex(todo => todo.id === id);
-    if (todoIndex === -1) {
-      throw new Error(`Todo with id ${id} not found`);
-    }
-
-    const deletedTodo = this.tables.todos[todoIndex];
-    this.tables.todos.splice(todoIndex, 1);
-    this.saveTableToWorkbook('todos');
-
-    return deletedTodo;
-  }
 
   // Account Types methods - now hardwired
   getAccountTypes() {
@@ -1800,49 +1743,7 @@ class RelationalDatabase {
           lastUpdated: new Date().toISOString()
         }
       ],
-      tags: [],
-      todos: [
-        {
-          id: 'TODO001',
-          title: 'Add budget tracking feature',
-          description: 'Allow users to set monthly budgets by category and track spending against them',
-          category: 'Feature',
-          status: 'pending',
-          priority: 'high',
-          estimatedHours: 8,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TODO002',
-          title: 'Implement recurring transactions',
-          description: 'Add ability to set up recurring income/expenses (salary, rent, subscriptions)',
-          category: 'Feature',
-          status: 'pending',
-          priority: 'medium',
-          estimatedHours: 12,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TODO003',
-          title: 'Add financial reports and charts',
-          description: 'Generate spending reports, net worth tracking, and visual charts',
-          category: 'Enhancement',
-          status: 'pending',
-          priority: 'medium',
-          estimatedHours: 16,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TODO004',
-          title: 'Implement multi-currency support',
-          description: 'Allow users to track finances in multiple currencies with automatic conversion rates and currency-specific formatting',
-          category: 'Feature',
-          status: 'pending',
-          priority: 'high',
-          estimatedHours: 20,
-          createdAt: new Date().toISOString()
-        }
-      ]
+      tags: []
     };
   }
 
@@ -1865,49 +1766,7 @@ class RelationalDatabase {
           lastUpdated: new Date().toISOString()
         }
       ],
-      tags: [],
-      todos: [
-        {
-          id: 'TODO001',
-          title: 'Ajouter suivi des budgets',
-          description: 'Permettre aux utilisateurs de définir des budgets mensuels par catégorie et suivre les dépenses',
-          category: 'Fonctionnalité',
-          status: 'pending',
-          priority: 'high',
-          estimatedHours: 8,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TODO002',
-          title: 'Implémenter transactions récurrentes',
-          description: 'Ajouter la possibilité de configurer des revenus/dépenses récurrents (salaire, loyer, abonnements)',
-          category: 'Fonctionnalité',
-          status: 'pending',
-          priority: 'medium',
-          estimatedHours: 12,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TODO003',
-          title: 'Ajouter rapports et graphiques',
-          description: 'Générer des rapports de dépenses, suivi du patrimoine net et graphiques visuels',
-          category: 'Amélioration',
-          status: 'pending',
-          priority: 'medium',
-          estimatedHours: 16,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'TODO004',
-          title: 'Support multi-devises',
-          description: 'Permettre le suivi des finances en plusieurs devises avec taux de change automatiques',
-          category: 'Fonctionnalité',
-          status: 'pending',
-          priority: 'high',
-          estimatedHours: 20,
-          createdAt: new Date().toISOString()
-        }
-      ]
+      tags: []
     };
   }
 
@@ -2594,6 +2453,16 @@ class RelationalDatabase {
         isActive: true,
         transactionTypeId: 'CAT_003', // Transfer
         createdAt: new Date().toISOString()
+      },
+      // Refund group
+      {
+        id: 'GRP_018',
+        name: 'Refunds',
+        description: 'Refunds from purchases, services, and transactions',
+        color: '#8bc34a',
+        isActive: true,
+        transactionTypeId: 'CAT_001', // Income
+        createdAt: new Date().toISOString()
       }
     ];
   }
@@ -2756,6 +2625,16 @@ class RelationalDatabase {
         isActive: true,
         transactionTypeId: 'CAT_003', // Virement
         createdAt: new Date().toISOString()
+      },
+      // Groupe de remboursement
+      {
+        id: 'GRP_018',
+        name: 'Remboursements',
+        description: 'Remboursements d\'achats, services et transactions',
+        color: '#8bc34a',
+        isActive: true,
+        transactionTypeId: 'CAT_001', // Revenus
+        createdAt: new Date().toISOString()
       }
     ];
   }
@@ -2867,10 +2746,9 @@ class RelationalDatabase {
   generateNomadicEnglishSubcategories() {
     return [
       // GRP_001 - Housing & Accommodation (Expenses)
-      { id: 'SUB_001', name: 'Short-Term Rentals', description: 'Airbnb, VRBO, or other vacation rentals for temporary stays', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_002', name: 'Long-Term Rentals', description: 'Monthly leases for apartments, houses, or condos in extended-stay locations', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_003', name: 'Utilities & Internet', description: 'Wi-Fi subscriptions, portable hotspots, or utility fees for rentals (electricity, water, gas)', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_004', name: 'Accommodation Incidentals', description: 'Cleaning fees, booking fees, or security deposits', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_001', name: 'Accommodation Rentals', description: 'Airbnb, VRBO, monthly leases, apartments, houses, and all accommodation rentals', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_002', name: 'Utilities & Internet', description: 'Wi-Fi subscriptions, portable hotspots, or utility fees for rentals (electricity, water, gas)', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_003', name: 'Accommodation Incidentals', description: 'Cleaning fees, booking fees, or security deposits', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
       
       // GRP_002 - Transportation (Expenses)
       { id: 'SUB_005', name: 'Flights & Air Travel', description: 'International and domestic flights for family members', groupId: 'GRP_002', isActive: true, createdAt: new Date().toISOString() },
@@ -2928,6 +2806,7 @@ class RelationalDatabase {
       { id: 'SUB_041', name: 'Childcare & Entertainment', description: 'Toys, games, or babysitting services for downtime', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_042', name: 'Charity & Donations', description: 'Contributions to local communities or causes during travels', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_043', name: 'Unexpected Costs', description: 'Miscellaneous or unplanned expenses (e.g., lost items, fines)', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_068', name: 'Cash Withdrawal', description: 'ATM withdrawals and cash-based transactions', groupId: 'GRP_010', isActive: true, isCashWithdrawal: true, createdAt: new Date().toISOString() },
       
       // GRP_011 - Professional & Business (Income)
       { id: 'SUB_044', name: 'Remote Work Salary', description: 'Regular salary income from remote employment', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
@@ -2965,15 +2844,17 @@ class RelationalDatabase {
       // GRP_017 - Bank Transfer (Transfer)
       { id: 'SUB_065', name: 'Account to Account Transfer', description: 'Internal transfers between personal accounts', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_066', name: 'Currency Exchange Transfer', description: 'Transfers involving currency exchange', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_067', name: 'International Wire Transfer', description: 'Wire transfers to international accounts', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() }
+      { id: 'SUB_067', name: 'International Wire Transfer', description: 'Wire transfers to international accounts', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
+
+      // GRP_018 - Refunds (Income)
+      { id: 'SUB_069', name: 'Refund', description: 'Refunds from purchases, services, and cancellations', groupId: 'GRP_018', isActive: true, createdAt: new Date().toISOString() }
     ];
   }
 
   generateNomadicFrenchSubcategories() {
     return [
       // GRP_001 - Logement & Hébergement (Expenses)
-      { id: 'SUB_001', name: 'Locations Courte Durée', description: 'Airbnb, VRBO, ou autres locations de vacances pour séjours temporaires', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_002', name: 'Locations Longue Durée', description: 'Baux mensuels pour appartements, maisons, ou condos en séjour prolongé', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_001', name: 'Locations Hébergement', description: 'Airbnb, VRBO, baux mensuels, appartements, maisons, et toutes locations d\'hébergement', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_003', name: 'Services Publics & Internet', description: 'Abonnements Wi-Fi, points d\'accès portables, ou frais de services pour locations (électricité, eau, gaz)', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_004', name: 'Frais Accessoires Logement', description: 'Frais de nettoyage, frais de réservation, ou dépôts de garantie', groupId: 'GRP_001', isActive: true, createdAt: new Date().toISOString() },
       
@@ -3033,6 +2914,7 @@ class RelationalDatabase {
       { id: 'SUB_041', name: 'Garde d\'Enfants & Divertissement', description: 'Jouets, jeux, ou services de garde pour temps libres', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_042', name: 'Charité & Dons', description: 'Contributions aux communautés locales ou causes pendant les voyages', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_043', name: 'Coûts Imprévus', description: 'Dépenses diverses ou non planifiées (ex: objets perdus, amendes)', groupId: 'GRP_010', isActive: true, createdAt: new Date().toISOString() },
+      { id: 'SUB_068', name: 'Retrait d\'Espèces', description: 'Retraits DAB et transactions en espèces', groupId: 'GRP_010', isActive: true, isCashWithdrawal: true, createdAt: new Date().toISOString() },
       
       // GRP_011 - Professionnel & Affaires (Income)
       { id: 'SUB_044', name: 'Salaire Télétravail', description: 'Revenus salariaux réguliers d\'emploi à distance', groupId: 'GRP_011', isActive: true, createdAt: new Date().toISOString() },
@@ -3070,7 +2952,10 @@ class RelationalDatabase {
       // GRP_017 - Virement Bancaire (Transfer)
       { id: 'SUB_065', name: 'Virement Compte à Compte', description: 'Virements internes entre comptes personnels', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
       { id: 'SUB_066', name: 'Virement Change de Devise', description: 'Virements impliquant un change de devise', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
-      { id: 'SUB_067', name: 'Virement International', description: 'Virements télégraphiques vers comptes internationaux', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() }
+      { id: 'SUB_067', name: 'Virement International', description: 'Virements télégraphiques vers comptes internationaux', groupId: 'GRP_017', isActive: true, createdAt: new Date().toISOString() },
+
+      // GRP_018 - Remboursements (Income)
+      { id: 'SUB_069', name: 'Remboursement', description: 'Remboursements d\'achats, services et annulations', groupId: 'GRP_018', isActive: true, createdAt: new Date().toISOString() }
     ];
   }
 

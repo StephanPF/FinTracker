@@ -142,16 +142,15 @@ Users can select the nomadic configuration through the **Database Configuration 
 ### Subcategories
 ```javascript
 // Nomadic subcategories are now fully implemented
-generateSubcategories(language, 'nomadic') // Returns: 67 subcategories organized by transaction groups
+generateSubcategories(language, 'nomadic') // Returns: 66 subcategories organized by transaction groups
 ```
 
-The nomadic configuration includes **67 detailed subcategories** that provide granular expense tracking across all 17 transaction groups. Each subcategory is specifically designed for nomadic lifestyle needs.
+The nomadic configuration includes **66 detailed subcategories** that provide granular expense tracking across all 17 transaction groups. Each subcategory is specifically designed for nomadic lifestyle needs.
 
 #### Subcategory Structure
 
-**Housing & Accommodation (4 subcategories)**
-- Short-Term Rentals: Airbnb, VRBO, vacation rentals
-- Long-Term Rentals: Monthly apartment/house leases  
+**Housing & Accommodation (3 subcategories)**
+- Accommodation Rentals: Airbnb, VRBO, monthly leases, apartments, houses, and all accommodation rentals
 - Utilities & Internet: Wi-Fi, hotspots, utility fees
 - Accommodation Incidentals: Cleaning fees, deposits
 
@@ -254,7 +253,7 @@ The nomadic configuration includes **67 detailed subcategories** that provide gr
 
 ## Recent Enhancements
 
-✅ **Subcategories Implemented**: 67 detailed subcategories now available across all transaction groups
+✅ **Subcategories Implemented**: 66 detailed subcategories now available across all transaction groups
 ✅ **Multi-Language Support**: Complete French translations for all subcategories  
 ✅ **Investment Categories**: Full crypto and traditional finance subcategories
 ✅ **Ethereum Support**: Dedicated Ethereum subcategories for both buying and selling

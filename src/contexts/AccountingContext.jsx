@@ -31,7 +31,6 @@ export const AccountingProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([]);
   const [tags, setTags] = useState([]);
   const [products, setProducts] = useState([]);
-  const [todos, setTodos] = useState([]);
   const [categories, setCategories] = useState([]);
   const [transactionGroups, setTransactionGroups] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -143,7 +142,6 @@ export const AccountingProvider = ({ children }) => {
     setTransactions([...database.getTable('transactions')]);
     setTags([...database.getTable('tags')]);
     setProducts([...database.getTable('tags')]);
-    setTodos([...database.getTable('todos')]);
     setPayees([...database.getTable('payees')]);
     setPayers([...database.getTable('payers')]);
     setBankConfigurations([...database.getBankConfigurations()]);
@@ -882,7 +880,6 @@ export const AccountingProvider = ({ children }) => {
       accountsCount: accounts.length,
       transactionsCount: transactions.length,
       productsCount: tags.length,
-      todosCount: todos.length
     };
   };
 
@@ -914,7 +911,7 @@ export const AccountingProvider = ({ children }) => {
       
       // Save all tables to files
       const tablesToSave = [
-        'accounts', 'transactions', 'tags', 'todos',
+        'accounts', 'transactions', 'tags',
         'transaction_types', 'transaction_groups', 'subcategories',
         'currencies', 'exchange_rates', 'currency_settings',
         'user_preferences', 'api_usage', 'api_settings', 'database_info',
@@ -941,7 +938,6 @@ export const AccountingProvider = ({ children }) => {
     setAccounts([]);
     setTransactions([]);
     setTags([]);
-    setTodos([]);
     setCategories([]);
     setPayees([]);
     setPayers([]);
@@ -1016,51 +1012,6 @@ export const AccountingProvider = ({ children }) => {
     }
   };
 
-  // Todo CRUD methods
-  const addTodo = async (todoData) => {
-    try {
-      const newTodo = database.addTodo(todoData);
-      setTodos([...database.getTable('todos')]);
-      
-      const buffer = database.exportTableToBuffer('todos');
-      await fileStorage.saveTable('todos', buffer);
-      
-      return newTodo;
-    } catch (error) {
-      console.error('Error adding todo:', error);
-      throw error;
-    }
-  };
-
-  const updateTodo = async (id, todoData) => {
-    try {
-      const updatedTodo = database.updateTodo(id, todoData);
-      setTodos([...database.getTable('todos')]);
-      
-      const buffer = database.exportTableToBuffer('todos');
-      await fileStorage.saveTable('todos', buffer);
-      
-      return updatedTodo;
-    } catch (error) {
-      console.error('Error updating todo:', error);
-      throw error;
-    }
-  };
-
-  const deleteTodo = async (id) => {
-    try {
-      const deletedTodo = database.deleteTodo(id);
-      setTodos([...database.getTable('todos')]);
-      
-      const buffer = database.exportTableToBuffer('todos');
-      await fileStorage.saveTable('todos', buffer);
-      
-      return deletedTodo;
-    } catch (error) {
-      console.error('Error deleting todo:', error);
-      throw error;
-    }
-  };
 
   // Account types helper methods
   const getAccountTypes = () => {
@@ -1644,7 +1595,6 @@ export const AccountingProvider = ({ children }) => {
     accounts,
     transactions,
     tags,
-    todos,
     categories,
     transactionGroups,
     subcategories,
@@ -1712,9 +1662,6 @@ export const AccountingProvider = ({ children }) => {
     getReconciledTransactions,
     getReconciliationSummary,
     getAllReconciliationReferences,
-    addTodo,
-    updateTodo,
-    deleteTodo,
     getSummary,
     getTransactionsWithDetails,
     resetToSetup,

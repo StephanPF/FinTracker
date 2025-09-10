@@ -6,7 +6,6 @@ import TransactionForm from './TransactionForm';
 import TransactionList from './TransactionList';
 import DatabaseSetup from './DatabaseSetup';
 import DataManagement from './DataManagement';
-import TodoPage from './TodoPage';
 import HelpPanel from './HelpPanel';
 import Test from './Test';
 import Settings from './Settings';
@@ -16,15 +15,16 @@ import ExistingReconciliationsPage from './ExistingReconciliationsPage';
 import TestDashboard from './TestDashboard';
 import BudgetSetup from './BudgetSetup';
 import AnalyticsMain from './Analytics/AnalyticsMain';
+import DatabaseMigrations from './DatabaseMigrations';
 import Logo from './Logo';
 
 const Dashboard = () => {
-  const { isLoaded, loading, resetToSetup } = useAccounting();
+  const { isLoaded, loading, resetToSetup, database, fileStorage } = useAccounting();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState(() => {
     // Initialize activeTab from URL hash first, then localStorage as fallback
     const hash = window.location.hash.slice(1);
-    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'todo', 'test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
+    const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'database-migrations', 'test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
     
     if (validTabs.includes(hash)) {
       return hash;
@@ -38,6 +38,8 @@ const Dashboard = () => {
   const [hamburgerMenuOpen, setHamburgerMenuOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState(null); // For account-filtered navigation
   const hamburgerRef = useRef(null);
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [backupStatus, setBackupStatus] = useState('');
 
   // Helper function to handle tab navigation with scroll-to-top
   const handleTabNavigation = (tabName) => {
@@ -70,6 +72,80 @@ const Dashboard = () => {
     handleTabNavigation('transactions');
   };
 
+  // Quick backup function (same as in DataSettings)
+  const createQuickBackup = async () => {
+    try {
+      setIsCreatingBackup(true);
+      setBackupStatus(t('creatingBackup'));
+
+      // Get all table data as buffers
+      const allTablesData = database.exportAllTablesToBuffers();
+      
+      // Import JSZip dynamically to keep bundle size smaller
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      // Add database info file
+      const dbInfo = {
+        backupDate: new Date().toISOString(),
+        version: '1.0',
+        tables: Object.keys(allTablesData),
+        description: 'FinanceFlow Database Backup'
+      };
+      
+      zip.file('backup-info.json', JSON.stringify(dbInfo, null, 2));
+
+      // Add all Excel files to the ZIP
+      Object.entries(allTablesData).forEach(([tableName, buffer]) => {
+        const fileName = fileStorage.getFileName(tableName);
+        zip.file(fileName, buffer);
+      });
+
+      setBackupStatus('Generating ZIP file...');
+      
+      // Generate the ZIP file
+      const zipBuffer = await zip.generateAsync({ 
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+      });
+
+      // Create download
+      const url = URL.createObjectURL(zipBuffer);
+      const a = document.createElement('a');
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, '0');
+      const day = today.getDate().toString().padStart(2, '0');
+      const backupFileName = `financeflow-backup-${year}-${month}-${day}.zip`;
+      
+      a.href = url;
+      a.download = backupFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setBackupStatus(`${t('backupCreated')}: ${backupFileName}`);
+      
+      // Clear status after 3 seconds
+      setTimeout(() => {
+        setBackupStatus('');
+      }, 3000);
+
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      setBackupStatus(`${t('backupError')}: ${error.message}`);
+      
+      // Clear error after 3 seconds
+      setTimeout(() => {
+        setBackupStatus('');
+      }, 3000);
+    } finally {
+      setIsCreatingBackup(false);
+    }
+  };
+
   // Scroll to top when activeTab changes to overview
   useEffect(() => {
     if (activeTab === 'overview' && isLoaded) {
@@ -85,7 +161,7 @@ const Dashboard = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
-      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'todo', 'test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
+      const validTabs = ['overview', 'transactions', 'add-transaction', 'data-management', 'budget-setup', 'analytics', 'database-migrations', 'test', 'test-dashboard', 'settings', 'import-transactions', 'reconciliation', 'reconciliation/existing'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
         localStorage.setItem('activeTab', hash);
@@ -179,6 +255,14 @@ const Dashboard = () => {
           </button>
         </div>
         <div className="nav-actions">
+          <button
+            className={`backup-btn ${isCreatingBackup ? 'creating' : ''}`}
+            onClick={createQuickBackup}
+            disabled={isCreatingBackup || !database || !fileStorage}
+            title={isCreatingBackup ? backupStatus : "Quick Backup"}
+          >
+            {isCreatingBackup ? '⏳' : '💾'}
+          </button>
           <div className="hamburger-menu" ref={hamburgerRef}>
             <button
               className={`hamburger-btn ${hamburgerMenuOpen ? 'open' : ''}`}
@@ -209,14 +293,14 @@ const Dashboard = () => {
                   <span className="menu-icon">⚙️</span>
                   <span className="menu-text">{t('settings')}</span>
                 </div>
-                <div className="menu-item" onClick={() => handleMenuNavigation('todo')}>
-                  <span className="menu-icon">🎯</span>
-                  <span className="menu-text">{t('todo')}</span>
-                </div>
                 <div className="menu-separator"></div>
                 <div className="menu-item" onClick={() => handleMenuNavigation('test-dashboard')}>
                   <span className="menu-icon">🧪</span>
                   <span className="menu-text">{t('testDashboard')}</span>
+                </div>
+                <div className="menu-item" onClick={() => handleMenuNavigation('database-migrations')}>
+                  <span className="menu-icon">🔧</span>
+                  <span className="menu-text">Database Migrations</span>
                 </div>
                 <div className="menu-separator"></div>
                 <div className="menu-item" onClick={() => setHamburgerMenuOpen(false)}>
@@ -254,11 +338,6 @@ const Dashboard = () => {
           </div>
         )}
 
-        {activeTab === 'todo' && (
-          <div className="todo-tab">
-            <TodoPage />
-          </div>
-        )}
         {activeTab === 'test' && (
           <div className="test-tab">
             <Test />
@@ -302,6 +381,12 @@ const Dashboard = () => {
         {activeTab === 'analytics' && (
           <div className="analytics-tab">
             <AnalyticsMain onNavigate={handleTabNavigation} />
+          </div>
+        )}
+
+        {activeTab === 'database-migrations' && (
+          <div className="database-migrations-tab">
+            <DatabaseMigrations />
           </div>
         )}
       </div>

@@ -8,7 +8,6 @@ export const fr = {
   importTransactions: "Importer Transactions",
   importTransactionsTitle: "📥 Importer Transactions",
   reconciliation: "Réconciliation",
-  todo: "TODO",
   settings: "Paramètres",
   reports: "Rapports",
   importExport: "Importer/Exporter",
@@ -676,7 +675,6 @@ export const fr = {
   optional: "Optionnel",
 
   // Hamburger Menu
-  todo: "TODO",
   settings: "Paramètres",
   reports: "Rapports",
   importExport: "Importer/Exporter",

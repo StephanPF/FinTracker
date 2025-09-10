@@ -8,7 +8,6 @@ export const en = {
   importTransactions: "Import Transactions",
   importTransactionsTitle: "📥 Import Transactions",
   reconciliation: "Reconciliation",
-  todo: "TODO",
   settings: "Settings",
   reports: "Reports",
   importExport: "Import/Export",

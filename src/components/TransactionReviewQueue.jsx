@@ -14,21 +14,32 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+  const [hideDuplicates, setHideDuplicates] = useState(false);
 
-  // Filter transactions based on status
+  // Filter transactions based on status and hide duplicates setting
   const filteredTransactions = useMemo(() => {
-    if (filter === 'all') return transactionsList;
+    let filtered = transactionsList;
     
-    return transactionsList.filter(t => {
-      switch (filter) {
-        case 'ready': return t.status === 'ready';
-        case 'warning': return t.status === 'warning';
-        case 'error': return t.status === 'error';
-        case 'duplicate': return t.isDuplicate;
-        default: return true;
-      }
-    });
-  }, [transactionsList, filter]);
+    // Apply status filter first
+    if (filter !== 'all') {
+      filtered = filtered.filter(t => {
+        switch (filter) {
+          case 'ready': return t.status === 'ready';
+          case 'warning': return t.status === 'warning';
+          case 'error': return t.status === 'error';
+          case 'duplicate': return t.isDuplicate;
+          default: return true;
+        }
+      });
+    }
+    
+    // Apply hide duplicates filter if enabled
+    if (hideDuplicates) {
+      filtered = filtered.filter(t => !t.isDuplicate);
+    }
+    
+    return filtered;
+  }, [transactionsList, filter, hideDuplicates]);
 
   // Count transactions by status
   const statusCounts = useMemo(() => {
@@ -350,6 +361,22 @@ const TransactionReviewQueue = ({ transactions, onBack, onReset, ruleProcessingS
             <option value="error">{t('errorTransactions')} ({statusCounts.error})</option>
             <option value="duplicate">{t('duplicateTransactions')} ({statusCounts.duplicate})</option>
           </select>
+          
+          {statusCounts.duplicate > 0 && (
+            <div className="duplicate-toggle">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={hideDuplicates}
+                  onChange={(e) => setHideDuplicates(e.target.checked)}
+                  className="toggle-checkbox"
+                />
+                <span className="toggle-text">
+                  Hide Duplicates ({statusCounts.duplicate})
+                </span>
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="bulk-controls">
