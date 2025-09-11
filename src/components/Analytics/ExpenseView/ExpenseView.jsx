@@ -3,6 +3,8 @@ import { useAnalytics } from '../AnalyticsMain';
 import OverviewCards from './OverviewCards';
 import CategoryBreakdown from './CategoryBreakdown';
 import BudgetStatusBreakdown from './BudgetStatusBreakdown';
+import TransactionGroupBreakdown from './TransactionGroupBreakdown';
+import TransactionGroupBudgetStatusBreakdown from './TransactionGroupBudgetStatusBreakdown';
 import BudgetProgress from './BudgetProgress';
 import TrendLines from './TrendLines';
 import TransactionTable from './TransactionTable';
@@ -297,6 +299,27 @@ const ExpenseView = ({ onNavigate }) => {
           {/* Budget Status Breakdown (Budget Status Colors) - 50% width */}
           <div className="chart-container budget-status-container">
             <BudgetStatusBreakdown
+              expenseData={expenseData}
+              activeBudget={activeBudget}
+              formatCurrency={formatCurrency}
+            />
+          </div>
+        </div>
+
+        {/* Row 2.5: Transaction Group Charts Split Layout - Two Transaction Group Breakdowns */}
+        <div className="content-row transaction-group-row">
+          {/* Transaction Group Breakdown (Transaction Group Colors) - 50% width */}
+          <div className="chart-container transaction-group-container">
+            <TransactionGroupBreakdown
+              expenseData={expenseData}
+              activeBudget={activeBudget}
+              formatCurrency={formatCurrency}
+            />
+          </div>
+
+          {/* Transaction Group Budget Status Breakdown (Budget Status Colors) - 50% width */}
+          <div className="chart-container transaction-group-budget-container">
+            <TransactionGroupBudgetStatusBreakdown
               expenseData={expenseData}
               activeBudget={activeBudget}
               formatCurrency={formatCurrency}

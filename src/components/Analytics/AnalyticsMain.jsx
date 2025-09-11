@@ -27,7 +27,8 @@ const AnalyticsMain = ({ onNavigate }) => {
     getActiveCurrencies,
     getBaseCurrency,
     numberFormatService,
-    getCurrencyFormatPreferences 
+    getCurrencyFormatPreferences,
+    exchangeRateService
   } = useAccounting();
   const { t } = useLanguage();
 
@@ -52,10 +53,10 @@ const AnalyticsMain = ({ onNavigate }) => {
   // Initialize analytics service
   useEffect(() => {
     if (database && fileStorage) {
-      const service = createAnalyticsDataService(database, fileStorage);
+      const service = createAnalyticsDataService(database, fileStorage, exchangeRateService);
       setAnalyticsService(service);
     }
-  }, [database, fileStorage]);
+  }, [database, fileStorage, exchangeRateService]);
 
   // Load active budget on component mount
   useEffect(() => {
@@ -150,25 +151,47 @@ const AnalyticsMain = ({ onNavigate }) => {
   };
 
   /**
-   * Format currency using site-wide formatting service
+   * Format currency with proper conversion using site-wide formatting service
+   * Converts amounts to base currency and formats them
    */
-  const formatCurrency = (amount, currencyId = null) => {
+  const formatCurrency = (amount, sourceCurrencyId = null) => {
     try {
-      if (!currencyId) {
-        const baseCurrency = getAnalyticsBaseCurrency();
-        currencyId = baseCurrency ? baseCurrency.id : 'CUR_001';
+      const baseCurrency = getAnalyticsBaseCurrency();
+      const baseCurrencyId = baseCurrency ? baseCurrency.id : 'CUR_001';
+      
+      let convertedAmount = amount;
+      
+      // Convert to base currency if needed and exchangeRateService is available
+      if (exchangeRateService && sourceCurrencyId && sourceCurrencyId !== baseCurrencyId) {
+        convertedAmount = exchangeRateService.convertToBaseCurrency(amount, sourceCurrencyId);
+        
+        // Debug logging for currency conversion
+        if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+          const rate = exchangeRateService.getExchangeRate(sourceCurrencyId, baseCurrencyId);
+          console.log(`Analytics Currency Conversion:`);
+          console.log(`Amount: ${amount} (${currencies.find(c => c.id === sourceCurrencyId)?.code})`);
+          console.log(`Exchange Rate: ${rate}`);
+          console.log(`Converted: ${convertedAmount} (${baseCurrency?.code})`);
+        }
       }
 
+      // Use exchangeRateService's formatting if available
+      if (exchangeRateService) {
+        return exchangeRateService.formatAmount(convertedAmount, baseCurrencyId);
+      }
+
+      // Fallback to numberFormatService
       if (numberFormatService) {
-        return numberFormatService.formatCurrency(amount, currencyId);
+        return numberFormatService.formatCurrency(convertedAmount, baseCurrencyId);
       }
       
-      const currency = currencies.find(c => c.id === currencyId) || getAnalyticsBaseCurrency();
-      return `${currency?.symbol || '$'}${parseFloat(amount || 0).toFixed(2)}`;
+      // Final fallback
+      const currency = baseCurrency || { symbol: '$' };
+      return `${currency.symbol}${parseFloat(convertedAmount || 0).toFixed(2)}`;
     } catch (error) {
-      console.error('Error formatting currency:', error);
-      const currency = getAnalyticsBaseCurrency();
-      return `${currency?.symbol || '$'}${parseFloat(amount || 0).toFixed(2)}`;
+      console.error('Error formatting currency in Analytics:', error);
+      const baseCurrency = getAnalyticsBaseCurrency();
+      return `${baseCurrency?.symbol || '$'}${parseFloat(amount || 0).toFixed(2)}`;
     }
   };
 

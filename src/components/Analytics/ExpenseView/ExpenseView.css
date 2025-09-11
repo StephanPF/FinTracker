@@ -721,6 +721,12 @@
   gap: 12px;
 }
 
+.transaction-group-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px;
+}
+
 .trend-row {
   display: grid;
   grid-template-columns: 1fr 0.7fr;
@@ -940,10 +946,12 @@
 .overview-card {
   background: white;
   border-radius: 8px;
-  padding: 12px;
+  padding: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
   transition: box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .overview-card:hover {
@@ -954,7 +962,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 2px;
 }
 
 .card-title-section {
@@ -985,13 +993,13 @@
 .card-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 1px;
 }
 
 .card-value-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0px;
 }
 
 .card-value {
@@ -1199,6 +1207,32 @@
 
 /* Category Legend */
 .category-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Budget Status Legend - Match scrolling behavior */
+.legend-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Transaction Group Legends - Match scrolling behavior */
+.transaction-group-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.transaction-group-budget-legend {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2957,10 +2991,21 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
+  
+  .transaction-group-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 @media (min-width: 769px) {
   .charts-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+    display: grid !important;
+  }
+  
+  .transaction-group-row {
     grid-template-columns: 1fr 1fr !important;
     gap: 12px;
     display: grid !important;

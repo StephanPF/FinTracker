@@ -8,9 +8,10 @@
  * Follows BUILD_NEW_FEATURE_GUIDE.md patterns
  */
 export class AnalyticsDataService {
-  constructor(database, fileStorage) {
+  constructor(database, fileStorage, exchangeRateService = null) {
     this.database = database;
     this.fileStorage = fileStorage;
+    this.exchangeRateService = exchangeRateService;
   }
 
   /**
@@ -224,7 +225,32 @@ export class AnalyticsDataService {
           return acc;
         }
         
-        acc[subcategoryId] = (acc[subcategoryId] || 0) + Math.abs(transaction.amount);
+        // Convert transaction amount to base currency if exchangeRateService is available
+        let convertedAmount = Math.abs(transaction.amount);
+        
+        if (this.exchangeRateService && transaction.accountId) {
+          // Get account currency from the transaction's account
+          const accounts = this.database.getTable('accounts') || [];
+          const account = accounts.find(a => a.id === transaction.accountId);
+          
+          if (account && account.currencyId) {
+            convertedAmount = this.exchangeRateService.convertToBaseCurrency(
+              Math.abs(transaction.amount), 
+              account.currencyId
+            );
+            
+            // Debug logging for currency conversion
+            if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+              const rate = this.exchangeRateService.getExchangeRate(account.currencyId);
+              console.log(`Analytics Transaction Conversion:`);
+              console.log(`Transaction: ${transaction.description} - ${Math.abs(transaction.amount)} (${account.currencyId})`);
+              console.log(`Exchange Rate: ${rate}`);
+              console.log(`Converted: ${convertedAmount}`);
+            }
+          }
+        }
+        
+        acc[subcategoryId] = (acc[subcategoryId] || 0) + convertedAmount;
         return acc;
       }, {});
 
@@ -278,9 +304,19 @@ export class AnalyticsDataService {
   getIncomeExpenseTotals(startDate, endDate, viewType = 'cash') {
     try {
       const transactions = this.getTransactionsForPeriod(startDate, endDate, viewType);
+      const accounts = this.database.getTable('accounts') || [];
       
       const totals = transactions.reduce((acc, transaction) => {
-        const amount = Math.abs(transaction.amount);
+        let amount = Math.abs(transaction.amount);
+        
+        // Convert to base currency if exchangeRateService is available
+        if (this.exchangeRateService && transaction.accountId) {
+          const account = accounts.find(a => a.id === transaction.accountId);
+          if (account && account.currencyId) {
+            amount = this.exchangeRateService.convertToBaseCurrency(amount, account.currencyId);
+          }
+        }
+        
         const transactionType = transaction.categoryId || transaction.transactionTypeId;
         
         if (transactionType === 'CAT_001') {
@@ -311,19 +347,40 @@ export class AnalyticsDataService {
     try {
       const transactions = this.getTransactionsForPeriod(startDate, endDate, 'cash');
       const expenseTransactions = transactions.filter(t => (t.categoryId || t.transactionTypeId) === 'CAT_002');
+      const accounts = this.database.getTable('accounts') || [];
       
       if (expenseTransactions.length === 0) {
         return null;
       }
 
-      const largestExpense = expenseTransactions.reduce((largest, current) => {
-        return Math.abs(current.amount) > Math.abs(largest.amount) ? current : largest;
+      // Convert all transactions to base currency for comparison
+      const convertedTransactions = expenseTransactions.map(transaction => {
+        let convertedAmount = Math.abs(transaction.amount);
+        
+        if (this.exchangeRateService && transaction.accountId) {
+          const account = accounts.find(a => a.id === transaction.accountId);
+          if (account && account.currencyId) {
+            convertedAmount = this.exchangeRateService.convertToBaseCurrency(
+              Math.abs(transaction.amount), 
+              account.currencyId
+            );
+          }
+        }
+        
+        return {
+          ...transaction,
+          convertedAmount
+        };
+      });
+
+      const largestExpense = convertedTransactions.reduce((largest, current) => {
+        return current.convertedAmount > largest.convertedAmount ? current : largest;
       });
 
       return {
         ...largestExpense,
         subcategoryName: this.getSubcategoryName(largestExpense.subcategoryId),
-        amount: Math.abs(largestExpense.amount)
+        amount: largestExpense.convertedAmount
       };
     } catch (error) {
       console.error('Error getting largest expense:', error);
@@ -336,8 +393,9 @@ export class AnalyticsDataService {
  * Factory function to create analytics data service
  * @param {Object} database - RelationalDatabase instance
  * @param {Object} fileStorage - RelationalFileStorage instance
+ * @param {Object} exchangeRateService - ExchangeRateService instance for currency conversion
  * @returns {AnalyticsDataService} Analytics data service instance
  */
-export const createAnalyticsDataService = (database, fileStorage) => {
-  return new AnalyticsDataService(database, fileStorage);
+export const createAnalyticsDataService = (database, fileStorage, exchangeRateService = null) => {
+  return new AnalyticsDataService(database, fileStorage, exchangeRateService);
 };

@@ -1996,9 +1996,26 @@ class RelationalDatabase {
 
     // Check if subcategory is used in transactions
     const usedInTransactions = this.tables.transactions.some(transaction => transaction.subcategoryId === id);
-
     if (usedInTransactions) {
       throw new Error('Cannot delete subcategory: it is used in transactions');
+    }
+
+    // Check if subcategory is used in budget line items
+    const usedInBudgetLineItems = this.tables.budget_line_items.some(item => item.subcategoryId === id);
+    if (usedInBudgetLineItems) {
+      throw new Error('Cannot delete subcategory: it is used in budget line items');
+    }
+
+    // Check if subcategory is used in cash allocations
+    const usedInCashAllocations = this.tables.cash_allocations.some(allocation => allocation.subcategoryId === id);
+    if (usedInCashAllocations) {
+      throw new Error('Cannot delete subcategory: it is used in cash allocations');
+    }
+
+    // Check if subcategory is used in transaction templates
+    const usedInTransactionTemplates = this.tables.transaction_templates.some(template => template.subcategoryId === id);
+    if (usedInTransactionTemplates) {
+      throw new Error('Cannot delete subcategory: it is used in transaction templates');
     }
 
     const deletedSubcategory = this.tables.subcategories[subcategoryIndex];
