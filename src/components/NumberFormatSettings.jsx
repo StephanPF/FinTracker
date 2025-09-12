@@ -305,11 +305,11 @@ const NumberFormatSettings = () => {
             <h4>Negative Amounts</h4>
             <div className="preview-item">
               <span className="currency-label">USD:</span>
-              <span className="preview-value" dangerouslySetInnerHTML={{ __html: preview.negative?.USD || 'Loading...' }}></span>
+              <span className="preview-value">{preview.negative?.USD || 'Loading...'}</span>
             </div>
             <div className="preview-item">
               <span className="currency-label">EUR:</span>
-              <span className="preview-value" dangerouslySetInnerHTML={{ __html: preview.negative?.EUR || 'Loading...' }}></span>
+              <span className="preview-value">{preview.negative?.EUR || 'Loading...'}</span>
             </div>
           </div>
 

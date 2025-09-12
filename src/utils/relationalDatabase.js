@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import TransactionManager from './transactionManager.js';
 
 class RelationalDatabase {
   constructor() {
@@ -43,7 +44,7 @@ class RelationalDatabase {
       payees: ['id', 'name', 'description', 'isActive', 'createdAt'],
       payers: ['id', 'name', 'description', 'isActive', 'createdAt'],
       api_usage: ['id', 'provider', 'endpoint', 'requestCount', 'date', 'createdAt'],
-      api_settings: ['id', 'provider', 'apiKey', 'baseUrl', 'isActive', 'createdAt', 'updatedAt'],
+      api_settings: ['id', 'provider', 'credentialId', 'baseUrl', 'isActive', 'createdAt', 'updatedAt'],
       bank_configurations: ['id', 'name', 'type', 'fieldMapping', 'settings', 'isActive', 'createdAt', 'updatedAt'],
       processing_rules: ['id', 'bankConfigId', 'name', 'type', 'active', 'ruleOrder', 'conditions', 'conditionLogic', 'actions', 'createdAt', 'updatedAt'],
       cash_allocations: ['id', 'parentTransactionId', 'categoryId', 'transactionGroupId', 'subcategoryId', 'amount', 'description', 'dateSpent', 'isAutomatic', 'createdAt', 'updatedAt'],
@@ -95,6 +96,15 @@ class RelationalDatabase {
         subcategoryId: { table: 'subcategories', field: 'id' }
       }
     };
+    
+    // Initialize transaction manager for atomic operations and data protection
+    this.transactionManager = new TransactionManager(this);
+    
+    // Track table versions for change detection
+    this.tableVersions = {};
+    Object.keys(this.tables).forEach(tableName => {
+      this.tableVersions[tableName] = 0;
+    });
   }
 
   async loadFromFiles(files) {
@@ -1333,75 +1343,73 @@ class RelationalDatabase {
     return this.tables.vendors.filter(vendor => vendor.isActive);
   }
 
-  deleteAccount(id) {
-    const accountIndex = this.tables.accounts.findIndex(account => account.id === id);
-    if (accountIndex === -1) {
-      throw new Error(`Account with id ${id} not found`);
-    }
+  async deleteAccount(id) {
+    return this.executeWithSnapshot('Delete Account', async () => {
+      const accountIndex = this.tables.accounts.findIndex(account => account.id === id);
+      if (accountIndex === -1) {
+        throw new Error(`Account with id ${id} not found`);
+      }
 
-    // Check if account is used in transactions
-    const usedInTransactions = this.tables.transactions.some(
-      transaction => transaction.accountId === id || transaction.destinationAccountId === id
-    );
+      // Check if account is used in transactions
+      const usedInTransactions = this.tables.transactions.some(
+        transaction => transaction.accountId === id || transaction.destinationAccountId === id
+      );
 
-    if (usedInTransactions) {
-      throw new Error('Cannot delete account: it is used in transactions');
-    }
+      if (usedInTransactions) {
+        throw new Error('Cannot delete account: it is used in transactions');
+      }
 
-    const deletedAccount = this.tables.accounts[accountIndex];
-    this.tables.accounts.splice(accountIndex, 1);
-    this.saveTableToWorkbook('accounts');
-
-    return deletedAccount;
+      const deletedAccount = this.tables.accounts[accountIndex];
+      this.tables.accounts.splice(accountIndex, 1);
+      
+      return deletedAccount;
+    }, `Deleting account ${id}`);
   }
 
 
-  deleteTransaction(id) {
-    const transactionIndex = this.tables.transactions.findIndex(transaction => transaction.id === id);
-    if (transactionIndex === -1) {
-      throw new Error(`Transaction with id ${id} not found`);
-    }
-
-    const deletedTransaction = { ...this.tables.transactions[transactionIndex] };
-    
-    // Check if this is a linked transaction (part of a transfer)
-    if (deletedTransaction.linkedTransactionId) {
-      const linkedTransactionIndex = this.tables.transactions.findIndex(
-        transaction => transaction.id === deletedTransaction.linkedTransactionId
-      );
-      
-      if (linkedTransactionIndex >= 0) {
-        const linkedTransaction = { ...this.tables.transactions[linkedTransactionIndex] };
-        
-        // Reverse the account balance effects for both transactions
-        this.reverseAccountBalances(deletedTransaction);
-        this.reverseAccountBalances(linkedTransaction);
-        
-        // Remove both transactions
-        this.tables.transactions.splice(transactionIndex, 1);
-        // Re-find the linked transaction index after first deletion
-        const updatedLinkedIndex = this.tables.transactions.findIndex(
-          transaction => transaction.id === linkedTransaction.id
-        );
-        if (updatedLinkedIndex >= 0) {
-          this.tables.transactions.splice(updatedLinkedIndex, 1);
-        }
-        
-        this.saveTableToWorkbook('transactions');
-        this.saveTableToWorkbook('accounts');
-        
-        // Return the primary transaction
-        return deletedTransaction;
+  async deleteTransaction(id) {
+    return this.executeWithSnapshot('Delete Transaction', async () => {
+      const transactionIndex = this.tables.transactions.findIndex(transaction => transaction.id === id);
+      if (transactionIndex === -1) {
+        throw new Error(`Transaction with id ${id} not found`);
       }
-    }
-    
-    // Standard transaction deletion
-    this.reverseAccountBalances(deletedTransaction);
-    this.tables.transactions.splice(transactionIndex, 1);
-    this.saveTableToWorkbook('transactions');
-    this.saveTableToWorkbook('accounts');
 
-    return deletedTransaction;
+      const deletedTransaction = { ...this.tables.transactions[transactionIndex] };
+      
+      // Check if this is a linked transaction (part of a transfer)
+      if (deletedTransaction.linkedTransactionId) {
+        const linkedTransactionIndex = this.tables.transactions.findIndex(
+          transaction => transaction.id === deletedTransaction.linkedTransactionId
+        );
+        
+        if (linkedTransactionIndex >= 0) {
+          const linkedTransaction = { ...this.tables.transactions[linkedTransactionIndex] };
+          
+          // Reverse the account balance effects for both transactions
+          this.reverseAccountBalances(deletedTransaction);
+          this.reverseAccountBalances(linkedTransaction);
+          
+          // Remove both transactions
+          this.tables.transactions.splice(transactionIndex, 1);
+          // Re-find the linked transaction index after first deletion
+          const updatedLinkedIndex = this.tables.transactions.findIndex(
+            transaction => transaction.id === linkedTransaction.id
+          );
+          if (updatedLinkedIndex >= 0) {
+            this.tables.transactions.splice(updatedLinkedIndex, 1);
+          }
+          
+          // Return the primary transaction
+          return deletedTransaction;
+        }
+      }
+      
+      // Standard transaction deletion
+      this.reverseAccountBalances(deletedTransaction);
+      this.tables.transactions.splice(transactionIndex, 1);
+
+      return deletedTransaction;
+    }, `Deleting transaction ${id}`);
   }
 
   // Reconciliation methods
@@ -3407,7 +3415,7 @@ class RelationalDatabase {
       {
         id: 'API_001',
         provider: 'exchangerate-api',
-        apiKey: '', // User needs to set this
+        credentialId: '', // Encrypted credential reference - not needed for free APIs
         isActive: false,
         autoUpdate: false,
         frequency: 'manual', // 'manual', 'hourly', 'daily'
@@ -4598,6 +4606,131 @@ class RelationalDatabase {
     return this.getNetWorthSnapshots().sort((a, b) => 
       new Date(a.snapshotDate) - new Date(b.snapshotDate)
     );
+  }
+
+  // Transaction Management Methods
+  
+  /**
+   * Execute operation with snapshot protection
+   * Automatically rolls back on failure
+   */
+  async executeWithSnapshot(operationName, operation, description = '') {
+    return this.transactionManager.executeWithSnapshot(operationName, operation, description);
+  }
+
+  /**
+   * Execute multiple operations atomically
+   * All succeed or all are rolled back
+   */
+  async performAtomicOperation(operationName, operations, description = '') {
+    return this.transactionManager.performAtomicOperation(operationName, operations, description);
+  }
+
+  /**
+   * Execute operation with full protection (snapshot + backup)
+   * Maximum protection for critical operations
+   */
+  async executeWithFullProtection(operationName, operation, description = '') {
+    return this.transactionManager.executeWithFullProtection(operationName, operation, description);
+  }
+
+  /**
+   * Create a manual snapshot for rollback
+   */
+  createSnapshot(operationName, description = '') {
+    return this.transactionManager.createSnapshot(operationName, description);
+  }
+
+  /**
+   * Create a persistent backup
+   */
+  createBackup(operationName, description = '') {
+    return this.transactionManager.createBackup(operationName, description);
+  }
+
+  /**
+   * Rollback to a specific snapshot
+   */
+  rollback(snapshotId) {
+    return this.transactionManager.rollback(snapshotId);
+  }
+
+  /**
+   * Restore from a persistent backup
+   */
+  async restoreFromBackup(backupId) {
+    return this.transactionManager.restoreFromBackup(backupId);
+  }
+
+  /**
+   * Get available snapshots and backups
+   */
+  getRecoveryOptions() {
+    return {
+      snapshots: this.transactionManager.getAvailableSnapshots(),
+      backups: this.transactionManager.getAvailableBackups(),
+      status: this.transactionManager.getStatus()
+    };
+  }
+
+  /**
+   * Clean up old snapshots and backups
+   */
+  cleanupRecoveryData() {
+    return this.transactionManager.cleanup();
+  }
+
+  /**
+   * Enhanced saveAllTables with version tracking
+   */
+  async saveAllTables() {
+    // Update table versions
+    Object.keys(this.tables).forEach(tableName => {
+      this.tableVersions[tableName]++;
+    });
+    
+    // Save all tables
+    const savePromises = Object.keys(this.tables).map(tableName => 
+      this.saveTableToWorkbook(tableName)
+    );
+    
+    return Promise.all(savePromises);
+  }
+
+  /**
+   * Export all tables with version information
+   */
+  exportAllTables() {
+    return JSON.stringify({
+      tables: this.tables,
+      tableVersions: this.tableVersions,
+      exportTimestamp: new Date().toISOString(),
+      version: '1.0'
+    });
+  }
+
+  /**
+   * Import all tables with version information
+   */
+  async importAllTables(data) {
+    try {
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      
+      if (parsed.tables) {
+        this.tables = parsed.tables;
+      }
+      
+      if (parsed.tableVersions) {
+        this.tableVersions = parsed.tableVersions;
+      }
+      
+      // Save imported data
+      await this.saveAllTables();
+      
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to import tables: ${error.message}`);
+    }
   }
 
 }

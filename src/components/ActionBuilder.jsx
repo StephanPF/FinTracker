@@ -241,6 +241,7 @@ const ActionBuilder = ({ actions, availableFields, onUpdateActions }) => {
                         <label>Parameter:</label>
                         <input
                           type="number"
+                          min="0"
                           className="parameter-field"
                           placeholder="Enter value"
                           value={action.parameter || ''}

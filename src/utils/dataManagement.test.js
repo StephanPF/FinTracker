@@ -163,7 +163,7 @@ export const createDataManagementTests = (expectObj) => {
       name: 'should prevent deleting account with transactions',
       description: 'Prevents deletion of accounts that have transactions',
       expectedBehavior: 'Should throw error when deleting account with transactions',
-      testFunction: () => {
+      testFunction: async () => {
         beforeEach();
         
         // Debug: Check what's available
@@ -198,10 +198,17 @@ export const createDataManagementTests = (expectObj) => {
         const accountTransaction = transactions.find(t => t.accountId === account.id);
         expect.toBeDefined(accountTransaction);
         
-        // Should throw error when trying to delete account with transactions
-        expect.toThrow(() => {
-          db.deleteAccount(account.id);
-        });
+        // Should throw error when trying to delete account with transactions (async)
+        let errorThrown = false;
+        try {
+          await db.deleteAccount(account.id);
+        } catch (error) {
+          errorThrown = true;
+        }
+        
+        if (!errorThrown) {
+          throw new Error('Expected deleteAccount to throw an error for account with transactions');
+        }
       }
     },
     
@@ -1550,7 +1557,7 @@ export const createDataManagementTests = (expectObj) => {
       name: 'should prevent deleting account used as destination in transfers',
       description: 'Prevents deletion of accounts used as destination in transfer transactions',
       expectedBehavior: 'Should throw error when deleting account used as transfer destination',
-      testFunction: () => {
+      testFunction: async () => {
         beforeEach();
         
         const accountTypes = db.getAccountTypes();
@@ -1582,15 +1589,29 @@ export const createDataManagementTests = (expectObj) => {
         expect.toBeDefined(transaction);
         expect.toBe(transaction.destinationAccountId, destinationAccount.id);
         
-        // Should throw error when trying to delete destination account
-        expect.toThrow(() => {
-          db.deleteAccount(destinationAccount.id);
-        });
+        // Should throw error when trying to delete destination account (async)
+        let destinationErrorThrown = false;
+        try {
+          await db.deleteAccount(destinationAccount.id);
+        } catch (error) {
+          destinationErrorThrown = true;
+        }
         
-        // Should also throw error when trying to delete source account
-        expect.toThrow(() => {
-          db.deleteAccount(sourceAccount.id);
-        });
+        if (!destinationErrorThrown) {
+          throw new Error('Expected deleteAccount to throw an error for destination account with transactions');
+        }
+        
+        // Should also throw error when trying to delete source account (async)
+        let sourceErrorThrown = false;
+        try {
+          await db.deleteAccount(sourceAccount.id);
+        } catch (error) {
+          sourceErrorThrown = true;
+        }
+        
+        if (!sourceErrorThrown) {
+          throw new Error('Expected deleteAccount to throw an error for source account with transactions');
+        }
       }
     },
     

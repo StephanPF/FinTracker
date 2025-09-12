@@ -52,7 +52,7 @@ const CurrencyManager = () => {
         // Set default values if no settings exist
         setApiFormData({
           provider: 'Currency-API (GitHub)',
-          apiKey: '', // Not needed but kept for compatibility
+          credentialId: '', // Not needed for free APIs - uses secure storage if required
           isActive: true, // Always active since it's free
           autoUpdate: false,
           frequency: 'manual',
@@ -225,7 +225,7 @@ const CurrencyManager = () => {
       // Ensure we have the minimum required fields
       const settingsToSave = {
         provider: 'Currency-API (GitHub)',
-        apiKey: '', // Not needed for ExchangeRate.host
+        credentialId: '', // Not needed for free ExchangeRate.host service
         isActive: true, // Always active since it's free
         autoUpdate: apiFormData.autoUpdate || false,
         frequency: apiFormData.frequency || 'manual',

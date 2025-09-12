@@ -468,6 +468,7 @@ const TransactionEditModal = ({ transaction, accounts, categories = [], currenci
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     value={formData.amount}
                     onChange={(e) => handleChange('amount', e.target.value)}
                     className={errors.amount ? 'error' : ''}
