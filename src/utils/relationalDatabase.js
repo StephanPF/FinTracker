@@ -25,13 +25,14 @@ class RelationalDatabase {
       budgets: [],
       budget_line_items: [],
       transaction_templates: [],
-      networth_snapshots: []
+      networth_snapshots: [],
+      notifications: []
     };
     
     // Define table schemas with headers for empty tables
     this.tableSchemas = {
       accounts: ['id', 'name', 'accountCode', 'type', 'balance', 'initialBalance', 'currencyId', 'description', 'notes', 'order', 'isActive', 'createdAt'],
-      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'cashWithdrawal', 'isPrepaid', 'recognitionMethod', 'serviceStartDate', 'serviceEndDate', 'recognitionStatus', 'recognizedToDate', 'remainingToRecognize', 'createdAt'],
+      transactions: ['id', 'date', 'description', 'accountId', 'destinationAccountId', 'amount', 'currencyId', 'exchangeRate', 'categoryId', 'subcategoryId', 'reference', 'notes', 'payer', 'payee', 'payerId', 'payeeId', 'broker', 'linkedTransactionId', 'transactionType', 'reconciliationReference', 'reconciledAt', 'cashWithdrawal', 'isPrepaid', 'recognitionMethod', 'serviceStartDate', 'serviceEndDate', 'recognitionStatus', 'recognizedToDate', 'remainingToRecognize', 'isTemplated', 'createdAt'],
       transaction_types: ['id', 'name', 'description', 'color', 'icon', 'defaultAccountId', 'destinationAccountId', 'isActive', 'createdAt'],
       currencies: ['id', 'name', 'symbol', 'code', 'exchangeRateToBase', 'isBaseCurrency', 'isActive', 'createdAt'],
       exchange_rates: ['id', 'fromCurrencyId', 'toCurrencyId', 'rate', 'date', 'source', 'createdAt'],
@@ -51,7 +52,8 @@ class RelationalDatabase {
       budgets: ['id', 'name', 'description', 'status', 'createdAt', 'lastModified', 'isDefault'],
       budget_line_items: ['id', 'budgetId', 'subcategoryId', 'subcategoryName', 'period', 'amount', 'baseCurrency'],
       transaction_templates: ['id', 'name', 'description', 'amount', 'accountId', 'destinationAccountId', 'destinationAmount', 'currencyId', 'subcategoryId', 'groupId', 'payee', 'payer', 'reference', 'notes', 'tag', 'categoryId', 'usageCount', 'lastUsed', 'isActive', 'createdAt'],
-      networth_snapshots: ['id', 'snapshotDate', 'baseCurrencyId', 'totalAssets', 'totalLiabilities', 'netAssets', 'totalRetirement', 'description', 'createdAt']
+      networth_snapshots: ['id', 'snapshotDate', 'baseCurrencyId', 'totalAssets', 'totalLiabilities', 'netAssets', 'totalRetirement', 'description', 'createdAt'],
+      notifications: ['id', 'type', 'priority', 'title', 'message', 'data', 'isRead', 'createdAt', 'expiresAt']
     };
     
     this.workbooks = {};
@@ -114,10 +116,11 @@ class RelationalDatabase {
           const arrayBuffer = await file.arrayBuffer();
           const workbook = XLSX.read(arrayBuffer, { type: 'array' });
           this.workbooks[tableName] = workbook;
-          
+
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
           if (worksheet) {
-            this.tables[tableName] = XLSX.utils.sheet_to_json(worksheet);
+            const data = XLSX.utils.sheet_to_json(worksheet);
+            this.tables[tableName] = data;
           }
         }
       }
@@ -162,6 +165,8 @@ class RelationalDatabase {
       budgets: [],
       budget_line_items: [],
       transaction_templates: [],
+      networth_snapshots: [],
+      notifications: [],
       
       database_info: [
         {
@@ -205,7 +210,8 @@ class RelationalDatabase {
       'ER': 'exchange_rates',
       'PAY': 'payees',
       'TT': 'transaction_templates',
-      'NWS': 'networth_snapshots'
+      'NWS': 'networth_snapshots',
+      'NOT': 'notifications'
     };
     
     const tableName = prefixToTable[prefix];
@@ -272,7 +278,7 @@ class RelationalDatabase {
     const requiredTables = [
       'networth_snapshots',
       'payees',
-      'payers', 
+      'payers',
       'transaction_templates',
       'api_settings',
       'api_usage'
@@ -280,7 +286,6 @@ class RelationalDatabase {
 
     for (const tableName of requiredTables) {
       if (!this.tables[tableName] || this.tables[tableName].length === 0) {
-        console.log(`Initializing missing table: ${tableName}`);
         this.tables[tableName] = [];
         
         // Create empty workbook for the table
@@ -339,9 +344,40 @@ class RelationalDatabase {
     
     if (errors.length > 0) {
       console.warn('Database relationship validation errors:', errors);
+
+      // Auto-fix orphaned processing rules
+      this.cleanupOrphanedProcessingRules(errors);
     }
-    
+
     return errors;
+  }
+
+  cleanupOrphanedProcessingRules(errors) {
+    // Find processing rule errors with missing bank configurations
+    const processingRuleErrors = errors.filter(error =>
+      error.table === 'processing_rules' &&
+      error.error.includes('bankConfigId')
+    );
+
+    if (processingRuleErrors.length > 0) {
+      let removedCount = 0;
+
+      processingRuleErrors.forEach(error => {
+        const ruleId = error.record;
+        const ruleIndex = this.tables.processing_rules.findIndex(rule => rule.id === ruleId);
+
+        if (ruleIndex !== -1) {
+          this.tables.processing_rules.splice(ruleIndex, 1);
+          removedCount++;
+        }
+      });
+
+      if (removedCount > 0) {
+        console.warn(`🧹 Cleaned up ${removedCount} orphaned processing rules with missing bank configurations`);
+        // Save the updated processing rules table
+        this.saveTableToWorkbook('processing_rules');
+      }
+    }
   }
 
   // Helper method to determine transaction type based on category
@@ -424,9 +460,11 @@ class RelationalDatabase {
       recognitionStatus: transactionData.recognitionStatus || null,
       recognizedToDate: transactionData.recognizedToDate || 0,
       remainingToRecognize: transactionData.remainingToRecognize || null,
+      isTemplated: transactionData.isTemplated || false,
       createdAt: new Date().toISOString()
     };
-    
+
+
     this.tables.transactions.push(newTransaction);
     
     // Recalculate all balances to ensure accuracy
@@ -491,9 +529,11 @@ class RelationalDatabase {
       recognitionStatus: null,
       recognizedToDate: 0,
       remainingToRecognize: null,
+      isTemplated: transactionData.isTemplated || false,
       createdAt: new Date().toISOString()
     };
-    
+
+
     // Transaction B: Credit to destination account
     const creditTransaction = {
       id: creditTxnId,
@@ -524,9 +564,11 @@ class RelationalDatabase {
       recognitionStatus: null,
       recognizedToDate: 0,
       remainingToRecognize: null,
+      isTemplated: transactionData.isTemplated || false,
       createdAt: new Date().toISOString()
     };
-    
+
+
     // Add both transactions to the table
     this.tables.transactions.push(debitTransaction);
     this.tables.transactions.push(creditTransaction);
@@ -838,7 +880,13 @@ class RelationalDatabase {
 
       let worksheet;
       const tableData = this.tables[tableName];
-      
+
+      // Debug logging for transactions table
+      if (tableName === 'transactions' && tableData.length > 0) {
+        const sampleTransaction = tableData[0];
+        const templatedTransactions = tableData.filter(t => t.isTemplated === true);
+      }
+
       // If table is empty but we have a schema, create headers
       if (tableData.length === 0 && this.tableSchemas[tableName]) {
         // Create a worksheet with just headers
@@ -942,12 +990,10 @@ class RelationalDatabase {
     // Clear workbooks to force regeneration
     this.workbooks = {};
     
-    console.log('All data cleared and reset to defaults (currencies preserved)');
   }
 
   // Complete database reset - recreate as if creating new database for first time
   resetToInitialState(language = 'en') {
-    console.log('Resetting database to initial state...');
     
     // Completely recreate the database with fresh data
     this.createNewDatabase(language);
@@ -955,7 +1001,6 @@ class RelationalDatabase {
     // Save all tables to workbook
     this.saveAllTablesToWorkbook();
     
-    console.log('Database reset to initial state completed');
   }
 
   // Helper methods to get default data
@@ -1028,12 +1073,11 @@ class RelationalDatabase {
       'currency_settings', 'user_preferences', 'api_usage', 'api_settings',
       'database_info', 'payees', 'payers', 'bank_configurations', 'processing_rules',
       'cash_allocations', 'budgets', 'budget_line_items', 'transaction_templates',
-      'networth_snapshots'
+      'networth_snapshots', 'notifications'
     ];
 
     for (const tableName of requiredTables) {
       if (!this.tables[tableName]) {
-        console.log(`Initializing missing table: ${tableName}`);
         this.tables[tableName] = [];
       }
     }
@@ -1061,7 +1105,6 @@ class RelationalDatabase {
       });
       
       if (updatedAny) {
-        console.log('Added notes field to existing accounts');
         this.saveTableToWorkbook('accounts');
       }
     }
@@ -1085,7 +1128,6 @@ class RelationalDatabase {
       return; // No timestamp accounts found, migration already completed
     }
 
-    console.log(`Migrating ${timestampAccounts.length} accounts from timestamp to sequential IDs...`);
 
     // Create mapping from old IDs to new sequential IDs
     const idMapping = {};
@@ -1176,7 +1218,6 @@ class RelationalDatabase {
       this.saveTableToWorkbook('transaction_templates');
     }
 
-    console.log(`Account ID migration completed. Updated ${Object.keys(idMapping).length} accounts and their references.`);
   }
 
   getTable(tableName) {
@@ -2986,7 +3027,6 @@ class RelationalDatabase {
 
   // Stress test method to generate bulk transactions
   generateStressTestTransactions(count = 1000) {
-    console.log(`Starting stress test: generating ${count} transactions...`);
     
     const startTime = performance.now();
     const transactions = [];
@@ -3076,9 +3116,6 @@ class RelationalDatabase {
     const endTime = performance.now();
     const duration = (endTime - startTime).toFixed(2);
     
-    console.log(`Stress test completed: Generated ${count} transactions in ${duration}ms`);
-    console.log(`Total transactions in database: ${this.tables.transactions.length}`);
-    console.log(`Average time per transaction: ${(duration / count).toFixed(3)}ms`);
     
     return {
       generated: count,
@@ -3102,7 +3139,6 @@ class RelationalDatabase {
     this.saveTableToWorkbook('transactions');
     this.saveTableToWorkbook('accounts');
     
-    console.log(`Cleared ${removed} stress test transactions`);
     return removed;
   }
 
@@ -4731,6 +4767,268 @@ class RelationalDatabase {
     } catch (error) {
       throw new Error(`Failed to import tables: ${error.message}`);
     }
+  }
+
+  // Notification Management Methods
+  addNotification(notificationData) {
+    if (!this.tables.notifications) {
+      this.tables.notifications = [];
+    }
+
+    const id = this.generateId('NOT');
+    const notification = {
+      id,
+      type: notificationData.type,
+      priority: notificationData.priority || 'medium',
+      title: notificationData.title,
+      message: notificationData.message,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      expiresAt: notificationData.expiresAt || null,
+      data: JSON.stringify(notificationData.data || {})
+    };
+
+    this.tables.notifications.push(notification);
+
+    this.saveTableToWorkbook('notifications');
+    return notification;
+  }
+
+  updateNotification(id, updates) {
+    const notifications = this.getTable('notifications');
+    const index = notifications.findIndex(n => n.id === id);
+    if (index === -1) {
+      throw new Error(`Notification not found: ${id}`);
+    }
+    
+    const updatedNotification = { ...notifications[index], ...updates };
+    this.tables.notifications[index] = updatedNotification;
+    this.saveTableToWorkbook('notifications');
+    return updatedNotification;
+  }
+
+  deleteNotification(id) {
+    const notifications = this.getTable('notifications');
+    const index = notifications.findIndex(n => n.id === id);
+    if (index === -1) {
+      throw new Error(`Notification not found: ${id}`);
+    }
+    
+    this.tables.notifications.splice(index, 1);
+    this.saveTableToWorkbook('notifications');
+    return true;
+  }
+
+  getNotifications() {
+    const notifications = this.getTable('notifications') || [];
+    // Debug the template opportunity notifications specifically
+    const templateNotifications = notifications.filter(n => n.type === 'template_opportunity');
+
+    return notifications;
+  }
+
+  // Method to fix broken notifications by deleting ones with undefined data
+  fixBrokenNotifications() {
+    const notifications = this.getTable('notifications') || [];
+    const brokenNotifications = notifications.filter(n => n.data === undefined);
+
+    if (brokenNotifications.length > 0) {
+      // Remove broken notifications
+      this.tables.notifications = notifications.filter(n => n.data !== undefined);
+      this.saveTableToWorkbook('notifications');
+      return brokenNotifications.length;
+    }
+
+    return 0;
+  }
+
+  getUnreadNotifications() {
+    return this.getNotifications().filter(n => !n.isRead);
+  }
+
+  markNotificationAsRead(id) {
+    return this.updateNotification(id, { isRead: true });
+  }
+
+  markAllNotificationsAsRead() {
+    const notifications = this.getNotifications();
+    notifications.forEach(notification => {
+      if (!notification.isRead) {
+        notification.isRead = true;
+      }
+    });
+    this.saveTableToWorkbook('notifications');
+    return notifications;
+  }
+
+  cleanupExpiredNotifications() {
+    const now = new Date().toISOString();
+    const notifications = this.getNotifications();
+    const beforeCount = notifications.length;
+    
+    this.tables.notifications = notifications.filter(n => {
+      return !n.expiresAt || n.expiresAt > now;
+    });
+    
+    const removedCount = beforeCount - this.tables.notifications.length;
+    if (removedCount > 0) {
+      this.saveTableToWorkbook('notifications');
+    }
+    
+    return removedCount;
+  }
+
+  // Fix duplicate notification IDs
+  fixDuplicateNotificationIDs() {
+    if (!this.tables.notifications) {
+      return 0;
+    }
+
+    const notifications = this.tables.notifications;
+    let fixedCount = 0;
+
+    // Check for duplicates
+    const idCounts = {};
+    notifications.forEach(notification => {
+      idCounts[notification.id] = (idCounts[notification.id] || 0) + 1;
+    });
+
+    // Find duplicates
+    const duplicateIds = Object.keys(idCounts).filter(id => idCounts[id] > 1);
+    
+    if (duplicateIds.length === 0) {
+      return 0;
+    }
+
+
+    // Fix each duplicate group
+    duplicateIds.forEach(duplicateId => {
+      const duplicateNotifications = notifications.filter(n => n.id === duplicateId);
+      
+      // Keep the first one unchanged, update the rest
+      for (let i = 1; i < duplicateNotifications.length; i++) {
+        const newId = this.generateId('NOT');
+        duplicateNotifications[i].id = newId;
+        fixedCount++;
+        console.log(`   Fixed: ${duplicateId} → ${newId}`);
+      }
+    });
+
+    if (fixedCount > 0) {
+      this.saveTableToWorkbook('notifications');
+      // Also try to save to file storage if available via context
+      if (typeof window !== 'undefined' && window.accountingContext) {
+        try {
+          const buffer = this.exportTableToBuffer('notifications');
+          window.accountingContext.fileStorage.saveTable('notifications', buffer);
+        } catch (error) {
+          console.error('❌ Failed to save fixed notifications to file:', error);
+        }
+      }
+    }
+
+    return fixedCount;
+  }
+
+  // Remove duplicate notifications based on content similarity
+  removeDuplicateNotifications() {
+    if (!this.tables.notifications) {
+      return 0;
+    }
+
+    const notifications = this.tables.notifications;
+    const uniqueNotifications = [];
+    const seen = new Set();
+    let removedCount = 0;
+
+    console.log('🧹 Starting duplicate notification cleanup...');
+
+    // Group by title + message to identify duplicates
+    notifications.forEach(notification => {
+      const key = `${notification.title}|${notification.message}`;
+      
+      if (!seen.has(key)) {
+        // First occurrence - keep it
+        seen.add(key);
+        uniqueNotifications.push(notification);
+      } else {
+        // Duplicate - skip it
+        removedCount++;
+      }
+    });
+
+    if (removedCount > 0) {
+      this.tables.notifications = uniqueNotifications;
+      this.saveTableToWorkbook('notifications');
+    } else {
+    }
+
+    return removedCount;
+  }
+
+  // Mark transaction as templated (either created from template or template created from it)
+  markTransactionAsTemplated(transactionId) {
+    const transactionIndex = this.tables.transactions.findIndex(t => t.id === transactionId);
+    if (transactionIndex === -1) {
+      console.warn(`❌ Transaction ${transactionId} not found for templating`);
+      return false;
+    }
+
+    const oldValue = this.tables.transactions[transactionIndex].isTemplated;
+    this.tables.transactions[transactionIndex].isTemplated = true;
+    console.log(`🔍 DEBUG: Updated transaction ${transactionId} isTemplated:`, oldValue, '→', true);
+
+    this.saveTableToWorkbook('transactions');
+    console.log('🔍 DEBUG: Saved transactions table to workbook after marking as templated');
+    return true;
+  }
+
+  // Mark multiple transactions as templated
+  markTransactionsAsTemplated(transactionIds) {
+    let updatedCount = 0;
+    
+    transactionIds.forEach(transactionId => {
+      const transactionIndex = this.tables.transactions.findIndex(t => t.id === transactionId);
+      if (transactionIndex !== -1) {
+        this.tables.transactions[transactionIndex].isTemplated = true;
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount > 0) {
+      this.saveTableToWorkbook('transactions');
+    }
+    
+    return updatedCount;
+  }
+
+  // Get transactions that were created from templates or have templates created from them
+  getTemplatedTransactions() {
+    return this.tables.transactions.filter(t => t.isTemplated === true);
+  }
+
+  // One-time migration: Add isTemplated field to existing transactions
+  addIsTemplatedToExistingTransactions() {
+    if (!this.tables.transactions) {
+      return 0;
+    }
+
+    let updatedCount = 0;
+
+
+    this.tables.transactions.forEach(transaction => {
+      if (transaction.isTemplated === undefined) {
+        transaction.isTemplated = false;
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount > 0) {
+      this.saveTableToWorkbook('transactions');
+    } else {
+    }
+
+    return updatedCount;
   }
 
 }

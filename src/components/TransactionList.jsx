@@ -9,7 +9,7 @@ import CashAllocationModal from './CashAllocationModal';
 import PrepaidExpenseModal from './PrepaidExpenseModal';
 
 const TransactionList = ({ limit, selectedAccountId }) => {
-  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database, getCashAllocationStatus, updateTransactionPrepaidSettings } = useAccounting();
+  const { transactions, accounts, resetToSetup, getAccountsWithTypes, categories, subcategories, getSubcategoriesWithCategories, customers, vendors, tags, currencies, exchangeRateService, numberFormatService, getActiveCategories, getActiveTransactionGroups, database, getCashAllocationStatus, updateTransactionPrepaidSettings, transactionTemplates, addTransactionTemplate, updateTransactionTemplate, getActiveTransactionTemplates, pendingTransactionSearch, setPendingTransactionSearch, markTransactionAsTemplated } = useAccounting();
   const { t } = useLanguage();
   const { formatDate } = useDate();
   const accountsWithTypes = getAccountsWithTypes();
@@ -25,6 +25,11 @@ const TransactionList = ({ limit, selectedAccountId }) => {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showAllocationModal, setShowAllocationModal] = useState(false);
   const [showPrepaidModal, setShowPrepaidModal] = useState(false);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [saveMode, setSaveMode] = useState('new');
+  const [selectedExistingTemplate, setSelectedExistingTemplate] = useState('');
+  const [templateNameError, setTemplateNameError] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
@@ -63,6 +68,15 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       setFilterAccount(selectedAccountId);
     }
   }, [selectedAccountId]);
+
+  // Check for pending search from notification context
+  useEffect(() => {
+    if (pendingTransactionSearch) {
+      setSearchTerm(pendingTransactionSearch);
+      // Clear the pending search after using it
+      setPendingTransactionSearch(null);
+    }
+  }, [pendingTransactionSearch, setPendingTransactionSearch]);
 
   const getAccountName = (accountId) => {
     const account = accounts.find(acc => acc.id === accountId);
@@ -235,7 +249,13 @@ const TransactionList = ({ limit, selectedAccountId }) => {
           
           return `${primaryAmount} (≈ ${formattedConvertedAmount})`;
         } catch (error) {
-          console.warn('Currency conversion failed for transaction:', transaction.id, error.message);
+          // Suppress console spam - only log unique currency conversion errors
+          if (!window.loggedCurrencyErrors) window.loggedCurrencyErrors = new Set();
+          const errorKey = error.message;
+          if (!window.loggedCurrencyErrors.has(errorKey)) {
+            console.warn('Currency conversion failed for transaction:', transaction.id, error.message);
+            window.loggedCurrencyErrors.add(errorKey);
+          }
           return primaryAmount; // Show only primary currency if conversion fails
         }
       }
@@ -285,7 +305,13 @@ const TransactionList = ({ limit, selectedAccountId }) => {
             </div>
           );
         } catch (error) {
-          console.warn('Currency conversion failed for transaction:', transaction.id, error.message);
+          // Suppress console spam - only log unique currency conversion errors
+          if (!window.loggedCurrencyErrors) window.loggedCurrencyErrors = new Set();
+          const errorKey = error.message;
+          if (!window.loggedCurrencyErrors.has(errorKey)) {
+            console.warn('Currency conversion failed for transaction:', transaction.id, error.message);
+            window.loggedCurrencyErrors.add(errorKey);
+          }
           return (
             <div className="primary-amount" style={{ color: 'inherit' }}>{primaryAmount}</div>
           ); // Show only primary currency if conversion fails
@@ -362,7 +388,13 @@ const TransactionList = ({ limit, selectedAccountId }) => {
               transaction.date
             );
           } catch (error) {
-            console.warn('Currency conversion failed for filtering:', transaction.id, error.message);
+            // Suppress console spam - only log unique currency conversion errors
+            if (!window.loggedCurrencyErrors) window.loggedCurrencyErrors = new Set();
+            const errorKey = error.message;
+            if (!window.loggedCurrencyErrors.has(errorKey)) {
+              console.warn('Currency conversion failed for filtering:', transaction.id, error.message);
+              window.loggedCurrencyErrors.add(errorKey);
+            }
             // Use original amount if conversion fails
           }
         }
@@ -383,7 +415,13 @@ const TransactionList = ({ limit, selectedAccountId }) => {
               transaction.date
             );
           } catch (error) {
-            console.warn('Currency conversion failed for filtering:', transaction.id, error.message);
+            // Suppress console spam - only log unique currency conversion errors
+            if (!window.loggedCurrencyErrors) window.loggedCurrencyErrors = new Set();
+            const errorKey = error.message;
+            if (!window.loggedCurrencyErrors.has(errorKey)) {
+              console.warn('Currency conversion failed for filtering:', transaction.id, error.message);
+              window.loggedCurrencyErrors.add(errorKey);
+            }
             // Use original amount if conversion fails
           }
         }
@@ -428,7 +466,7 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     
     // Calculate dropdown dimensions
     const dropdownHeight = 60; // Approximate height for the dropdown
-    const dropdownWidth = 120;
+    const dropdownWidth = 220;
     
     // Check if dropdown would go off-screen if placed below
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -443,18 +481,8 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       top = rect.bottom + 4;
     }
     
-    // Position to the right of the button, but check for screen edges
-    left = rect.left - dropdownWidth + rect.width;
-    
-    // Ensure it doesn't go off the left edge of screen
-    if (left < 10) {
-      left = rect.right - dropdownWidth;
-    }
-    
-    // Ensure it doesn't go off the right edge of screen  
-    if (left + dropdownWidth > window.innerWidth - 10) {
-      left = window.innerWidth - dropdownWidth - 10;
-    }
+    // Always position from the right edge of screen with margin
+    left = window.innerWidth - dropdownWidth - 20;
     
     setDropdownPosition({ top, left });
     setActiveDropdown(transactionId);
@@ -486,6 +514,110 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     } catch (error) {
       console.error('Error saving prepaid settings:', error);
       alert('Error saving prepaid settings: ' + error.message);
+    }
+  };
+
+  // Template handlers
+  const resetTemplateModalState = () => {
+    setShowSaveTemplateModal(false);
+    setTemplateName('');
+    setSaveMode('new');
+    setSelectedExistingTemplate('');
+    setTemplateNameError('');
+  };
+
+  const handleSaveAsTemplate = (transaction) => {
+    setSelectedTransaction(transaction);
+    setTemplateName(transaction.description);
+    setShowSaveTemplateModal(true);
+    setActiveDropdown(null);
+  };
+
+  const confirmSaveTemplate = async () => {
+    // Clear any previous errors
+    setTemplateNameError('');
+    
+    let templateNameToUse = '';
+    
+    try {
+      if (saveMode === 'new') {
+        // New template mode - validate name is provided and doesn't exist
+        if (!templateName.trim()) {
+          setTemplateNameError('Template name is required');
+          return;
+        }
+        
+        templateNameToUse = templateName.trim();
+        
+        // Check if template name already exists
+        const existingTemplate = getActiveTransactionTemplates().find(
+          template => template.name.toLowerCase() === templateNameToUse.toLowerCase()
+        );
+        
+        if (existingTemplate) {
+          setTemplateNameError('Template name already exists');
+          return;
+        }
+      } else {
+        // Replace existing template mode - validate selection
+        if (!selectedExistingTemplate) {
+          setTemplateNameError('Please select a template to replace');
+          return;
+        }
+        
+        const templateToReplace = getActiveTransactionTemplates().find(
+          template => template.id === selectedExistingTemplate
+        );
+        
+        if (!templateToReplace) {
+          setTemplateNameError('Selected template not found');
+          return;
+        }
+        
+        templateNameToUse = templateToReplace.name;
+      }
+      
+      // Create template data from selected transaction
+      const templateData = {
+        name: templateNameToUse,
+        description: selectedTransaction.description,
+        amount: selectedTransaction.amount,
+        currencyId: selectedTransaction.currencyId,
+        subcategoryId: selectedTransaction.subcategoryId,
+        payee: selectedTransaction.payee,
+        payer: selectedTransaction.payer,
+        broker: selectedTransaction.broker,
+        reference: selectedTransaction.reference,
+        notes: selectedTransaction.notes,
+        productId: selectedTransaction.productId,
+        categoryId: selectedTransaction.categoryId
+      };
+
+      if (saveMode === 'new') {
+        await addTransactionTemplate(templateData);
+
+        // Mark the source transaction as templated
+        if (selectedTransaction?.id) {
+          const result = await markTransactionAsTemplated(selectedTransaction.id);
+        } else {
+          console.warn('⚠️ No selectedTransaction.id found for marking as templated');
+        }
+      } else {
+        await updateTransactionTemplate(selectedExistingTemplate, templateData);
+
+        // Also mark as templated when updating an existing template
+        if (selectedTransaction?.id) {
+          const result = await markTransactionAsTemplated(selectedTransaction.id);
+        } else {
+          console.warn('⚠️ No selectedTransaction.id found for marking as templated (update mode)');
+        }
+      }
+      
+      resetTemplateModalState();
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('Error saving template:', error);
+      setTemplateNameError('Error saving template');
     }
   };
 
@@ -884,7 +1016,8 @@ const TransactionList = ({ limit, selectedAccountId }) => {
             position: 'fixed',
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
-            width: '120px',
+            width: '220px !important',
+            minWidth: '220px',
             zIndex: 9999
           }}
         >
@@ -933,7 +1066,18 @@ const TransactionList = ({ limit, selectedAccountId }) => {
                 {transaction?.isPrepaid ? '🕐 Edit Prepaid' : '🕐 Mark as Prepaid'}
               </button>
             );
-          })()}
+          })()} 
+          <button 
+            className="dropdown-item"
+            onClick={() => {
+              const transaction = transactions.find(t => t.id === activeDropdown);
+              if (transaction) {
+                handleSaveAsTemplate(transaction);
+              }
+            }}
+          >
+            📝 Save As Template
+          </button>
         </div>,
         document.body
       )}
@@ -958,6 +1102,188 @@ const TransactionList = ({ limit, selectedAccountId }) => {
         }}
         onSave={handlePrepaidSave}
       />
+
+      {/* Save As Template Modal */}
+      {showSaveTemplateModal && selectedTransaction && createPortal(
+        <div className="modal-overlay" onClick={() => resetTemplateModalState()} style={{ 
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px'
+        }}>
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '400px',
+              maxWidth: 'calc(100vw - 80px)',
+              backgroundColor: 'white',
+              padding: '24px',
+              borderRadius: '8px',
+              color: '#1a202c',
+              boxSizing: 'border-box'
+            }}
+          >
+            <h3 style={{ margin: '0 0 20px 0' }}>Save as Template</h3>
+            
+            {/* Save Mode Selection */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  marginBottom: '8px'
+                }}>
+                  <input
+                    type="radio"
+                    name="saveMode"
+                    value="new"
+                    checked={saveMode === 'new'}
+                    onChange={(e) => {
+                      setSaveMode(e.target.value);
+                      setTemplateNameError('');
+                    }}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Save as new template
+                </label>
+              </div>
+              
+              <div>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="radio"
+                    name="saveMode"
+                    value="replace"
+                    checked={saveMode === 'replace'}
+                    onChange={(e) => {
+                      setSaveMode(e.target.value);
+                      setTemplateNameError('');
+                    }}
+                    style={{ marginRight: '8px' }}
+                  />
+                  Replace existing template
+                </label>
+              </div>
+            </div>
+            
+            {/* Input Field - Changes based on save mode */}
+            {saveMode === 'new' ? (
+              <div style={{ marginBottom: '16px' }}>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => {
+                    setTemplateName(e.target.value);
+                    setTemplateNameError('');
+                  }}
+                  placeholder="Enter template name..."
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: templateNameError ? '1px solid #dc2626' : '1px solid #d1d5db',
+                    backgroundColor: 'white',
+                    color: '#1a202c'
+                  }}
+                  autoFocus
+                />
+                {templateNameError && (
+                  <div style={{
+                    color: '#dc2626',
+                    fontSize: '12px',
+                    marginTop: '4px'
+                  }}>
+                    {templateNameError}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginBottom: '16px' }}>
+                <select
+                  value={selectedExistingTemplate}
+                  onChange={(e) => {
+                    setSelectedExistingTemplate(e.target.value);
+                    setTemplateNameError('');
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: templateNameError ? '1px solid #dc2626' : '1px solid #d1d5db',
+                    backgroundColor: 'white',
+                    color: '#1a202c'
+                  }}
+                >
+                  <option value="">Select template to replace...</option>
+                  {getActiveTransactionTemplates().map(template => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+                {templateNameError && (
+                  <div style={{
+                    color: '#dc2626',
+                    fontSize: '12px',
+                    marginTop: '4px'
+                  }}>
+                    {templateNameError}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={resetTemplateModalState}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSaveTemplate}
+                disabled={(
+                  saveMode === 'new' && !templateName.trim()
+                ) || (
+                  saveMode === 'replace' && !selectedExistingTemplate
+                )}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#059669',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: ((
+                    saveMode === 'new' && templateName.trim()
+                  ) || (
+                    saveMode === 'replace' && selectedExistingTemplate
+                  )) ? 'pointer' : 'not-allowed',
+                  opacity: ((
+                    saveMode === 'new' && templateName.trim()
+                  ) || (
+                    saveMode === 'replace' && selectedExistingTemplate
+                  )) ? 1 : 0.5
+                }}
+              >
+                {saveMode === 'new' ? 'Save Template' : 'Replace Template'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAccounting } from '../contexts/AccountingContext';
+import createTestNotifications from '../utils/testNotifications';
 
 const Test = () => {
   const { t } = useLanguage();
@@ -8,7 +9,9 @@ const Test = () => {
     generateStressTestTransactions, 
     clearStressTestTransactions, 
     transactions, 
-    loading 
+    loading,
+    database,
+    notificationService
   } = useAccounting();
   const [selectedLogo, setSelectedLogo] = useState(null);
   const [showInContext, setShowInContext] = useState(false);
@@ -25,6 +28,36 @@ const Test = () => {
     } catch (error) {
       console.error('Stress test failed:', error);
       alert(`❌ Stress Test Failed: ${error.message}`);
+    }
+  };
+
+  const handleCreateTestNotifications = () => {
+    try {
+      if (!database) {
+        alert('❌ Database not available');
+        return;
+      }
+      
+      createTestNotifications(database);
+      alert('✅ Test notifications created! Check the notification badge in the header.');
+    } catch (error) {
+      console.error('Failed to create test notifications:', error);
+      alert(`❌ Failed to create test notifications: ${error.message}`);
+    }
+  };
+
+  const handleTriggerNotificationCheck = () => {
+    try {
+      if (!notificationService) {
+        alert('❌ Notification service not available');
+        return;
+      }
+      
+      notificationService.checkAllTriggers();
+      alert('✅ Notification triggers checked! New notifications may have been created based on current data.');
+    } catch (error) {
+      console.error('Failed to trigger notification check:', error);
+      alert(`❌ Failed to trigger notification check: ${error.message}`);
     }
   };
 
@@ -299,6 +332,47 @@ const Test = () => {
               you may notice slower rendering. This helps identify optimization opportunities.
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="notification-test-section">
+        <div className="page-header">
+          <h2>🔔 Notification System Test</h2>
+          <p>Test the notification center with sample notifications</p>
+        </div>
+        
+        <div className="notification-test-controls">
+          <div className="button-group">
+            <button 
+              className="stress-btn generate-btn"
+              onClick={handleCreateTestNotifications}
+              disabled={!database}
+            >
+              📢 Create Test Notifications
+            </button>
+            
+            <button 
+              className="stress-btn generate-btn"
+              onClick={handleTriggerNotificationCheck}
+              disabled={!notificationService}
+            >
+              🔍 Trigger Notification Check
+            </button>
+          </div>
+          
+          <div className="test-info">
+            <h4>🧪 What this creates:</h4>
+            <ul>
+              <li>Budget alerts (exceeded, approaching limits)</li>
+              <li>Account balance warnings</li>
+              <li>Large transaction alerts</li>
+              <li>Reconciliation reminders</li>
+              <li>Data inconsistency notifications</li>
+              <li>Monthly summaries and insights</li>
+              <li>Template suggestions and backup reminders</li>
+            </ul>
+            <p><strong>Check the notification badge (🔔) in the header to see the results!</strong></p>
+          </div>
         </div>
       </div>
 

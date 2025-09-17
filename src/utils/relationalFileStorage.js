@@ -25,7 +25,8 @@ class RelationalFileStorage {
       budgets: 'budgets.xlsx',
       budget_line_items: 'budget_line_items.xlsx',
       transaction_templates: 'transaction_templates.xlsx',
-      networth_snapshots: 'networth_snapshots.xlsx'
+      networth_snapshots: 'networth_snapshots.xlsx',
+      notifications: 'notifications.xlsx'
     };
   }
 

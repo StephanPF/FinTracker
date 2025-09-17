@@ -17,9 +17,11 @@ import BudgetSetup from './BudgetSetup';
 import AnalyticsMain from './Analytics/AnalyticsMain';
 import DatabaseMigrations from './DatabaseMigrations';
 import Logo from './Logo';
+import NotificationBadge from './NotificationBadge';
+import NotificationCenter from './NotificationCenter';
 
 const Dashboard = () => {
-  const { isLoaded, loading, resetToSetup, database, fileStorage } = useAccounting();
+  const { isLoaded, loading, resetToSetup, database, fileStorage, notificationService } = useAccounting();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState(() => {
     // Initialize activeTab from URL hash first, then localStorage as fallback
@@ -40,6 +42,14 @@ const Dashboard = () => {
   const hamburgerRef = useRef(null);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [backupStatus, setBackupStatus] = useState('');
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
+  const [notificationBadgeKey, setNotificationBadgeKey] = useState(0);
+
+  // Function to refresh notification badge count
+  const refreshNotificationBadge = () => {
+    console.log('🔄 Refreshing notification badge count');
+    setNotificationBadgeKey(prev => prev + 1);
+  };
 
   // Helper function to handle tab navigation with scroll-to-top
   const handleTabNavigation = (tabName) => {
@@ -255,6 +265,13 @@ const Dashboard = () => {
           </button>
         </div>
         <div className="nav-actions">
+          {notificationService && (
+            <NotificationBadge
+              key={notificationBadgeKey}
+              notificationService={notificationService}
+              onClick={() => setNotificationCenterOpen(true)}
+            />
+          )}
           <button
             className={`backup-btn ${isCreatingBackup ? 'creating' : ''}`}
             onClick={createQuickBackup}
@@ -395,6 +412,15 @@ const Dashboard = () => {
         isOpen={helpPanelOpen} 
         onClose={() => setHelpPanelOpen(false)} 
       />
+      
+      {notificationService && (
+        <NotificationCenter
+          isOpen={notificationCenterOpen}
+          onClose={() => setNotificationCenterOpen(false)}
+          notificationService={notificationService}
+          onNotificationChange={refreshNotificationBadge}
+        />
+      )}
     </div>
   );
 };

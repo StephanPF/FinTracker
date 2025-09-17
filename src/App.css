@@ -2689,9 +2689,9 @@ input[type="number"] {
 }
 
 .portal-dropdown {
-  width: 120px !important;
-  min-width: 120px !important;
-  max-width: 120px !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
 }
 
 /* Remove number input spinners and left align text */
@@ -8511,8 +8511,8 @@ body {
 
 /* Dropdown menu width adjustment for prepaid option */
 .portal-dropdown {
-  min-width: 140px !important;
-  width: auto !important;
+  min-width: 220px !important;
+  width: 220px !important;
 }
 
 /* Transaction Type Filter Styles */

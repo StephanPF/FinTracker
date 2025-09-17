@@ -11,10 +11,11 @@ import AccommodationSubcategoryMigration from '../utils/migrateAccommodationSubc
 import AddCashWithdrawalSubcategoryMigration from '../utils/addCashWithdrawalSubcategory.js';
 import FixCashWithdrawalSubcategoryMigration from '../utils/fixCashWithdrawalSubcategory.js';
 import AddRefundGroupAndSubcategoryMigration from '../utils/addRefundGroupAndSubcategory.js';
+import CreateNotificationsTableMigration from '../utils/createNotificationsTableMigration.js';
 import './DatabaseMigrations.css';
 
 const DatabaseMigrations = () => {
-  const { database, fileStorage } = useAccounting();
+  const { database, fileStorage, addNotification, deleteNotification } = useAccounting();
   const { t } = useLanguage();
   const [migrations, setMigrations] = useState([]);
   const [runningMigration, setRunningMigration] = useState(null);
@@ -22,6 +23,15 @@ const DatabaseMigrations = () => {
 
   // Available migrations
   const availableMigrations = [
+    {
+      id: 'create_notifications_table',
+      name: 'Create Notifications Table and File',
+      description: 'Ensures notifications.xlsx file is created with proper structure, resolving the issue where notifications table exists in memory but no physical file exists',
+      version: '1.0.0',
+      migrationClass: CreateNotificationsTableMigration,
+      riskLevel: 'low',
+      affectedTables: ['notifications']
+    },
     {
       id: 'consolidate_accommodation_subcategories',
       name: 'Consolidate Accommodation Subcategories',
@@ -88,7 +98,10 @@ const DatabaseMigrations = () => {
     setRunningMigration(migrationConfig.id);
     
     try {
-      const migration = new migrationConfig.migrationClass(database, fileStorage);
+      const migration = new migrationConfig.migrationClass(database, fileStorage, {
+        addNotification: addNotification,
+        deleteNotification: deleteNotification
+      });
       
       // Check if migration can run (if method exists)
       if (typeof migration.canRun === 'function') {

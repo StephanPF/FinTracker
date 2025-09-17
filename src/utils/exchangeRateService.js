@@ -17,27 +17,25 @@ class ExchangeRateService {
     const targetDate = date || new Date().toISOString().split('T')[0];
     const exchangeRates = this.database.getTable('exchange_rates');
     
-    // Find direct rate
+    // Find direct rate - use most recent rate available regardless of date
     const directRate = exchangeRates
       .filter(rate => 
         rate.fromCurrencyId === fromCurrencyId && 
-        rate.toCurrencyId === toCurrencyId &&
-        rate.date <= targetDate
+        rate.toCurrencyId === toCurrencyId
       )
-      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      .sort((a, b) => new Date(b.date) - new Date(a.date))[0]; // Most recent rate
 
     if (directRate) {
       return directRate.rate;
     }
 
-    // Find inverse rate
+    // Find inverse rate - use most recent rate available regardless of date
     const inverseRate = exchangeRates
       .filter(rate => 
         rate.fromCurrencyId === toCurrencyId && 
-        rate.toCurrencyId === fromCurrencyId &&
-        rate.date <= targetDate
+        rate.toCurrencyId === fromCurrencyId
       )
-      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      .sort((a, b) => new Date(b.date) - new Date(a.date))[0]; // Most recent rate
 
     if (inverseRate) {
       return 1 / inverseRate.rate;

@@ -489,6 +489,19 @@ const TransactionForm = ({ onSuccess }) => {
         transactionData.exchangeRate = 1.0;
       }
       
+      // Mark as templated if created from a template
+      if (usedTemplateId) {
+        transactionData.isTemplated = true;
+        console.log('🔍 DEBUG: Setting isTemplated=true for transaction created from template:', usedTemplateId);
+      } else {
+        console.log('🔍 DEBUG: No template used, isTemplated will be false');
+      }
+
+      console.log('🔍 DEBUG: Transaction data before addTransaction:', {
+        description: transactionData.description,
+        isTemplated: transactionData.isTemplated
+      });
+
       await addTransaction(transactionData);
       
       // Increment template usage count if a template was used

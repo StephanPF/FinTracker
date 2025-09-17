@@ -37,27 +37,22 @@ export class LiveExchangeRateService extends ExchangeRateService {
       }
       
       const url = `${this.apiUrl}/${baseCurrency.toLowerCase()}.json`;
-      console.log('🌐 Fetching forex rates from Currency-API (CORS-enabled):', url);
       
       // Simple fetch without custom headers to avoid CORS preflight
       let response = await fetch(url);
       
       // Try fallback URL if primary fails
       if (!response.ok && retryCount === 0) {
-        console.log('⚠️ Primary URL failed, trying fallback...');
         const fallbackApiUrl = `${this.fallbackUrl}/${baseCurrency.toLowerCase()}.json`;
         response = await fetch(fallbackApiUrl);
       }
       
-      console.log('📡 API Response Status:', response.status, response.statusText);
       
       if (!response.ok) {
         throw new Error(`Currency-API request failed: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('📊 API Response Data:', data);
-      console.log('📊 Rates object:', data[baseCurrency.toLowerCase()]);
       
       if (data && data[baseCurrency.toLowerCase()]) {
         const rates = data[baseCurrency.toLowerCase()];
@@ -84,7 +79,6 @@ export class LiveExchangeRateService extends ExchangeRateService {
       
       // Retry logic
       if (retryCount < this.maxRetries) {
-        console.log(`Retrying... (${retryCount + 1}/${this.maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1))); // Exponential backoff
         return this.fetchLiveRates(baseCurrency, retryCount + 1);
       }
@@ -118,7 +112,6 @@ export class LiveExchangeRateService extends ExchangeRateService {
       return;
     }
 
-    console.log(`💾 Storing rates for base currency: ${baseCurrency}`, fromCurrency);
     const currentDate = new Date().toISOString().split('T')[0];
     const timestamp = new Date().toISOString();
     
@@ -132,7 +125,6 @@ export class LiveExchangeRateService extends ExchangeRateService {
       
       const toCurrency = this.getCurrencyByCode(currencyCode.toUpperCase());
       if (toCurrency) {
-        console.log(`💰 Storing rate: ${baseCurrency} -> ${currencyCode.toUpperCase()} = ${rate}`);
         
         // Add new rate (unified API source for all currencies)
         await this.database.addExchangeRate({
@@ -147,21 +139,12 @@ export class LiveExchangeRateService extends ExchangeRateService {
         });
         ratesStored++;
       } else {
-        console.log(`⚠️ Currency ${currencyCode.toUpperCase()} not found in database, skipping...`);
       }
     }
     
-    console.log(`✅ Stored ${ratesStored} exchange rates successfully`);
     
     // Final verification
     const finalRates = this.database.getTable('exchange_rates');
-    console.log(`🔍 Final verification: ${finalRates.length} total rates in database`);
-    console.log('📊 Final rates by source:', 
-      finalRates.reduce((acc, rate) => {
-        acc[rate.source] = (acc[rate.source] || 0) + 1;
-        return acc;
-      }, {})
-    );
     
     return ratesStored;
   }
@@ -170,25 +153,16 @@ export class LiveExchangeRateService extends ExchangeRateService {
     // Remove ALL exchange rates (API, manual, crypto-api - everything) for complete refresh
     const allExistingRates = this.database.getTable('exchange_rates');
     
-    console.log(`🧹 Removing ALL ${allExistingRates.length} existing exchange rates before adding fresh ones`);
-    console.log('📋 Existing rates by source:', 
-      allExistingRates.reduce((acc, rate) => {
-        acc[rate.source] = (acc[rate.source] || 0) + 1;
-        return acc;
-      }, {})
-    );
     
     // Create a copy of the array to avoid iteration issues when deleting
     const ratesToDelete = [...allExistingRates];
     
     for (const rate of ratesToDelete) {
-      console.log(`🗑️ Deleting rate: ${rate.id} (${rate.source})`);
       this.database.deleteExchangeRate(rate.id);
     }
     
     // Verify all rates are deleted
     const remainingRates = this.database.getTable('exchange_rates');
-    console.log(`✅ After deletion: ${remainingRates.length} rates remaining`);
     if (remainingRates.length > 0) {
       console.warn('⚠️ Some rates were not deleted:', remainingRates);
     }
@@ -310,7 +284,6 @@ export class LiveExchangeRateService extends ExchangeRateService {
 
     const interval = intervals[this.apiSettings.frequency];
     if (interval) {
-      console.log(`🕒 Scheduling automatic rate updates every ${this.apiSettings.frequency}`);
       this.intervalId = setInterval(() => {
         this.autoUpdateRates();
       }, interval);
@@ -327,21 +300,17 @@ export class LiveExchangeRateService extends ExchangeRateService {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
-      console.log('🛑 Stopped automatic rate updates');
     }
   }
 
   async autoUpdateRates() {
     if (this.isUpdating) {
-      console.log('⏳ Rate update already in progress, skipping...');
       return;
     }
 
-    console.log('🔄 Starting automatic rate update...');
     const result = await this.fetchLiveRates();
     
     if (result.success) {
-      console.log(`✅ Updated ${result.ratesCount} exchange rates`);
     } else {
       console.error('❌ Automatic update failed:', result.error);
     }

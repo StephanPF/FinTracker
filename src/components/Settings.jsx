@@ -4,6 +4,7 @@ import CurrencyFormatSettings from './CurrencyFormatSettings';
 import DateSettings from './DateSettings';
 import DataSettings from './DataSettings';
 import ImportSettings from './ImportSettings';
+import NotificationSettings from './NotificationSettings';
 
 const Settings = () => {
   const { t } = useLanguage();
@@ -27,6 +28,12 @@ const Settings = () => {
       label: t('data'),
       icon: '📁',
       component: DataSettings
+    },
+    {
+      id: 'notifications',
+      label: t('notifications') || 'Notifications',
+      icon: '🔔',
+      component: NotificationSettings
     },
     {
       id: 'import',

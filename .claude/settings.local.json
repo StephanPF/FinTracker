@@ -171,7 +171,9 @@
       "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)",
       "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)",
       "Read(/C:\\Users\\steph\\OneDrive - Planfocus Consulting\\Projects\\Accounting System Prototype\\accounting-app\\src\\components/**)",
-      "Bash(del test_analytics_toggle.js)"
+      "Bash(del test_analytics_toggle.js)",
+      "Bash(del test_notification_data.js)",
+      "Bash(start http://localhost:5177)"
     ],
     "deny": [],
     "ask": []

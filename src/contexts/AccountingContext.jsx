@@ -6,6 +6,7 @@ import LiveExchangeRateService from '../utils/liveExchangeRateService';
 import CryptoRateService from '../utils/cryptoRateService';
 import NumberFormatService from '../utils/numberFormatService';
 import DateFormatService from '../utils/dateFormatService';
+import NotificationService from '../utils/notificationService';
 import { useLanguage } from './LanguageContext';
 
 const AccountingContext = createContext();
@@ -26,6 +27,7 @@ export const AccountingProvider = ({ children }) => {
   const [cryptoRateService, setCryptoRateService] = useState(null);
   const [numberFormatService, setNumberFormatService] = useState(null);
   const [dateFormatService, setDateFormatService] = useState(null);
+  const [notificationService, setNotificationService] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -46,7 +48,9 @@ export const AccountingProvider = ({ children }) => {
   const [bankConfigurations, setBankConfigurations] = useState([]);
   const [processingRules, setProcessingRules] = useState({});
   const [transactionTemplates, setTransactionTemplates] = useState([]);
+  const [pendingTransactionSearch, setPendingTransactionSearch] = useState(null);
   const [netWorthSnapshots, setNetWorthSnapshots] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +68,6 @@ export const AccountingProvider = ({ children }) => {
           const existingConfigs = database.getBankConfigurations();
           const exists = existingConfigs.find(existing => existing.id === config.id);
           if (!exists) {
-            console.log('Migrating bank configuration to database:', config.name);
             database.addBankConfiguration(config);
           }
         });
@@ -74,7 +77,6 @@ export const AccountingProvider = ({ children }) => {
         
         // Clear localStorage after successful migration
         localStorage.removeItem('bankConfigurations');
-        console.log('Bank configurations migrated from localStorage to database');
       } else if (database) {
         // No localStorage data, just load from database
         setBankConfigurations([...database.getBankConfigurations()]);
@@ -90,7 +92,6 @@ export const AccountingProvider = ({ children }) => {
     setTimeout(() => {
       const savedTab = localStorage.getItem('activeTab');
       if (savedTab && savedTab !== 'overview') {
-        console.log('Restoring saved tab after database load:', savedTab);
         window.location.hash = savedTab;
         // Dispatch hashchange event to trigger navigation
         window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -120,7 +121,6 @@ export const AccountingProvider = ({ children }) => {
       
       // If new tables were created, save them to file storage
       if (tablesAfter > tablesBefore) {
-        console.log('New tables created, saving to file storage...');
         const buffers = database.exportAllTablesToBuffers();
         await fileStorage.saveAllTables(buffers);
       }
@@ -135,6 +135,54 @@ export const AccountingProvider = ({ children }) => {
       database.saveAllTablesToWorkbooks();
     }
     
+    // Fix duplicate notification IDs if any exist
+    if (database.fixDuplicateNotificationIDs) {
+      const fixedCount = database.fixDuplicateNotificationIDs();
+      if (fixedCount > 0) {
+        // Save the fixed notifications to file
+        try {
+          const buffer = database.exportTableToBuffer('notifications');
+          fileStorage.saveTable('notifications', buffer);
+        } catch (error) {
+          console.error('❌ Failed to save fixed notifications to file:', error);
+        }
+      }
+    }
+
+    // Clean up duplicate notifications (one-time cleanup)
+    if (!localStorage.getItem('notification_duplicates_cleaned') && database.removeDuplicateNotifications) {
+      const removedCount = database.removeDuplicateNotifications();
+      if (removedCount > 0) {
+        // Save the cleaned notifications to file
+        try {
+          const buffer = database.exportTableToBuffer('notifications');
+          fileStorage.saveTable('notifications', buffer);
+          localStorage.setItem('notification_duplicates_cleaned', 'true');
+        } catch (error) {
+          console.error('❌ Failed to save cleaned notifications to file:', error);
+        }
+      } else {
+        localStorage.setItem('notification_duplicates_cleaned', 'true');
+      }
+    }
+
+    // Add isTemplated field to existing transactions (one-time migration)
+    if (!localStorage.getItem('transactions_isTemplated_migrated') && database.addIsTemplatedToExistingTransactions) {
+      const updatedCount = database.addIsTemplatedToExistingTransactions();
+      if (updatedCount > 0) {
+        // Save the updated transactions to file
+        try {
+          const buffer = database.exportTableToBuffer('transactions');
+          fileStorage.saveTable('transactions', buffer);
+          localStorage.setItem('transactions_isTemplated_migrated', 'true');
+        } catch (error) {
+          console.error('❌ Failed to save updated transactions to file:', error);
+        }
+      } else {
+        localStorage.setItem('transactions_isTemplated_migrated', 'true');
+      }
+    }
+
     const accountsData = database.getTable('accounts');
     
     // Create new arrays to ensure React detects changes
@@ -146,6 +194,7 @@ export const AccountingProvider = ({ children }) => {
     setPayers([...database.getTable('payers')]);
     setBankConfigurations([...database.getBankConfigurations()]);
     setTransactionTemplates([...database.getTable('transaction_templates')]);
+    setNotifications([...database.getTable('notifications')]);
     
     // Load all processing rules for all bank configurations
     const allBankConfigs = database.getBankConfigurations();
@@ -188,6 +237,91 @@ export const AccountingProvider = ({ children }) => {
     const dateService = new DateFormatService(database);
     setDateFormatService(dateService);
     
+    // Initialize notification service with persistent save function
+    const persistentAddNotification = async (notificationData) => {
+      try {
+        const notification = database?.addNotification(notificationData);
+        if (notification) {
+          const buffer = database.exportTableToBuffer('notifications');
+          await fileStorage.saveTable('notifications', buffer);
+        }
+        return notification;
+      } catch (error) {
+        console.error('❌ Error in persistentAddNotification:', error);
+        return null;
+      }
+    };
+
+    const persistentDeleteNotification = async (notificationId) => {
+      try {
+        const result = database?.deleteNotification(notificationId);
+        if (result) {
+          const buffer = database.exportTableToBuffer('notifications');
+          await fileStorage.saveTable('notifications', buffer);
+        }
+        return result;
+      } catch (error) {
+        console.error('❌ Error in persistentDeleteNotification:', error);
+        return false;
+      }
+    };
+
+    const persistentMarkAsRead = async (notificationId) => {
+      try {
+        const result = database?.markNotificationAsRead(notificationId);
+        if (result) {
+          const buffer = database.exportTableToBuffer('notifications');
+          await fileStorage.saveTable('notifications', buffer);
+        }
+        return result;
+      } catch (error) {
+        console.error('❌ Error in persistentMarkAsRead:', error);
+        return null;
+      }
+    };
+
+    const persistentMarkAllAsRead = async () => {
+      try {
+        const result = database?.markAllNotificationsAsRead();
+        if (result) {
+          const buffer = database.exportTableToBuffer('notifications');
+          await fileStorage.saveTable('notifications', buffer);
+        }
+        return result;
+      } catch (error) {
+        console.error('❌ Error in persistentMarkAllAsRead:', error);
+        return null;
+      }
+    };
+
+    const notifyService = new NotificationService(database, {
+      addNotification: persistentAddNotification,
+      deleteNotification: persistentDeleteNotification,
+      markAsRead: persistentMarkAsRead,
+      markAllAsRead: persistentMarkAllAsRead
+    });
+    setNotificationService(notifyService);
+    
+    // Fix any broken notifications first
+    if (database) {
+      const fixedCount = database.fixBrokenNotifications();
+      if (fixedCount > 0) {
+      }
+    }
+
+    // Run initial notification checks after a short delay to let everything initialize
+    // Only run once per session to prevent duplicate notifications
+    if (!localStorage.getItem('notification_triggers_checked_today')) {
+      setTimeout(() => {
+        if (notifyService) {
+          notifyService.checkAllTriggers();
+          // Set flag with today's date to prevent running again today
+          localStorage.setItem('notification_triggers_checked_today', new Date().toDateString());
+        }
+      }, 2000);
+    } else {
+    }
+    
     // Start automatic updates if configured
     if (currentApiSettings && currentApiSettings.autoUpdate) {
       setTimeout(() => liveService.updateSchedule(), 1000); // Delay to ensure everything is loaded
@@ -213,7 +347,6 @@ export const AccountingProvider = ({ children }) => {
       
       // Automatically refresh exchange rates with current live data instead of using old sample rates
       try {
-        console.log('🚀 Refreshing exchange rates for new database with live data...');
         
         // Create exchange rate service directly (state hasn't updated yet)
         const formatService = new NumberFormatService(database);
@@ -230,7 +363,6 @@ export const AccountingProvider = ({ children }) => {
         // Fetch live rates directly
         const result = await liveService.fetchLiveRates(baseCurrencyCode);
         if (result.success) {
-          console.log(`✅ Successfully populated new database with ${result.ratesCount} current exchange rates`);
           // Refresh state to show updated rates
           setExchangeRates([...database.getTable('exchange_rates')]);
         } else {
@@ -970,7 +1102,6 @@ export const AccountingProvider = ({ children }) => {
         
         // If it's the same database and we already have it loaded, just return success
         if (isSameDatabase) {
-          console.log('Database is already loaded and active - no need to reload');
           // Update the timestamp in recent databases to show it was accessed
           fileStorage.addToRecentDatabases(databaseInfo);
           setLoading(false);
@@ -1409,7 +1540,6 @@ export const AccountingProvider = ({ children }) => {
     try {
       const buffers = { exchange_rates: database.exportTableToBuffer('exchange_rates') };
       await fileStorage.saveAllTables(buffers);
-      console.log('💾 Exchange rates saved to exchange_rates.xlsx');
       return true;
     } catch (error) {
       console.error('❌ Failed to save exchange rates to file:', error);
@@ -1425,12 +1555,10 @@ export const AccountingProvider = ({ children }) => {
       const baseCurrency = currencies.find(c => c.id === baseCurrencyId);
       const baseCurrencyCode = baseCurrency ? baseCurrency.code : 'EUR';
       
-      console.log(`🔄 Refreshing rates with base currency: ${baseCurrencyCode}`);
       const result = await exchangeRateService.fetchLiveRates(baseCurrencyCode);
       if (result.success) {
         // Refresh the exchange rates state after successful update
         setExchangeRates([...database.getTable('exchange_rates')]);
-        console.log('✅ Exchange rates state updated after API call');
         
         // Save to Excel file
         await saveExchangeRatesToFile();
@@ -1590,6 +1718,105 @@ export const AccountingProvider = ({ children }) => {
     return database.getActiveNetWorthSnapshots();
   };
 
+  // Notification Management Methods
+  const addNotification = async (notificationData) => {
+    try {
+      const newNotification = database.addNotification(notificationData);
+      updateStateFromDatabase();
+      
+      const buffer = database.exportTableToBuffer('notifications');
+      await fileStorage.saveTable('notifications', buffer);
+      
+      return newNotification;
+    } catch (error) {
+      console.error('Error adding notification:', error);
+      throw error;
+    }
+  };
+
+  const updateNotification = async (id, updates) => {
+    try {
+      const updatedNotification = database.updateNotification(id, updates);
+      updateStateFromDatabase();
+      
+      const buffer = database.exportTableToBuffer('notifications');
+      await fileStorage.saveTable('notifications', buffer);
+      
+      return updatedNotification;
+    } catch (error) {
+      console.error('Error updating notification:', error);
+      throw error;
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      const result = database.deleteNotification(id);
+      updateStateFromDatabase();
+      
+      const buffer = database.exportTableToBuffer('notifications');
+      await fileStorage.saveTable('notifications', buffer);
+      
+      return result;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+  };
+
+  const markNotificationAsRead = async (id) => {
+    try {
+      const result = database.markNotificationAsRead(id);
+      updateStateFromDatabase();
+      
+      const buffer = database.exportTableToBuffer('notifications');
+      await fileStorage.saveTable('notifications', buffer);
+      
+      return result;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      const result = database.markAllNotificationsAsRead();
+      updateStateFromDatabase();
+      
+      const buffer = database.exportTableToBuffer('notifications');
+      await fileStorage.saveTable('notifications', buffer);
+      
+      return result;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw error;
+    }
+  };
+
+  const getNotifications = () => {
+    return database.getNotifications();
+  };
+
+  const getUnreadNotifications = () => {
+    return database.getUnreadNotifications();
+  };
+
+  const cleanupExpiredNotifications = async () => {
+    try {
+      const result = database.cleanupExpiredNotifications();
+      if (result > 0) {
+        updateStateFromDatabase();
+        const buffer = database.exportTableToBuffer('notifications');
+        await fileStorage.saveTable('notifications', buffer);
+      }
+      return result;
+    } catch (error) {
+      console.error('Error cleaning up notifications:', error);
+      throw error;
+    }
+  };
+
   const value = {
     database,
     accounts,
@@ -1603,6 +1830,7 @@ export const AccountingProvider = ({ children }) => {
     currencySettings,
     userPreferences,
     exchangeRateService,
+    notificationService,
     databaseInfo,
     payees,
     payers,
@@ -1783,7 +2011,52 @@ export const AccountingProvider = ({ children }) => {
     updateNetWorthSnapshot,
     deleteNetWorthSnapshot,
     getNetWorthSnapshots,
-    getActiveNetWorthSnapshots
+    getActiveNetWorthSnapshots,
+    // Notification methods and data
+    notifications,
+    addNotification,
+    updateNotification,
+    deleteNotification,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    getNotifications,
+    getUnreadNotifications,
+    cleanupExpiredNotifications,
+    // Pending transaction search functionality
+    pendingTransactionSearch,
+    setPendingTransactionSearch: (searchTerm) => {
+      setPendingTransactionSearch(searchTerm);
+    },
+    // Transaction templating functionality
+    markTransactionAsTemplated: async (transactionId) => {
+      try {
+        const result = database?.markTransactionAsTemplated(transactionId);
+        if (result) {
+          // Force save to actual file
+          const buffer = database.exportTableToBuffer('transactions');
+          await fileStorage.saveTable('transactions', buffer);
+        }
+        return result;
+      } catch (error) {
+        console.error('❌ Error in markTransactionAsTemplated:', error);
+        return false;
+      }
+    },
+    markTransactionsAsTemplated: async (transactionIds) => {
+      try {
+        const result = database?.markTransactionsAsTemplated(transactionIds);
+        if (result > 0) {
+          // Force save to actual file
+          const buffer = database.exportTableToBuffer('transactions');
+          await fileStorage.saveTable('transactions', buffer);
+        }
+        return result;
+      } catch (error) {
+        console.error('❌ Error in markTransactionsAsTemplated:', error);
+        return 0;
+      }
+    },
+    getTemplatedTransactions: () => database?.getTemplatedTransactions() || []
   };
 
   return (
