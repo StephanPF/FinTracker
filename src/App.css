@@ -637,18 +637,7 @@ body {
   --card-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
 }
 
-.summary-card.liabilities .card-values {
-  color: #fd7e14 !important;
-}
-
-.summary-card.liabilities .card-values .currency-value {
-  color: #fd7e14 !important;
-}
-
-.summary-card.liabilities .card-values .currency-value .amount {
-  color: #fd7e14 !important;
-  font-weight: 600;
-}
+/* Removed old conflicting liabilities color rules - now using dynamic color coding */
 
 .summary-card.net { 
   --card-gradient: linear-gradient(135deg, #4c6ef5 0%, #7c3aed 100%);
@@ -661,18 +650,9 @@ body {
   --card-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
-.summary-card.retirement .card-values {
-  color: #3b82f6 !important;
-}
+/* Removed old conflicting retirement color rules - now using dynamic color coding */
 
-.summary-card.retirement .card-values .currency-value {
-  color: #3b82f6 !important;
-}
-
-.summary-card.retirement .card-values .currency-value .amount {
-  color: #3b82f6 !important;
-  font-weight: 600;
-}
+/* Dynamic color coding for overview card amounts now handled via inline styles */
 
 .card-header {
   display: flex;
@@ -756,6 +736,8 @@ body {
   font-weight: 700;
   color: #1f2937;
 }
+
+/* Removed override rule - conflicts resolved by removing old color rules */
 
 .currency-value .currency-code {
   font-size: 0.75rem;

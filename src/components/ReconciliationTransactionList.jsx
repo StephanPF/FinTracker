@@ -242,6 +242,22 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
     }
   };
 
+  // Calculate total amount of filtered transactions
+  const totalAmount = useMemo(() => {
+    return filteredTransactions.reduce((sum, transaction) => {
+      const amount = transaction.amount || 0;
+      // CREDIT transactions are positive, DEBIT transactions are negative
+      if (transaction.transactionType === 'CREDIT') {
+        return sum + Math.abs(amount);
+      } else if (transaction.transactionType === 'DEBIT') {
+        return sum - Math.abs(amount);
+      } else {
+        // For undefined transaction types, use the raw amount
+        return sum + amount;
+      }
+    }, 0);
+  }, [filteredTransactions]);
+
   return (
     <div className="reconciliation-transaction-list">
       {/* Filters */}
@@ -439,6 +455,20 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
 
       </div>
 
+      {/* Transaction Summary */}
+      {filteredTransactions.length > 0 && (
+        <div className="transaction-summary">
+          <div className="summary-row">
+            <span className="summary-label">
+              Total of {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''}:
+            </span>
+            <span className={`summary-amount ${totalAmount < 0 ? 'negative' : 'positive'}`}>
+              {formatCurrency(totalAmount)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Transaction Table */}
       <div className="transactions-table">
         {filteredTransactions.length === 0 ? (
@@ -492,7 +522,7 @@ const ReconciliationTransactionList = ({ selectedTransactions, onTransactionTogg
                   </td>
                   <td>{getAccountName(transaction.accountId)}</td>
                   <td>{getCategoryName(transaction.categoryId)}</td>
-                  <td className={`amount-cell ${transaction.amount >= 0 ? 'positive' : 'negative'}`}>
+                  <td className={`amount-cell ${transaction.transactionType === 'CREDIT' ? 'positive' : transaction.transactionType === 'DEBIT' ? 'negative' : ''}`}>
                     {formatCurrency(transaction.amount)}
                   </td>
                   <td>{transaction.reference || '—'}</td>

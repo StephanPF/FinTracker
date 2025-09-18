@@ -220,25 +220,25 @@ export class AnalyticsDataService {
       
       const subcategoryTotals = expenseTransactions.reduce((acc, transaction) => {
         const subcategoryId = transaction.subcategoryId;
-        
+
         if (!subcategoryId) {
           return acc;
         }
-        
-        // Convert transaction amount to base currency if exchangeRateService is available
+
+        // Calculate amount considering transaction type (DEBIT increases expenses, CREDIT decreases)
         let convertedAmount = Math.abs(transaction.amount);
-        
+
         if (this.exchangeRateService && transaction.accountId) {
           // Get account currency from the transaction's account
           const accounts = this.database.getTable('accounts') || [];
           const account = accounts.find(a => a.id === transaction.accountId);
-          
+
           if (account && account.currencyId) {
             convertedAmount = this.exchangeRateService.convertToBaseCurrency(
-              Math.abs(transaction.amount), 
+              Math.abs(transaction.amount),
               account.currencyId
             );
-            
+
             // Debug logging for currency conversion
             if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
               const rate = this.exchangeRateService.getExchangeRate(account.currencyId);
@@ -249,8 +249,14 @@ export class AnalyticsDataService {
             }
           }
         }
-        
-        acc[subcategoryId] = (acc[subcategoryId] || 0) + convertedAmount;
+
+        // For expense transactions: DEBIT increases expenses, CREDIT decreases expenses
+        if (transaction.transactionType === 'DEBIT') {
+          acc[subcategoryId] = (acc[subcategoryId] || 0) + convertedAmount;
+        } else if (transaction.transactionType === 'CREDIT') {
+          acc[subcategoryId] = (acc[subcategoryId] || 0) - convertedAmount;
+        }
+
         return acc;
       }, {});
 
@@ -307,8 +313,9 @@ export class AnalyticsDataService {
       const accounts = this.database.getTable('accounts') || [];
       
       const totals = transactions.reduce((acc, transaction) => {
+        // Calculate amount considering transaction type (CREDIT = positive, DEBIT = negative)
         let amount = Math.abs(transaction.amount);
-        
+
         // Convert to base currency if exchangeRateService is available
         if (this.exchangeRateService && transaction.accountId) {
           const account = accounts.find(a => a.id === transaction.accountId);
@@ -316,15 +323,25 @@ export class AnalyticsDataService {
             amount = this.exchangeRateService.convertToBaseCurrency(amount, account.currencyId);
           }
         }
-        
+
         const transactionType = transaction.categoryId || transaction.transactionTypeId;
-        
+
+        // For income transactions (CAT_001): CREDIT increases income, DEBIT decreases income
+        // For expense transactions (CAT_002): DEBIT increases expenses, CREDIT decreases expenses
         if (transactionType === 'CAT_001') {
-          acc.totalIncome += amount;
+          if (transaction.transactionType === 'CREDIT') {
+            acc.totalIncome += amount;
+          } else if (transaction.transactionType === 'DEBIT') {
+            acc.totalIncome -= amount;
+          }
         } else if (transactionType === 'CAT_002') {
-          acc.totalExpenses += amount;
+          if (transaction.transactionType === 'DEBIT') {
+            acc.totalExpenses += amount;
+          } else if (transaction.transactionType === 'CREDIT') {
+            acc.totalExpenses -= amount;
+          }
         }
-        
+
         return acc;
       }, { totalIncome: 0, totalExpenses: 0 });
 
@@ -354,19 +371,22 @@ export class AnalyticsDataService {
       }
 
       // Convert all transactions to base currency for comparison
-      const convertedTransactions = expenseTransactions.map(transaction => {
+      // Only consider DEBIT expense transactions (actual expenses)
+      const debitExpenseTransactions = expenseTransactions.filter(t => t.transactionType === 'DEBIT');
+
+      const convertedTransactions = debitExpenseTransactions.map(transaction => {
         let convertedAmount = Math.abs(transaction.amount);
-        
+
         if (this.exchangeRateService && transaction.accountId) {
           const account = accounts.find(a => a.id === transaction.accountId);
           if (account && account.currencyId) {
             convertedAmount = this.exchangeRateService.convertToBaseCurrency(
-              Math.abs(transaction.amount), 
+              Math.abs(transaction.amount),
               account.currencyId
             );
           }
         }
-        
+
         return {
           ...transaction,
           convertedAmount

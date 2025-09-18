@@ -244,26 +244,79 @@ const AccountSummary = ({ onAccountClick }) => {
       .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)); // Sort by absolute amount, largest first
   };
 
-  // Helper function to display currency values with 0 fallback
-  const displayCurrencyValues = (amounts) => {
+  // Helper function to display currency values with 0 fallback and color coding
+  const displayCurrencyValues = (amounts, cardType = null) => {
+    console.log('🎨 displayCurrencyValues called with cardType:', cardType);
     const breakdown = formatCurrencyBreakdown(amounts);
     if (breakdown.length === 0) {
       // Show 0 in base currency when no amounts
       const baseCurrency = getBaseCurrency();
       const baseCurrencyId = baseCurrency?.id || 'CUR_001';
+      console.log('🎨 Returning zero amount for cardType:', cardType);
+
+      // Apply color even for zero amounts
+      let amountStyle = {};
+      if (cardType === 'assets') {
+        amountStyle = { color: '#10b981', fontWeight: '600' };
+      } else if (cardType === 'liabilities') {
+        amountStyle = { color: '#ef4444', fontWeight: '600' };
+      } else if (cardType === 'net-worth') {
+        amountStyle = { color: '#10b981', fontWeight: '600' }; // Assume positive for zero
+      }
+
       return (
         <div className="currency-value">
-          <span className="amount">{formatCurrencyAmount(0, baseCurrencyId)}</span>
+          <span className="amount" style={amountStyle}>{formatCurrencyAmount(0, baseCurrencyId)}</span>
           <span className="currency-code">{baseCurrency?.code}</span>
         </div>
       );
     }
-    return breakdown.map(({ currencyId, formatted, currency, amount }) => (
-      <div key={currencyId} className={`currency-value ${amount < 0 ? 'negative' : 'positive'}`}>
-        <span className="amount">{formatted}</span>
-        <span className="currency-code">{currency?.code}</span>
-      </div>
-    ));
+    return breakdown.map(({ currencyId, formatted, currency, amount }) => {
+      // Determine color class based on card type and amount
+      let colorClass = '';
+      if (cardType === 'assets') {
+        colorClass = 'assets-color'; // Always green for assets
+      } else if (cardType === 'liabilities') {
+        colorClass = 'liabilities-color'; // Always red for liabilities
+      } else if (cardType === 'net-worth') {
+        colorClass = amount >= 0 ? 'net-worth-positive' : 'net-worth-negative'; // Green if positive, red if negative
+      } else {
+        colorClass = amount < 0 ? 'negative' : 'positive'; // Default behavior
+      }
+
+      // Debug logging to verify color classes are applied
+      if (cardType) {
+        console.log(`🎨 Processing: Card type: ${cardType}, Amount: ${amount}, Color class: ${colorClass}`);
+      }
+
+      // Determine inline style colors with !important equivalent approach
+      let amountStyle = {
+        fontWeight: '600',
+        fontSize: '1.25rem' // Match the existing CSS
+      };
+
+      if (cardType === 'assets') {
+        amountStyle.color = '#10b981'; // Green for assets
+        console.log('🎨 Applied GREEN style for assets');
+      } else if (cardType === 'liabilities') {
+        amountStyle.color = '#ef4444'; // Red for liabilities
+        console.log('🎨 Applied RED style for liabilities');
+      } else if (cardType === 'net-worth') {
+        amountStyle.color = amount >= 0 ? '#10b981' : '#ef4444';
+        console.log(`🎨 Applied ${amount >= 0 ? 'GREEN' : 'RED'} style for net-worth (amount: ${amount})`);
+      } else {
+        // Fallback test color to see if inline styles work at all
+        amountStyle.color = '#ff00ff'; // Bright magenta for testing
+        console.log('🎨 Applied MAGENTA test color for no cardType');
+      }
+
+      return (
+        <div key={currencyId} className={`currency-value ${colorClass}`} style={{ color: amountStyle.color }}>
+          <span className="amount" style={amountStyle}>{formatted}</span>
+          <span className="currency-code">{currency?.code}</span>
+        </div>
+      );
+    });
   };
 
   // Handle clicks outside context menu to close it
@@ -415,7 +468,7 @@ const AccountSummary = ({ onAccountClick }) => {
             <span className="card-icon">📈</span>
           </div>
           <div className="card-values">
-            {displayCurrencyValues(baseCurrencyTotals.assets)}
+            {displayCurrencyValues(baseCurrencyTotals.assets, 'assets')}
           </div>
           <div className="card-subtitle">{getNonRetirementAssetAccounts().length} {t('accountsCount')}</div>
         </div>
@@ -431,7 +484,7 @@ const AccountSummary = ({ onAccountClick }) => {
             <span className="card-icon">📊</span>
           </div>
           <div className="card-values">
-            {displayCurrencyValues(baseCurrencyTotals.liabilities)}
+            {displayCurrencyValues(baseCurrencyTotals.liabilities, 'liabilities')}
           </div>
           <div className="card-subtitle">{getIncludedAccountsByType('Liability').length} {t('accountsCount')}</div>
         </div>
@@ -447,7 +500,7 @@ const AccountSummary = ({ onAccountClick }) => {
             <span className="card-icon">🎯</span>
           </div>
           <div className="card-values">
-            {displayCurrencyValues(baseCurrencyTotals.netWorth)}
+            {displayCurrencyValues(baseCurrencyTotals.netWorth, 'net-worth')}
           </div>
           <div className="card-subtitle">Assets - Liabilities</div>
         </div>
