@@ -246,13 +246,11 @@ const AccountSummary = ({ onAccountClick }) => {
 
   // Helper function to display currency values with 0 fallback and color coding
   const displayCurrencyValues = (amounts, cardType = null) => {
-    console.log('🎨 displayCurrencyValues called with cardType:', cardType);
     const breakdown = formatCurrencyBreakdown(amounts);
     if (breakdown.length === 0) {
       // Show 0 in base currency when no amounts
       const baseCurrency = getBaseCurrency();
       const baseCurrencyId = baseCurrency?.id || 'CUR_001';
-      console.log('🎨 Returning zero amount for cardType:', cardType);
 
       // Apply color even for zero amounts
       let amountStyle = {};
@@ -284,35 +282,19 @@ const AccountSummary = ({ onAccountClick }) => {
         colorClass = amount < 0 ? 'negative' : 'positive'; // Default behavior
       }
 
-      // Debug logging to verify color classes are applied
-      if (cardType) {
-        console.log(`🎨 Processing: Card type: ${cardType}, Amount: ${amount}, Color class: ${colorClass}`);
-      }
-
-      // Determine inline style colors with !important equivalent approach
-      let amountStyle = {
-        fontWeight: '600',
-        fontSize: '1.25rem' // Match the existing CSS
-      };
-
+      // Determine CSS class for color coding
+      let cardColorClass = '';
       if (cardType === 'assets') {
-        amountStyle.color = '#10b981'; // Green for assets
-        console.log('🎨 Applied GREEN style for assets');
+        cardColorClass = 'assets-card';
       } else if (cardType === 'liabilities') {
-        amountStyle.color = '#ef4444'; // Red for liabilities
-        console.log('🎨 Applied RED style for liabilities');
+        cardColorClass = 'liabilities-card';
       } else if (cardType === 'net-worth') {
-        amountStyle.color = amount >= 0 ? '#10b981' : '#ef4444';
-        console.log(`🎨 Applied ${amount >= 0 ? 'GREEN' : 'RED'} style for net-worth (amount: ${amount})`);
-      } else {
-        // Fallback test color to see if inline styles work at all
-        amountStyle.color = '#ff00ff'; // Bright magenta for testing
-        console.log('🎨 Applied MAGENTA test color for no cardType');
+        cardColorClass = amount >= 0 ? 'net-worth-positive' : 'net-worth-negative';
       }
 
       return (
-        <div key={currencyId} className={`currency-value ${colorClass}`} style={{ color: amountStyle.color }}>
-          <span className="amount" style={amountStyle}>{formatted}</span>
+        <div key={currencyId} className={`currency-value ${colorClass} ${cardColorClass}`}>
+          <span className="amount">{formatted}</span>
           <span className="currency-code">{currency?.code}</span>
         </div>
       );

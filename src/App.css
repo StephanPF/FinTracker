@@ -734,7 +734,6 @@ body {
 .currency-value .amount {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1f2937;
 }
 
 /* Removed override rule - conflicts resolved by removing old color rules */
@@ -748,12 +747,25 @@ body {
   border-radius: 4px;
 }
 
-.currency-value.positive .amount {
-  color: #059669;
+/* Dynamic color classes for overview summary cards */
+.currency-value.assets-card .amount {
+  color: #10b981 !important; /* Green for assets */
+  -webkit-text-fill-color: #10b981 !important; /* Override webkit text fill */
 }
 
-.currency-value.negative .amount {
-  color: #dc2626;
+.currency-value.liabilities-card .amount {
+  color: #ef4444 !important; /* Red for liabilities */
+  -webkit-text-fill-color: #ef4444 !important; /* Override webkit text fill */
+}
+
+.currency-value.net-worth-positive .amount {
+  color: #10b981 !important; /* Green for positive net worth */
+  -webkit-text-fill-color: #10b981 !important; /* Override webkit text fill */
+}
+
+.currency-value.net-worth-negative .amount {
+  color: #ef4444 !important; /* Red for negative net worth */
+  -webkit-text-fill-color: #ef4444 !important; /* Override webkit text fill */
 }
 
 /* Accounts Section */
