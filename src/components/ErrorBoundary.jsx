@@ -13,16 +13,49 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log the error to our logging system
-    logger.error('React Component Error', {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
+    // Enhanced error logging with better error object handling
+    const errorDetails = {
       errorBoundary: this.props.name || 'UnnamedErrorBoundary',
       type: 'react-error',
       timestamp: new Date().toISOString(),
+      componentStack: errorInfo.componentStack,
       props: this.props.logProps ? this.props : undefined
-    });
+    };
+
+    // Safely extract error information
+    if (error) {
+      try {
+        errorDetails.message = error.message || 'No error message';
+        errorDetails.stack = error.stack || 'No stack trace';
+        errorDetails.name = error.name || 'Unknown error type';
+        errorDetails.errorType = typeof error;
+
+        // Try to get additional error properties
+        const errorKeys = Object.keys(error);
+        if (errorKeys.length > 0) {
+          errorDetails.errorKeys = errorKeys;
+          errorDetails.errorProps = {};
+          errorKeys.forEach(key => {
+            try {
+              errorDetails.errorProps[key] = error[key];
+            } catch (e) {
+              errorDetails.errorProps[key] = '[Circular or non-serializable]';
+            }
+          });
+        }
+      } catch (e) {
+        errorDetails.message = 'Error occurred while processing error details';
+        errorDetails.serializationError = e.message;
+      }
+    } else {
+      errorDetails.message = 'Error object is null or undefined';
+      errorDetails.originalError = error;
+    }
+
+    // Log with enhanced details
+    logger.error('React Component Error', errorDetails);
+
+    // Error details are already logged via logger.error above
 
     // Store error info in state for potential display
     this.setState({

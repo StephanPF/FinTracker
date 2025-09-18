@@ -24,6 +24,8 @@ const ProcessingRulesSection = ({
   // Get rules directly from context instead of local state
   const rules = bankConfigId ? getProcessingRules(bankConfigId) : [];
 
+  // Debug logging removed - using log system instead
+
   useEffect(() => {
     if (bankConfigId) {
       loadRules();

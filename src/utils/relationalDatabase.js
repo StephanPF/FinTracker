@@ -3975,7 +3975,7 @@ class RelationalDatabase {
     if (!this.tables.bank_configurations) {
       this.tables.bank_configurations = [];
     }
-    
+
     const id = bankConfigData.id || Date.now().toString();
     const newBankConfig = {
       id,
@@ -3987,9 +3987,10 @@ class RelationalDatabase {
       createdAt: bankConfigData.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
-    
+
     this.tables.bank_configurations.push(newBankConfig);
     this.saveTableToWorkbook('bank_configurations');
+
     return {
       ...newBankConfig,
       fieldMapping: JSON.parse(newBankConfig.fieldMapping),
@@ -4093,8 +4094,8 @@ class RelationalDatabase {
 
   getProcessingRules(bankConfigId) {
     const rules = this.tables.processing_rules || [];
-    const filteredRules = bankConfigId 
-      ? rules.filter(rule => rule.bankConfigId === bankConfigId)
+    const filteredRules = bankConfigId
+      ? rules.filter(rule => String(rule.bankConfigId) === String(bankConfigId))
       : rules;
     
     return filteredRules

@@ -12,6 +12,7 @@ import AddCashWithdrawalSubcategoryMigration from '../utils/addCashWithdrawalSub
 import FixCashWithdrawalSubcategoryMigration from '../utils/fixCashWithdrawalSubcategory.js';
 import AddRefundGroupAndSubcategoryMigration from '../utils/addRefundGroupAndSubcategory.js';
 import CreateNotificationsTableMigration from '../utils/createNotificationsTableMigration.js';
+import AddBusinessExpenseSubcategoryMigration from '../utils/addBusinessExpenseSubcategory.js';
 import './DatabaseMigrations.css';
 
 const DatabaseMigrations = () => {
@@ -67,6 +68,15 @@ const DatabaseMigrations = () => {
       migrationClass: AddRefundGroupAndSubcategoryMigration,
       riskLevel: 'low',
       affectedTables: ['transaction_groups', 'subcategories']
+    },
+    {
+      id: 'add_business_expense_subcategory',
+      name: 'Add Business Expense Subcategory',
+      description: 'Adds SUB_070 "Business Expense" subcategory to GRP_009 (Financial & Administrative) for professional and business-related expenses',
+      version: '1.0.0',
+      migrationClass: AddBusinessExpenseSubcategoryMigration,
+      riskLevel: 'low',
+      affectedTables: ['subcategories']
     }
   ];
 

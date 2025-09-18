@@ -33,6 +33,10 @@ const TransactionList = ({ limit, selectedAccountId }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
+  // Sorting state
+  const [sortField, setSortField] = useState('date');
+  const [sortDirection, setSortDirection] = useState('desc'); // Default to newest first
+
   // Get user's date format from database
   const getUserDateFormat = () => {
     if (database) {
@@ -430,14 +434,83 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       });
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortField) {
+        case 'date':
+          aValue = new Date(a.date);
+          bValue = new Date(b.date);
+          break;
+        case 'description':
+          aValue = a.description.toLowerCase();
+          bValue = b.description.toLowerCase();
+          break;
+        case 'account':
+          aValue = getAccountName(a.accountId).toLowerCase();
+          bValue = getAccountName(b.accountId).toLowerCase();
+          break;
+        case 'amount':
+          aValue = parseFloat(a.amount) || 0;
+          bValue = parseFloat(b.amount) || 0;
+          break;
+        case 'type':
+          aValue = getTransactionType(a).toLowerCase();
+          bValue = getTransactionType(b).toLowerCase();
+          break;
+        case 'reference':
+          aValue = (a.reference || '').toLowerCase();
+          bValue = (b.reference || '').toLowerCase();
+          break;
+        case 'payee':
+          aValue = getPayeePayer(a).toLowerCase();
+          bValue = getPayeePayer(b).toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
     return filtered;
-  }, [transactions, searchTerm, filterAccount, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, accounts, categories, subcategories, customers, vendors, tags, t]);
+  }, [transactions, searchTerm, filterAccount, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax, accounts, categories, subcategories, customers, vendors, tags, t, sortField, sortDirection]);
 
   const displayTransactions = useMemo(() => {
-    return limit 
-      ? filteredTransactions.slice(-limit).reverse() 
-      : [...filteredTransactions].reverse();
+    return limit
+      ? filteredTransactions.slice(-limit)
+      : filteredTransactions;
   }, [filteredTransactions, limit]);
+
+  // Calculate total amount of displayed transactions
+  const totalAmount = useMemo(() => {
+    return displayTransactions.reduce((sum, transaction) => {
+      let amount = parseFloat(transaction.amount) || 0;
+
+      // Convert to base currency if needed for consistent totaling
+      if (transaction.currencyId !== exchangeRateService?.getBaseCurrencyId() && exchangeRateService) {
+        try {
+          amount = exchangeRateService.convertToBaseCurrency(
+            amount,
+            transaction.currencyId,
+            transaction.date
+          );
+        } catch (error) {
+          // Use original amount if conversion fails
+        }
+      }
+
+      // Apply correct sign based on transaction type
+      if (transaction.transactionType === 'DEBIT') {
+        amount = -amount;
+      }
+
+      return sum + amount;
+    }, 0);
+  }, [displayTransactions, exchangeRateService]);
 
   // Handle large datasets with loading state
   useEffect(() => {
@@ -531,6 +604,24 @@ const TransactionList = ({ limit, selectedAccountId }) => {
     setTemplateName(transaction.description);
     setShowSaveTemplateModal(true);
     setActiveDropdown(null);
+  };
+
+  // Handle table header sorting
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with default direction
+      setSortField(field);
+      setSortDirection(field === 'date' ? 'desc' : 'asc'); // Date defaults to newest first
+    }
+  };
+
+  // Render sort indicator
+  const getSortIndicator = (field) => {
+    if (sortField !== field) return ' ↕️'; // Neutral sort indicator
+    return sortDirection === 'asc' ? ' ↑' : ' ↓';
   };
 
   const confirmSaveTemplate = async () => {
@@ -753,7 +844,15 @@ const TransactionList = ({ limit, selectedAccountId }) => {
       
       {!limit && (
         <div className="transaction-count-display">
-          Showing {displayTransactions.length} of {transactions.length} transactions
+          Showing {displayTransactions.length} of {transactions.length} transactions | Total: {(() => {
+            if (exchangeRateService) {
+              const baseCurrencyId = exchangeRateService.getBaseCurrencyId();
+              return exchangeRateService.formatAmount(totalAmount, baseCurrencyId);
+            }
+            // Fallback formatting
+            const baseCurrency = currencies.find(c => c.id === exchangeRateService?.getBaseCurrencyId());
+            return `${baseCurrency?.symbol || '€'}${totalAmount.toFixed(2)}`;
+          })()}
         </div>
       )}
       
@@ -761,14 +860,56 @@ const TransactionList = ({ limit, selectedAccountId }) => {
         <table>
           <thead>
             <tr>
-              <th>{t('date')}</th>
-              <th>Type</th>
-              <th>{t('description')}</th>
-              <th>Account</th>
+              <th
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('date')}
+                title="Click to sort by date"
+              >
+                {t('date')}{getSortIndicator('date')}
+              </th>
+              <th
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('type')}
+                title="Click to sort by type"
+              >
+                Type{getSortIndicator('type')}
+              </th>
+              <th
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('description')}
+                title="Click to sort by description"
+              >
+                {t('description')}{getSortIndicator('description')}
+              </th>
+              <th
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('account')}
+                title="Click to sort by account"
+              >
+                Account{getSortIndicator('account')}
+              </th>
               <th>From/To Account</th>
-              <th>Payee/Payer</th>
-              <th>Reference</th>
-              <th style={{ width: '100px', textAlign: 'right' }}>{t('amount')}</th>
+              <th
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('payee')}
+                title="Click to sort by payee/payer"
+              >
+                Payee/Payer{getSortIndicator('payee')}
+              </th>
+              <th
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('reference')}
+                title="Click to sort by reference"
+              >
+                Reference{getSortIndicator('reference')}
+              </th>
+              <th
+                style={{ width: '100px', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('amount')}
+                title="Click to sort by amount"
+              >
+                {t('amount')}{getSortIndicator('amount')}
+              </th>
               <th style={{ width: '60px', textAlign: 'center' }}>RR</th>
               <th style={{ width: '50px', textAlign: 'center' }}>Actions</th>
             </tr>

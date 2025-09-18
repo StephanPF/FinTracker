@@ -21,8 +21,35 @@ export const useAccounting = () => {
 
 export const AccountingProvider = ({ children }) => {
   const { language, changeLanguage } = useLanguage();
-  const [database, setDatabase] = useState(new RelationalDatabase());
-  const [fileStorage, setFileStorage] = useState(new RelationalFileStorage());
+
+  // Add error state tracking
+  const [initError, setInitError] = useState(null);
+
+  // Initialize services with error handling
+  const [database, setDatabase] = useState(() => {
+    try {
+      return new RelationalDatabase();
+    } catch (error) {
+      return null;
+    }
+  });
+
+  const [fileStorage, setFileStorage] = useState(() => {
+    try {
+      return new RelationalFileStorage();
+    } catch (error) {
+      return null;
+    }
+  });
+
+  // Check for initialization errors after component mounts
+  useEffect(() => {
+    if (!database) {
+      setInitError(new Error('Failed to initialize RelationalDatabase'));
+    } else if (!fileStorage) {
+      setInitError(new Error('Failed to initialize RelationalFileStorage'));
+    }
+  }, [database, fileStorage]);
   const [exchangeRateService, setExchangeRateService] = useState(null);
   const [cryptoRateService, setCryptoRateService] = useState(null);
   const [numberFormatService, setNumberFormatService] = useState(null);
@@ -57,32 +84,67 @@ export const AccountingProvider = ({ children }) => {
     initializeDatabase();
   }, []);
 
-  const loadBankConfigurations = () => {
-    // Migration: Check for existing localStorage data and migrate to database
-    try {
-      const stored = localStorage.getItem('bankConfigurations');
-      if (stored && database) {
-        const configs = JSON.parse(stored);
-        // Migrate each config to database if not already there
-        configs.forEach(config => {
-          const existingConfigs = database.getBankConfigurations();
-          const exists = existingConfigs.find(existing => existing.id === config.id);
-          if (!exists) {
-            database.addBankConfiguration(config);
+  // Debug monitoring for bank configuration persistence issues
+  useEffect(() => {
+    if (!database || !isLoaded) return;
+
+    let intervalId;
+    const monitorBankConfigurations = () => {
+      try {
+        const dbConfigs = database.getBankConfigurations();
+        const currentStateCount = bankConfigurations.length;
+        const dbCount = dbConfigs.length;
+
+        // Check for discrepancies between state and database
+        if (currentStateCount !== dbCount) {
+          console.warn(`Bank config discrepancy detected: State=${currentStateCount}, DB=${dbCount}`);
+
+          // Auto-sync state from database
+          setBankConfigurations(dbConfigs.map(config => ({...config})));
+        }
+
+        // Check for specific missing configurations
+        bankConfigurations.forEach(stateConfig => {
+          const existsInDb = dbConfigs.find(dbConfig => dbConfig.id === stateConfig.id);
+          if (!existsInDb) {
+            console.error(`Bank configuration ${stateConfig.id} exists in state but missing from database!`);
           }
         });
-        
-        // Update state from database
-        setBankConfigurations([...database.getBankConfigurations()]);
-        
-        // Clear localStorage after successful migration
-        localStorage.removeItem('bankConfigurations');
-      } else if (database) {
-        // No localStorage data, just load from database
-        setBankConfigurations([...database.getBankConfigurations()]);
+
+      } catch (error) {
+        console.error('Error monitoring bank configurations:', error);
       }
+    };
+
+    // Monitor every 30 seconds when bank configs exist
+    if (bankConfigurations.length > 0) {
+      intervalId = setInterval(monitorBankConfigurations, 30000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [database, isLoaded, bankConfigurations]);
+
+  const loadBankConfigurations = () => {
+    try {
+      if (!database) return;
+
+      // Get current configurations from database
+      const dbConfigs = database.getBankConfigurations();
+
+      // Update state with deep copy to prevent reference issues
+      setBankConfigurations(dbConfigs.map(config => ({...config})));
+
     } catch (error) {
       console.error('Error loading bank configurations:', error);
+      // Fallback: just load from database
+      if (database) {
+        const dbConfigs = database.getBankConfigurations();
+        setBankConfigurations(dbConfigs.map(config => ({...config})));
+      }
     }
   };
 
@@ -192,7 +254,7 @@ export const AccountingProvider = ({ children }) => {
     setProducts([...database.getTable('tags')]);
     setPayees([...database.getTable('payees')]);
     setPayers([...database.getTable('payers')]);
-    setBankConfigurations([...database.getBankConfigurations()]);
+    setBankConfigurations(database.getBankConfigurations().map(config => ({...config})));
     setTransactionTemplates([...database.getTable('transaction_templates')]);
     setNotifications([...database.getTable('notifications')]);
     
@@ -748,12 +810,39 @@ export const AccountingProvider = ({ children }) => {
   // Bank Configuration functions
   const addBankConfiguration = async (bankConfig) => {
     try {
+      // Add to database
       const newConfig = database.addBankConfiguration(bankConfig);
-      setBankConfigurations([...database.getBankConfigurations()]);
-      
-      const buffer = database.exportTableToBuffer('bank_configurations');
-      await fileStorage.saveTable('bank_configurations', buffer);
-      
+
+      // Ensure workbook is saved
+      database.saveTableToWorkbook('bank_configurations');
+
+      // Get fresh configurations from database and update state with deep copy
+      const dbConfigs = database.getBankConfigurations();
+      setBankConfigurations(dbConfigs.map(config => ({...config})));
+
+      // Reload processing rules for the new configuration
+      const rules = database.getProcessingRules(newConfig.id);
+      setProcessingRules(prev => ({
+        ...prev,
+        [newConfig.id]: rules
+      }));
+
+      // Save to file storage with error handling
+      try {
+        const buffer = database.exportTableToBuffer('bank_configurations');
+        await fileStorage.saveTable('bank_configurations', buffer);
+      } catch (fileError) {
+        console.error('Error saving bank configuration to file:', fileError);
+        // Don't throw - the database operation succeeded
+      }
+
+      // Verify persistence by checking if config exists in database
+      const verifyConfig = database.getBankConfigurations().find(c => c.id === newConfig.id);
+      if (!verifyConfig) {
+        console.error('Bank configuration failed to persist in database');
+        throw new Error('Bank configuration failed to persist');
+      }
+
       return newConfig;
     } catch (error) {
       console.error('Error adding bank configuration:', error);
@@ -763,12 +852,39 @@ export const AccountingProvider = ({ children }) => {
 
   const updateBankConfiguration = async (id, updates) => {
     try {
+      // Update in database
       const updatedConfig = database.updateBankConfiguration(id, updates);
-      setBankConfigurations([...database.getBankConfigurations()]);
-      
-      const buffer = database.exportTableToBuffer('bank_configurations');
-      await fileStorage.saveTable('bank_configurations', buffer);
-      
+
+      // Ensure workbook is saved
+      database.saveTableToWorkbook('bank_configurations');
+
+      // Get fresh configurations from database and update state with deep copy
+      const dbConfigs = database.getBankConfigurations();
+      setBankConfigurations(dbConfigs.map(config => ({...config})));
+
+      // Reload processing rules for the updated configuration
+      const rules = database.getProcessingRules(id);
+      setProcessingRules(prev => ({
+        ...prev,
+        [id]: rules
+      }));
+
+      // Save to file storage with error handling
+      try {
+        const buffer = database.exportTableToBuffer('bank_configurations');
+        await fileStorage.saveTable('bank_configurations', buffer);
+      } catch (fileError) {
+        console.error('Error saving updated bank configuration to file:', fileError);
+        // Don't throw - the database operation succeeded
+      }
+
+      // Verify persistence by checking if updated config exists in database
+      const verifyConfig = database.getBankConfigurations().find(c => c.id === id);
+      if (!verifyConfig) {
+        console.error('Updated bank configuration failed to persist in database');
+        throw new Error('Bank configuration update failed to persist');
+      }
+
       return updatedConfig;
     } catch (error) {
       console.error('Error updating bank configuration:', error);
@@ -779,11 +895,21 @@ export const AccountingProvider = ({ children }) => {
   const removeBankConfiguration = async (id) => {
     try {
       const deletedConfig = database.deleteBankConfiguration(id);
-      setBankConfigurations([...database.getBankConfigurations()]);
-      
+
+      // Get fresh configurations from database and update state with deep copy
+      const dbConfigs = database.getBankConfigurations();
+      setBankConfigurations(dbConfigs.map(config => ({...config})));
+
+      // Remove processing rules from state for deleted configuration
+      setProcessingRules(prev => {
+        const updated = {...prev};
+        delete updated[id];
+        return updated;
+      });
+
       const buffer = database.exportTableToBuffer('bank_configurations');
       await fileStorage.saveTable('bank_configurations', buffer);
-      
+
       return deletedConfig;
     } catch (error) {
       console.error('Error removing bank configuration:', error);
@@ -2058,6 +2184,17 @@ export const AccountingProvider = ({ children }) => {
     },
     getTemplatedTransactions: () => database?.getTemplatedTransactions() || []
   };
+
+  // Handle initialization errors
+  if (initError) {
+    return (
+      <div className="accounting-provider-error">
+        <h2>Failed to initialize accounting system</h2>
+        <p>Error: {initError.message}</p>
+        <button onClick={() => window.location.reload()}>Reload Application</button>
+      </div>
+    );
+  }
 
   return (
     <AccountingContext.Provider value={value}>

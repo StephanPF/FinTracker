@@ -142,10 +142,10 @@ Users can select the nomadic configuration through the **Database Configuration 
 ### Subcategories
 ```javascript
 // Nomadic subcategories are now fully implemented
-generateSubcategories(language, 'nomadic') // Returns: 66 subcategories organized by transaction groups
+generateSubcategories(language, 'nomadic') // Returns: 67 subcategories organized by transaction groups
 ```
 
-The nomadic configuration includes **66 detailed subcategories** that provide granular expense tracking across all 17 transaction groups. Each subcategory is specifically designed for nomadic lifestyle needs.
+The nomadic configuration includes **67 detailed subcategories** that provide granular expense tracking across all 17 transaction groups. Each subcategory is specifically designed for nomadic lifestyle needs.
 
 #### Subcategory Structure
 
@@ -200,11 +200,12 @@ The nomadic configuration includes **66 detailed subcategories** that provide gr
 - Mobile Data & SIM Cards: Local/international connectivity
 - Tech Accessories: Chargers, adapters, power banks
 
-**Financial & Administrative (4 subcategories)**
+**Financial & Administrative (5 subcategories)**
 - Banking Fees: Currency conversion, ATM fees
 - Visas & Permits: Tourist visas, work permits
 - Taxes & Legal Fees: Tax prep, legal services
 - Emergency Fund: Unexpected expense savings
+- Business Expense: Professional and business-related expenses
 
 **Miscellaneous (3 subcategories)**
 - Childcare & Entertainment: Toys, babysitting
