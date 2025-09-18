@@ -19,6 +19,9 @@ import DatabaseMigrations from './DatabaseMigrations';
 import Logo from './Logo';
 import NotificationBadge from './NotificationBadge';
 import NotificationCenter from './NotificationCenter';
+import LogButton from './LogButton';
+import LogModal from './LogModal';
+import logger from '../utils/logger';
 
 const Dashboard = () => {
   const { isLoaded, loading, resetToSetup, database, fileStorage, notificationService } = useAccounting();
@@ -50,6 +53,59 @@ const Dashboard = () => {
     console.log('🔄 Refreshing notification badge count');
     setNotificationBadgeKey(prev => prev + 1);
   };
+
+  // Create sample logs for testing (only once)
+  useEffect(() => {
+    const hasCreatedSampleLogs = sessionStorage.getItem('sampleLogsCreated');
+    if (!hasCreatedSampleLogs) {
+      // Basic logs
+      logger.info('Dashboard loaded successfully');
+      logger.debug('Dashboard state initialized', { activeTab, isLoaded });
+      logger.warn('This is a sample warning message');
+      logger.error('This is a sample error message for testing', { error: 'Sample error object' });
+      logger.info('User session started', { timestamp: new Date().toISOString() });
+
+      // Add some logs with artificial delays to test time filtering
+      setTimeout(() => {
+        logger.info('Database connection established', { database: 'SQLite', version: '3.x' });
+        logger.debug('Loading user preferences', { theme: 'light', language: 'en' });
+      }, 100);
+
+      setTimeout(() => {
+        logger.warn('Cache miss for user data', { userId: 'user123', operation: 'fetch' });
+        logger.error('API timeout exceeded', { endpoint: '/api/transactions', timeout: 5000 });
+      }, 200);
+
+      setTimeout(() => {
+        logger.info('Transaction processing completed', { count: 15, duration: '245ms' });
+        logger.debug('Memory usage check', { heapUsed: '45MB', heapTotal: '67MB' });
+      }, 300);
+
+      // Test error capture systems
+      setTimeout(() => {
+        // Test console.error capture
+        console.error('Test console.error - this should appear in logs');
+        console.warn('Test console.warn - this should appear in logs');
+
+        // Test unhandled promise rejection
+        Promise.reject(new Error('Test unhandled promise rejection'));
+
+        // Test manual error reporting
+        try {
+          throw new Error('Test manual error reporting');
+        } catch (error) {
+          logger.error('Caught and manually logged error', {
+            originalError: error.message,
+            stack: error.stack
+          });
+        }
+      }, 500);
+
+      // Clear this to test orphan rule detection
+      sessionStorage.removeItem('sampleLogsCreated');
+      sessionStorage.setItem('sampleLogsCreated', 'true');
+    }
+  }, []);
 
   // Helper function to handle tab navigation with scroll-to-top
   const handleTabNavigation = (tabName) => {
@@ -265,6 +321,7 @@ const Dashboard = () => {
           </button>
         </div>
         <div className="nav-actions">
+          <LogButton />
           {notificationService && (
             <NotificationBadge
               key={notificationBadgeKey}
@@ -421,6 +478,7 @@ const Dashboard = () => {
           onNotificationChange={refreshNotificationBadge}
         />
       )}
+      <LogModal />
     </div>
   );
 };

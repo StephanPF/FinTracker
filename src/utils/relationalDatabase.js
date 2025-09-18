@@ -361,19 +361,35 @@ class RelationalDatabase {
 
     if (processingRuleErrors.length > 0) {
       let removedCount = 0;
+      const orphanedRules = [];
 
       processingRuleErrors.forEach(error => {
         const ruleId = error.record;
         const ruleIndex = this.tables.processing_rules.findIndex(rule => rule.id === ruleId);
 
         if (ruleIndex !== -1) {
+          const rule = this.tables.processing_rules[ruleIndex];
+          orphanedRules.push({
+            ruleId: rule.id,
+            ruleName: rule.name || 'Unnamed Rule',
+            bankConfigId: rule.bankConfigId,
+            priority: rule.priority
+          });
           this.tables.processing_rules.splice(ruleIndex, 1);
           removedCount++;
         }
       });
 
       if (removedCount > 0) {
-        console.warn(`🧹 Cleaned up ${removedCount} orphaned processing rules with missing bank configurations`);
+        // Get list of existing bank config IDs for debugging
+        const existingBankConfigIds = this.tables.bank_configurations.map(config => config.id);
+
+        console.warn(`🧹 Found and removed ${removedCount} orphaned processing rules:`, {
+          orphanedRules,
+          existingBankConfigIds,
+          message: 'These rules referenced non-existent bank configurations',
+          type: 'orphaned-rules-cleanup'
+        });
         // Save the updated processing rules table
         this.saveTableToWorkbook('processing_rules');
       }
@@ -4024,10 +4040,19 @@ class RelationalDatabase {
     if (configIndex === -1) {
       throw new Error(`Bank configuration with id ${id} not found`);
     }
-    
+
     const deletedConfig = this.tables.bank_configurations[configIndex];
+
+    // CASCADE DELETE: Remove all processing rules associated with this bank configuration
+    const deletedRulesCount = this.deleteProcessingRulesByBankConfig(id);
+    if (deletedRulesCount > 0) {
+      console.info(`🔗 Cascade delete: Removed ${deletedRulesCount} processing rules associated with bank configuration '${deletedConfig.name}' (ID: ${id})`);
+    }
+
+    // Delete the bank configuration
     this.tables.bank_configurations.splice(configIndex, 1);
     this.saveTableToWorkbook('bank_configurations');
+
     return {
       ...deletedConfig,
       fieldMapping: typeof deletedConfig.fieldMapping === 'string' ? JSON.parse(deletedConfig.fieldMapping) : deletedConfig.fieldMapping,

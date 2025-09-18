@@ -39,7 +39,7 @@ const Autocomplete = ({
       setFilteredOptions([]);
       setShowDropdown(false);
     }
-  }, [inputValue, options, filterFunction]);
+  }, [inputValue, options]); // Removed filterFunction from deps to prevent infinite loop
 
   // Handle input change
   const handleInputChange = (e) => {
